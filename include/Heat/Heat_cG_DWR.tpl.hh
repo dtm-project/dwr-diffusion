@@ -208,6 +208,8 @@ protected:
 		struct {
 			data_vectors_storage u; ///< primal solutions interpolated into dual FE room list
 			data_vectors_storage z; ///< dual solutions list
+			
+			data_vectors_storage eta; ///< error_indicators list
 		} storage;
 		
 		
@@ -227,10 +229,6 @@ protected:
 		// Convergence Table
 		dealii::ConvergenceTable convergence_table;
 	} dual;
-	
-	// list of primal and dual solutions
-	
-	data_vectors_storage In_eta; ///< error_indicators list
 	
 	std::shared_ptr< Heat::Grid_DWR<dim,1> > grid;
 	

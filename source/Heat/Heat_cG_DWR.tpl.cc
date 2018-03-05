@@ -229,9 +229,9 @@ init_storage() {
 	
 	////////////////////////
 	// auxiliary vector eta:
-	In_eta = std::make_shared<l_data_vectors_storage > ();
-	In_eta->resize(N);
-	for (auto &element : *In_eta) {
+	dual.storage.eta = std::make_shared<l_data_vectors_storage > ();
+	dual.storage.eta->resize(N);
+	for (auto &element : *dual.storage.eta) {
 		element.x = std::make_shared< dealii::Vector<double> > ();
 	}
 }
@@ -1876,18 +1876,18 @@ compute_Ieff_L2final() {
 
 	// Compute eta_K^n within fct. estimate() of class DWR_ErrorEstimator and store
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
-	// and all these vectors within the list In_eta.
+	// and all these vectors within the list dual.storage.eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
 		dual.storage.z,
-		In_eta
+		dual.storage.eta
 	);
 	
 	// Sum up the local contributions of all cells within one time-interval of the 
 	// local vector error_indicators (sum_(K in T_h)n_K^n). Then sum up all these
 	// added values and store it within the double eta (=sum_(n=1)^N (sum_(K in T_h)n_K^n))
-	auto In_eta_test(In_eta->begin());
-	auto endIn_eta_test(In_eta->end());
+	auto In_eta_test(dual.storage.eta->begin());
+	auto endIn_eta_test(dual.storage.eta->end());
 	// Variable for estimated error eta
 	double eta;
 	eta = 0;
@@ -1948,11 +1948,11 @@ Heat_cG_DWR<dim>::
 compute_Ieff_L2global() {
 	// Compute eta_K^n within fct. estimate() of class DWR_ErrorEstimator ans store
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
-	// and all these vectors within the list In_eta.
+	// and all these vectors within the list dual.storage.eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
 		dual.storage.z,
-		In_eta
+		dual.storage.eta
 	);
 
 	////////////////////////////////////////////////////////////////////////////
@@ -1962,8 +1962,8 @@ compute_Ieff_L2global() {
 	// Sum up the local contributions of all cells within one time-interval of the 
 	// local vector error_indicators (sum_(K in T_h)n_K^n). Then sum up all these
 	// added values and store it within the double eta (=sum_(n=1)^N (sum_(K in T_h)n_K^n))
-	auto In_eta_test(In_eta->begin());
-	auto endIn_eta_test(In_eta->end());
+	auto In_eta_test(dual.storage.eta->begin());
+	auto endIn_eta_test(dual.storage.eta->end());
 	// Variable for estimated error eta
 	double eta;
 	eta = 0;
@@ -2011,18 +2011,18 @@ Heat_cG_DWR<dim>::
 compute_Ieff_mean_final() {
 	// Compute eta_K^n within fct. estimate() of class DWR_ErrorEstimator ans store
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
-	// and all these vectors within the list In_eta.
+	// and all these vectors within the list dual.storage.eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
 		dual.storage.z,
-		In_eta
+		dual.storage.eta
 	);
 	
 	// Sum up the local contributions of all cells within one time-interval of the 
 	// local vector error_indicators (sum_(K in T_h)n_K^n). Then sum up all these
 	// added values and store it within the double eta (=sum_(n=1)^N (sum_(K in T_h)n_K^n))
-	auto In_eta_test(In_eta->begin());
-	auto endIn_eta_test(In_eta->end());
+	auto In_eta_test(dual.storage.eta->begin());
+	auto endIn_eta_test(dual.storage.eta->end());
 	// Variable for estimated error eta
 	double eta;
 	eta = 0.;
@@ -2087,18 +2087,18 @@ Heat_cG_DWR<dim>::
 compute_Ieff_mean_global() {
 	// Compute eta_K^n within fct. estimate() of class DWR_ErrorEstimator ans store
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
-	// and all these vectors within the list In_eta.
+	// and all these vectors within the list dual.storage.eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
 		dual.storage.z,
-		In_eta
+		dual.storage.eta
 	);
 	
 	// Sum up the local contributions of all cells within one time-interval of the 
 	// local vector error_indicators (sum_(K in T_h)n_K^n). Then sum up all these
 	// added values and store it within the double eta (=sum_(n=1)^N (sum_(K in T_h)n_K^n))
-	auto In_eta_test(In_eta->begin());
-	auto endIn_eta_test(In_eta->end());
+	auto In_eta_test(dual.storage.eta->begin());
+	auto endIn_eta_test(dual.storage.eta->end());
 	// Variable for estimated error eta
 	double eta;
 	eta = 0.;
@@ -2220,18 +2220,18 @@ Heat_cG_DWR<dim>::
 compute_Ieff_point_final() {
 	// Compute eta_K^n within fct. estimate() of class DWR_ErrorEstimator ans store
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
-	// and all these vectors within the list In_eta.
+	// and all these vectors within the list dual.storage.eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
 		dual.storage.z,
-		In_eta
+		dual.storage.eta
 	);
 	
 	// Sum up the local contributions of all cells within one time-interval of the 
 	// local vector error_indicators (sum_(K in T_h)n_K^n). Then sum up all these
 	// added values and store it within the double eta (=sum_(n=1)^N (sum_(K in T_h)n_K^n))
-	auto In_eta_test(In_eta->begin());
-	auto endIn_eta_test(In_eta->end());
+	auto In_eta_test(dual.storage.eta->begin());
+	auto endIn_eta_test(dual.storage.eta->end());
 	// Variable for estimated error eta
 	double eta;
 	eta = 0.;
@@ -2444,7 +2444,7 @@ refine_grids_dwr() {
 // // 	error_estimator.DWR->estimate(
 // // 		dual.storage.u,
 // // 		dual.storage.z,
-// // 		In_eta
+// // 		dual.storage.eta
 // // 	);
 // // 	
 // // 	////////////////////////////////////////////////////////////////////////////
@@ -2482,7 +2482,7 @@ refine_grids_dwr() {
 	// Build up a loop over all grids:
 	auto Inth(grid->slabs.begin());
 	auto endInth(grid->slabs.end());
-	auto In_etath(In_eta->begin());
+	auto In_etath(dual.storage.eta->begin());
 	
 	for (; Inth != endInth; ++Inth) {
 	
@@ -2971,7 +2971,7 @@ run() {
 		////////////////////////////////////////////////////////////////////////
 		
 		// Compute I_eff:
-		std::cout << "In_eta hat Groesse = " << In_eta->size() << std::endl;
+		std::cout << "dual.storage.eta hat Groesse = " << dual.storage.eta->size() << std::endl;
 	
 		compute_Ieff();
 
@@ -2991,7 +2991,7 @@ run() {
 		// 	dual.storage.u->clear();
 		// 	dual.storage.z->clear();
 		// 	primal.storage.u->clear();
-		// 	In_eta->clear();
+		// 	dual.storage.eta->clear();
 		// 	// Refine time_mesh global:
 		// // 		//TEST gehört zu Zeitkonvergenz
 		// 		data.tau_n = (data.tau_n/4.);
