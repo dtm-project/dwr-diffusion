@@ -182,9 +182,6 @@ protected:
 		dealii::Vector<double> system_rhs;
 		
 		
-// TODO
-// 		dealii::Vector<double> testvector;
-		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
 		unsigned int data_output_patches;
