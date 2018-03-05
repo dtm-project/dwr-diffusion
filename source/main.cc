@@ -6,11 +6,11 @@
  * @date 2016-01-12, UK
  * @date 2015-11-11, UK
  *
- * @brief DTM++.Project/academic/step-06: Solve the heat-eq with DWR.
+ * @brief DTM++.Project/DWR/DWR-Heat: Solve the heat-eq with DWR.
  * 
  */
 
-/*  Copyright (C) 2012-2017 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 		// Restrict usage to a single process (NumProc == 1) only.
 		//
 		
-		AssertThrow(NumProc == 1, dealii::ExcMessage("MPI mode disabled."));
+		AssertThrow(NumProc == 1, dealii::ExcMessage("MPI mode not supported."));
 		
 		//
 		////////////////////////////////////////////////////////////////////////
@@ -125,10 +125,12 @@ int main(int argc, char *argv[]) {
 		const unsigned int DIM=2;
 		
 		const unsigned int p_primal = 1;
-		const unsigned int p_dual   = 2; 
+		const unsigned int p_dual   = 2;
+		
 		const unsigned int global_refine = 3;
+		
 		double t0 = 0.;
-		double T = 0.5;
+		double T  = 0.5;
 		double tau_n = 0.02;
 		const unsigned int time_steps = ((T-t0)/tau_n);
 		
@@ -152,12 +154,16 @@ int main(int argc, char *argv[]) {
 		//
 		auto epsilon = std::make_shared< dealii::ConstantFunction<DIM> > (1.e-00); ///< diffusion coefficient
 		auto alpha = std::make_shared< dealii::ConstantFunction<DIM> > (50.e-00); ///< coefficient for Hartmann fct.
+		
 		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
 		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon); ///< boundary values/ exact solution
+		
 		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only! 
 		auto f = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues); ///< rhs
+		
 		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
 		auto BoundaryValues_dual = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon); ///< boundary values/ exact solution
+		
 		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only!
 		auto f_dual = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues); ///< rhs
 		
@@ -185,15 +191,6 @@ int main(int argc, char *argv[]) {
 		);
 		
 		problem->run();
-
-		//TEST
-		dealii::Point<DIM> p;
-		p(0) = 0.5;
-		p(1) = 0.5;
-		BoundaryValues->set_time(0.5);
-		std::cout << "Hartmann = " << BoundaryValues->value(p,0) << std::endl;
-		
-		//TEST ENDE
 		
 		DTM::pout << std::endl << "Goodbye." << std::endl;
 		
