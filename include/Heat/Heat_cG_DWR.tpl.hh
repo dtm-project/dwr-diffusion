@@ -183,6 +183,11 @@ protected:
 		/// primal problem system_rhs vector ((tau_n*f_0) + (M*u_old_interpolated))
 		dealii::Vector<double> system_rhs;
 		
+		// storage TODO
+		struct {
+			data_vectors_storage u; ///< primal solutions list
+		} storage;
+// 		data_vectors_storage In_uprimal; ///< primal solutions list
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
@@ -221,7 +226,7 @@ protected:
 	data_vectors_storage In_u; ///< primal solutions interpolated into dual FE room list
 	data_vectors_storage In_z; ///< dual solutions list
 	
-	data_vectors_storage In_uprimal; ///< primal solutions list
+	
 	
 	data_vectors_storage In_eta; ///< error_indicators list
 	
