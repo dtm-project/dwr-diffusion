@@ -78,20 +78,18 @@ public:
 	virtual ~Grid_DWR();
 	
 	virtual void initialize_slabs(
+		const unsigned int &p_primal,
+		const unsigned int &p_dual,
 		const double &t0,
 		const double &T,
 		const double &tau_n
 	);
+	
 	virtual void generate();
 	virtual void refine_global(const unsigned int n = 1);
 	virtual void set_boundary_indicators();
 	
 	virtual void distribute();
-	
-	virtual void set_data(
-		const unsigned int p_primal,
-		const unsigned int p_dual
-	);
 	
 	/// slab: collects data structures and functions of a space-time slab
 	struct slab {
@@ -120,14 +118,7 @@ public:
 		double tau_n() const { return (t_n-t_m); };
 	};
 	
-	// TODO rename to slabs
 	std::list<struct slab> slabs;
-	
-	struct {
-		// TODO: check place for storing polynomial degrees in space
-		unsigned int p_primal; ///< polynomial degree p of primal problem
-		unsigned int p_dual; ///< polynomial degree p of dual problem
-	} gdata;
 	
 	dealii::GridIn<dim>            grid_in;
 	dealii::GridOut                grid_out;

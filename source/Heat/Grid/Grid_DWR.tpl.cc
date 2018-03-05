@@ -47,7 +47,6 @@
 #include <cmath>
 #include <limits>
 
-// class declaration
 namespace Heat {
 
 template<int dim, int spacedim>
@@ -67,80 +66,96 @@ Grid_DWR<dim,spacedim>::
 template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
-set_data(
-	const unsigned int p_primal,
-	const unsigned int p_dual) {
-	// TODO
-	gdata.p_primal = p_primal;
-	gdata.p_dual   = p_dual;
-}
-
-
-/// Initialize list of grids
-template<int dim, int spacedim>
-void
-Grid_DWR<dim,spacedim>::
 initialize_slabs(
+	const unsigned int &p_primal,
+	const unsigned int &p_dual,
 	const double &t0,
 	const double &T,
 	const double &tau_n) {
-	if ( slabs.empty() ) {
-		std::cout << "Initialize slabs objects " << std::endl;
-		
-		// determine initial time intervals
-		unsigned int numoftimeintervals;
-		numoftimeintervals = static_cast<unsigned int>(std::floor(
-			(T-t0)/tau_n
-		));
-		if (std::abs((numoftimeintervals*tau_n)-(T-t0))
-			>= std::numeric_limits< double >::epsilon()*T) {
-			numoftimeintervals += 1;
-		}
-		
-		// init spatial "grids" of each slab
-		for (unsigned int i{1}; i<= numoftimeintervals; ++i) {
-			slabs.emplace_back();
-			auto &slab = slabs.back();
-			
-			slab.tria = std::make_shared< dealii::Triangulation<dim> >(
-				typename dealii::Triangulation<dim>::MeshSmoothing(
-					dealii::Triangulation<dim>::smoothing_on_refinement
-				)
-			);
-			
-			slab.primal.dof = std::make_shared< dealii::DoFHandler<dim> > (*(slab.tria));
-			slab.dual.dof = std::make_shared< dealii::DoFHandler<dim> > (*(slab.tria));
-			
-			slab.primal.constraints = std::make_shared< dealii::ConstraintMatrix > ();
-			slab.dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
-			
-			slab.primal.sp = std::make_shared< dealii::SparsityPattern >();
-			slab.dual.sp = std::make_shared< dealii::SparsityPattern >();
-			
-			slab.primal.fe = std::make_shared< dealii::FE_Q<dim> > (gdata.p_primal);
-			slab.dual.fe = std::make_shared< dealii::FE_Q<dim> > (gdata.p_dual);
-			
-			slab.primal.mapping = std::make_shared< dealii::MappingQ<dim> > (gdata.p_primal);
-			slab.dual.mapping = std::make_shared< dealii::MappingQ<dim> > (gdata.p_dual);
-		}
-		
-		// init temporal "grids" of each slab
-		{
-			unsigned int n{1};
-			for (auto &slab : slabs) {
-				slab.t_m = (n-1)*tau_n+t0;
-				slab.t_n = n*tau_n + t0;
-				++n;
-			}
-			
-			auto &last_slab = slabs.back();
-			if ( std::abs(last_slab.t_n - T) >= std::numeric_limits< double >::epsilon()*T) {
-				last_slab.t_n = T;
-			}
-		}
+	
+	Assert(
+		slabs.empty(),
+		dealii::ExcMessage(
+			"Internal Error: slabs must be empty when calling this function"
+		)
+	);
+	
+	// determine initial time intervals
+	unsigned int numoftimeintervals;
+	numoftimeintervals = static_cast<unsigned int>(std::floor(
+		(T-t0)/tau_n
+	));
+	if (std::abs((numoftimeintervals*tau_n)-(T-t0))
+		>= std::numeric_limits< double >::epsilon()*T) {
+		numoftimeintervals += 1;
 	}
-	else {
-		Assert(false, dealii::ExcMessage("space-time grid already initialized"));
+	
+	// init spatial "grids" of each slab
+	for (unsigned int i{1}; i<= numoftimeintervals; ++i) {
+		slabs.emplace_back();
+		auto &slab = slabs.back();
+		////////////////////
+		// common components
+		//
+		slab.tria = std::make_shared< dealii::Triangulation<dim> >(
+			typename dealii::Triangulation<dim>::MeshSmoothing(
+				dealii::Triangulation<dim>::smoothing_on_refinement
+			)
+		);
+		
+		/////////////////////////
+		// primal grid components
+		//
+		slab.primal.dof = std::make_shared< dealii::DoFHandler<dim> > (
+			*slab.tria
+		);
+		
+		slab.primal.fe = std::make_shared< dealii::FE_Q<dim> > (
+			p_primal
+		);
+		
+		slab.primal.constraints = std::make_shared< dealii::ConstraintMatrix > ();
+		
+		slab.primal.sp = std::make_shared< dealii::SparsityPattern >();
+		
+		slab.primal.mapping = std::make_shared< dealii::MappingQ<dim> > (
+			p_primal
+		);
+		
+		///////////////////////
+		// dual grid components
+		//
+		slab.dual.dof = std::make_shared< dealii::DoFHandler<dim> > (
+			*slab.tria
+		);
+		
+		slab.dual.fe = std::make_shared< dealii::FE_Q<dim> > (
+			p_dual
+		);
+		
+		slab.dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
+		
+		slab.dual.sp = std::make_shared< dealii::SparsityPattern >();
+		
+		slab.dual.mapping = std::make_shared< dealii::MappingQ<dim> > (
+			p_dual
+		);
+	}
+	
+	// init temporal "grids" of each slab
+	{
+		unsigned int n{1};
+		for (auto &slab : slabs) {
+			slab.t_m = (n-1)*tau_n+t0;
+			slab.t_n = n*tau_n + t0;
+			++n;
+		}
+		
+		auto &last_slab = slabs.back();
+		if ( std::abs(last_slab.t_n - T) >=
+			std::numeric_limits< double >::epsilon()*T) {
+			last_slab.t_n = T;
+		}
 	}
 }
 
@@ -212,15 +227,15 @@ set_boundary_indicators() {
 }
 
 
-/// Distribute.
 template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 distribute() {
 	// Distribute the degrees of freedom (dofs)
-	// Start itererator over all list-elements
+	
 	auto slab(slabs.begin());
 	auto ends(slabs.end());
+	
 	for (; slab != ends; ++slab) {
 		////////////////////////////////////////////////////////////////////////////
 		// distribute primal dofs, create constraints and sparsity pattern sp
@@ -238,6 +253,7 @@ distribute() {
 			slab->primal.constraints->clear();
 			slab->primal.constraints->reinit();
 			
+			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
 			dealii::DoFTools::make_hanging_node_constraints(
 				*(slab->primal.dof),
 				*(slab->primal.constraints)
@@ -246,9 +262,12 @@ distribute() {
 			slab->primal.constraints->close();
 			
 			// create sparsity pattern
+			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
 			dealii::DynamicSparsityPattern dsp(
 				slab->primal.dof->n_dofs(), slab->primal.dof->n_dofs()
 			);
+			
+			Assert(slab->primal.constraints.use_count(), dealii::ExcNotInitialized());
 			dealii::DoFTools::make_sparsity_pattern(
 				*(slab->primal.dof),
 				dsp,
@@ -276,6 +295,7 @@ distribute() {
 			slab->dual.constraints->clear();
 			slab->dual.constraints->reinit();
 			
+			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
 			dealii::DoFTools::make_hanging_node_constraints(
 				*(slab->dual.dof),
 				*(slab->dual.constraints)
@@ -284,9 +304,12 @@ distribute() {
 			slab->dual.constraints->close();
 			
 			// create sparsity pattern
+			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
 			dealii::DynamicSparsityPattern dsp(
 				slab->dual.dof->n_dofs(), slab->dual.dof->n_dofs()
 			);
+			
+			Assert(slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 			dealii::DoFTools::make_sparsity_pattern(
 				*(slab->dual.dof),
 				dsp,

@@ -80,7 +80,7 @@ public:
 		const unsigned int p_primal,
 		const unsigned int p_dual,
 		const unsigned int global_refinement,
-		const unsigned int time_steps,
+		const unsigned int time_steps, // TODO
 		double t0,
 		double T,
 		double tau_n
@@ -253,10 +253,13 @@ protected:
 		unsigned int p_primal; ///< polynomial degree p of primal problem
 		unsigned int p_dual; ///< polynomial degree p of dual problem
 		unsigned int global_refinement; ///< global_refinement for initial mesh
+		
 		unsigned int time_steps; ///< Number of time intervals In
+		
 		double t0; ///< initial timepoint
 		double T; ///< final timepoint
 		double tau_n; ///< timestep size
+		
 		double primal_time; ///< primal time variable (t_primal)
 		double dual_time; ///< dual time variable (t_dual)
 		unsigned int primal_timestep_number; ///< primal run variable (current primal timestep)

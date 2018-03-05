@@ -144,10 +144,16 @@ int main(int argc, char *argv[]) {
 		auto error_functional_type = Heat::types::error_functional::L2_final;
 		
 		////////////////////////////////////////////////////////////////////////
+		// check
+		Assert(
+			(p_primal < p_dual),
+			dealii::ExcMessage("Error: set p_primal < p_dual")
+		);
+		
+		////////////////////////////////////////////////////////////////////////
 		// grid
 		//
 		auto grid = std::make_shared< Heat::Grid_DWR<DIM,1> > ();
-		grid->set_data(p_primal, p_dual);
 
 		////////////////////////////////////////////////////////////////////////
 		// functions
@@ -160,6 +166,9 @@ int main(int argc, char *argv[]) {
 		
 		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only! 
 		auto f = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues); ///< rhs
+		
+		///////////////////////////////////////
+		// TODO: avoid the following functions:
 		
 		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
 		auto BoundaryValues_dual = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon); ///< boundary values/ exact solution
@@ -183,7 +192,15 @@ int main(int argc, char *argv[]) {
 		problem->set_f_dual(f_dual);
 		problem->set_evaluation_point(evaluation_point);
 		
-		problem->set_data(p_primal, p_dual, global_refine, time_steps, t0, T, tau_n);
+		problem->set_data(
+			p_primal,
+			p_dual,
+			global_refine,
+			time_steps,
+			t0,
+			T,
+			tau_n
+		);
 		
 		problem->set_data_output_patches(
 			data_output_patches_primal,
