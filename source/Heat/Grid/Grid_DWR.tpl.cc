@@ -52,12 +52,13 @@ namespace Heat {
 template<int dim, int spacedim>
 Grid_DWR<dim,spacedim>::
 ~Grid_DWR() {
-	auto Inth(In.begin());
-	auto endIn(In.end());
-	for (; Inth != endIn; ++Inth) {
-		Inth->primal.dof->clear();
-		Inth->dual.dof->clear();
-	} //end for-loop Inth
+	auto slab(In.begin());
+	auto ends(In.end());
+	
+	for (; slab != ends; ++slab) {
+		slab->primal.dof->clear();
+		slab->dual.dof->clear();
+	}
 }
 
 
@@ -76,9 +77,10 @@ set_data(
 template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
-initialize_grids(const double &t0,
-				 const double &T,
-				 const double &tau_n) {
+initialize_grids(
+	const double &t0,
+	const double &T,
+	const double &tau_n) {
 	if ( In.empty() ) {
 		std::cout << "Initialize In objects " << std::endl;
 		
@@ -87,46 +89,56 @@ initialize_grids(const double &t0,
 		numoftimeintervals = static_cast<unsigned int>(std::floor(
 			(T-t0)/tau_n
 		));
-		if (std::abs((numoftimeintervals*tau_n)-(T-t0)) >= std::numeric_limits< double >::epsilon()*T) {
+		if (std::abs((numoftimeintervals*tau_n)-(T-t0))
+			>= std::numeric_limits< double >::epsilon()*T) {
 			numoftimeintervals += 1;
 		}
 		
-		// init space "grid" on each I_n
+		// init spatial "grids" of each slab
 		for (unsigned int i{1}; i<= numoftimeintervals; ++i) {
 			In.emplace_back();
-			auto &element = In.back();
-			element.tria = std::make_shared< dealii::Triangulation<dim> >(
+			auto &slab = In.back();
+			
+			slab.tria = std::make_shared< dealii::Triangulation<dim> >(
 				typename dealii::Triangulation<dim>::MeshSmoothing(
 					dealii::Triangulation<dim>::smoothing_on_refinement
 				)
 			);
 			
-			element.primal.dof = std::make_shared< dealii::DoFHandler<dim> > (*(element.tria));
-			element.dual.dof = std::make_shared< dealii::DoFHandler<dim> > (*(element.tria));
-			element.primal.constraints = std::make_shared< dealii::ConstraintMatrix > ();
-			element.dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
-			element.primal.sp = std::make_shared< dealii::SparsityPattern >();
-			element.dual.sp = std::make_shared< dealii::SparsityPattern >();
-			element.primal.fe = std::make_shared< dealii::FE_Q<dim> > (gdata.p_primal);
-			element.dual.fe = std::make_shared< dealii::FE_Q<dim> > (gdata.p_dual);
-			element.primal.mapping = std::make_shared< dealii::MappingQ<dim> > (gdata.p_primal);
-			element.dual.mapping = std::make_shared< dealii::MappingQ<dim> > (gdata.p_dual);
-		}// end for loop i
+			slab.primal.dof = std::make_shared< dealii::DoFHandler<dim> > (*(slab.tria));
+			slab.dual.dof = std::make_shared< dealii::DoFHandler<dim> > (*(slab.tria));
+			
+			slab.primal.constraints = std::make_shared< dealii::ConstraintMatrix > ();
+			slab.dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
+			
+			slab.primal.sp = std::make_shared< dealii::SparsityPattern >();
+			slab.dual.sp = std::make_shared< dealii::SparsityPattern >();
+			
+			slab.primal.fe = std::make_shared< dealii::FE_Q<dim> > (gdata.p_primal);
+			slab.dual.fe = std::make_shared< dealii::FE_Q<dim> > (gdata.p_dual);
+			
+			slab.primal.mapping = std::make_shared< dealii::MappingQ<dim> > (gdata.p_primal);
+			slab.dual.mapping = std::make_shared< dealii::MappingQ<dim> > (gdata.p_dual);
+		}
 		
-		{ // init time "grid"
+		// init temporal "grids" of each slab
+		{
 			unsigned int n{1};
-			for (auto &element : In) {
-				element.t_m = (n-1)*tau_n+t0;
-				element.t_n = n*tau_n + t0;
+			for (auto &slab : In) {
+				slab.t_m = (n-1)*tau_n+t0;
+				slab.t_n = n*tau_n + t0;
 				++n;
 			}
 			
-			auto &last_element = In.back();
-			if ( std::abs(last_element.t_n - T) >= std::numeric_limits< double >::epsilon()*T) {
-				last_element.t_n = T;
+			auto &last_slab = In.back();
+			if ( std::abs(last_slab.t_n - T) >= std::numeric_limits< double >::epsilon()*T) {
+				last_slab.t_n = T;
 			}
 		}
-	} // end if (in.empty())
+	}
+	else {
+		Assert(false, dealii::ExcMessage("space-time grid already initialized"));
+	}
 }
 
 
@@ -135,18 +147,21 @@ template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 generate() {
-
+	// TODO: Throws Exception in base class.
+	
+	// TODO: remove the following code and set an assert
 	const double a(0.);
 	const double b(1.);
-	auto Inth(In.begin());
-	auto endIn(In.end());
-		for (; Inth != endIn; ++Inth) {
-			dealii::GridGenerator::hyper_cube(
-				*(Inth->tria),
-				a,b,false
-			);
-	} //end for loop i
 	
+	auto slab(In.begin());
+	auto ends(In.end());
+	
+	for (; slab != ends; ++slab) {
+		dealii::GridGenerator::hyper_cube(
+			*(slab->tria),
+			a,b,false
+		);
+	}
 }
 
 
@@ -155,12 +170,12 @@ template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 refine_global(const unsigned int n) {
+	auto slab(In.begin());
+	auto ends(In.end());
 	
-	auto Inth(In.begin());
-	auto endIn(In.end());
-	for (; Inth != endIn; ++Inth) {
-		Inth->tria->refine_global(n);
-	} //end for loop i
+	for (; slab != ends; ++slab) {
+		slab->tria->refine_global(n);
+	}
 }
 
 
@@ -169,48 +184,29 @@ template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 set_boundary_indicators() {
+	// TODO: remove the following code and set an assert
+	
 	// set boundary indicators
+	auto slab(In.begin());
+	auto ends(In.end());
 	
-	auto Inth(In.begin());
-	auto endIn(In.end());
-	for (; Inth != endIn; ++Inth) {
-	auto cell(Inth->tria->begin_active());
-	auto endc(Inth->tria->end());
-	
-	for (; cell != endc; ++cell) {
-	if (cell->at_boundary()) {
-	for (unsigned int face(0); face < dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
-		if (cell->face(face)->at_boundary()) {
-			cell->face(face)->set_boundary_id(
-				static_cast<dealii::types::boundary_id> (
-					Heat::types::boundary_id::Dirichlet)
-			);
-		}
-	}}}//end loop cell
-	}//end loop Inth
-}
-
-template<int dim, int spacedim>
-void
-Grid_DWR<dim,spacedim>::
-output_boundary_id() {
-	
-	auto Inth(In.begin());
-	auto endIn(In.end());
-	for (; Inth != endIn; ++Inth) {
-	auto cell(Inth->tria->begin_active());
-	auto endc(Inth->tria->end());
-	
+	for (; slab != ends; ++slab) {
+		auto cell(slab->tria->begin_active());
+		auto endc(slab->tria->end());
+		
 		for (; cell != endc; ++cell) {
-		for (unsigned int face_number = 0; face_number < dealii::GeometryInfo<dim>::faces_per_cell; ++face_number) {
-			std::cout << "center_x = " << cell->face(face_number)->center()(0) << std::endl;
-			std::cout << "center_y = " << cell->face(face_number)->center()(1) << std::endl;
-			std::cout << "Einfaerbung = " << cell->face(face_number)->boundary_id() << std::endl;
-		}}//end loop cell
-		std::cout << "======================================================" << std::endl;
+		if (cell->at_boundary()) {
+		for (unsigned int face(0);
+			face < dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
+			if (cell->face(face)->at_boundary()) {
+				cell->face(face)->set_boundary_id(
+					static_cast<dealii::types::boundary_id> (
+						Heat::types::boundary_id::Dirichlet)
+				);
+			}
+		}}}
 	}
 }
-
 
 
 /// Distribute.
@@ -220,66 +216,85 @@ Grid_DWR<dim,spacedim>::
 distribute() {
 	// Distribute the degrees of freedom (dofs)
 	// Start itererator over all list-elements
-	auto Inth(In.begin());
-	auto endIn(In.end());
-	for (; Inth != endIn; ++Inth) {
-	
+	auto slab(In.begin());
+	auto ends(In.end());
+	for (; slab != ends; ++slab) {
 		////////////////////////////////////////////////////////////////////////////
 		// distribute primal dofs, create constraints and sparsity pattern sp
 		{
-			Assert(Inth->primal.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(Inth->primal.fe.use_count(), dealii::ExcNotInitialized());
-			Inth->primal.dof->distribute_dofs(*(Inth->primal.fe));
+			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(slab->primal.fe.use_count(), dealii::ExcNotInitialized());
+			slab->primal.dof->distribute_dofs(*(slab->primal.fe));
 			
-			DTM::pout << "grid: dof: primal mesh: n_dofs = " << Inth->primal.dof->n_dofs() << std::endl;
+			DTM::pout
+				<< "grid: dof: primal mesh: n_dofs = " << slab->primal.dof->n_dofs()
+				<< std::endl;
 			
 			// setup constraints like boundary values or hanging nodes
-			Assert(Inth->primal.constraints.use_count(), dealii::ExcNotInitialized());
-			Inth->primal.constraints->clear();
-			Inth->primal.constraints->reinit();
+			Assert(slab->primal.constraints.use_count(), dealii::ExcNotInitialized());
+			slab->primal.constraints->clear();
+			slab->primal.constraints->reinit();
 			
-			dealii::DoFTools::make_hanging_node_constraints(*(Inth->primal.dof), *(Inth->primal.constraints));
+			dealii::DoFTools::make_hanging_node_constraints(
+				*(slab->primal.dof),
+				*(slab->primal.constraints)
+			);
 			
-			Inth->primal.constraints->close();
+			slab->primal.constraints->close();
 			
-			// Now we create a sparsity pattern, which we will use to initialise
-			// our system matrix (for the assembly step).
-			// See deal.II step-2 tutorial for details.
-			dealii::DynamicSparsityPattern dsp(Inth->primal.dof->n_dofs(), Inth->primal.dof->n_dofs());
-			dealii::DoFTools::make_sparsity_pattern(*(Inth->primal.dof), dsp, *(Inth->primal.constraints), false);
+			// create sparsity pattern
+			dealii::DynamicSparsityPattern dsp(
+				slab->primal.dof->n_dofs(), slab->primal.dof->n_dofs()
+			);
+			dealii::DoFTools::make_sparsity_pattern(
+				*(slab->primal.dof),
+				dsp,
+				*(slab->primal.constraints),
+				false
+			);
 			
-			Assert(Inth->primal.sp.use_count(), dealii::ExcNotInitialized());
-			Inth->primal.sp->copy_from(dsp);
+			Assert(slab->primal.sp.use_count(), dealii::ExcNotInitialized());
+			slab->primal.sp->copy_from(dsp);
 		}
 		
 		////////////////////////////////////////////////////////////////////////////
 		// distribute dual dofs, create constraints and sparsity pattern sp
 		{
-			Assert(Inth->dual.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(Inth->dual.fe.use_count(), dealii::ExcNotInitialized());
-			Inth->dual.dof->distribute_dofs(*(Inth->dual.fe));
+			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+			slab->dual.dof->distribute_dofs(*(slab->dual.fe));
 			
-			DTM::pout << "grid: dof: dual mesh: n_dofs = " << Inth->dual.dof->n_dofs() << std::endl;
+			DTM::pout
+				<< "grid: dof: dual mesh: n_dofs = " << slab->dual.dof->n_dofs()
+				<< std::endl;
 			
 			// setup constraints like boundary values or hanging nodes
-			Assert(Inth->dual.constraints.use_count(), dealii::ExcNotInitialized());
-			Inth->dual.constraints->clear();
-			Inth->dual.constraints->reinit();
+			Assert(slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
+			slab->dual.constraints->clear();
+			slab->dual.constraints->reinit();
 			
-			dealii::DoFTools::make_hanging_node_constraints(*(Inth->dual.dof), *(Inth->dual.constraints));
+			dealii::DoFTools::make_hanging_node_constraints(
+				*(slab->dual.dof),
+				*(slab->dual.constraints)
+			);
 			
-			Inth->dual.constraints->close();
+			slab->dual.constraints->close();
 			
-			// Now we create a sparsity pattern, which we will use to initialise
-			// our system matrix (for the assembly step).
-			// See deal.II step-2 tutorial for details.
-			dealii::DynamicSparsityPattern dsp(Inth->dual.dof->n_dofs(), Inth->dual.dof->n_dofs());
-			dealii::DoFTools::make_sparsity_pattern(*(Inth->dual.dof), dsp, *(Inth->dual.constraints), false);
+			// create sparsity pattern
+			dealii::DynamicSparsityPattern dsp(
+				slab->dual.dof->n_dofs(), slab->dual.dof->n_dofs()
+			);
+			dealii::DoFTools::make_sparsity_pattern(
+				*(slab->dual.dof),
+				dsp,
+				*(slab->dual.constraints),
+				false
+			);
 			
-			Assert(Inth->dual.sp.use_count(), dealii::ExcNotInitialized());
-			Inth->dual.sp->copy_from(dsp);
+			Assert(slab->dual.sp.use_count(), dealii::ExcNotInitialized());
+			slab->dual.sp->copy_from(dsp);
 		}
-	} // end for-loop Inth
+	} // end for-loop slab
 }
 
 

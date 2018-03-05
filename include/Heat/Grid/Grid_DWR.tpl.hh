@@ -74,25 +74,25 @@ class Grid_DWR {
 public:
 	Grid_DWR() = default;
 	virtual ~Grid_DWR();
-
-	virtual void initialize_grids(const double &t0,
-								  const double &T,
-								  const double &tau_n
+	
+	virtual void initialize_grids(
+		const double &t0,
+		const double &T,
+		const double &tau_n
 	);
 	virtual void generate();
 	virtual void refine_global(const unsigned int n = 1);
 	virtual void set_boundary_indicators();
-	virtual void output_boundary_id();
 	
 	virtual void distribute();
-
+	
 	virtual void set_data(
 		const unsigned int p_primal,
 		const unsigned int p_dual
 	);
 	
-
-	struct In {
+	/// slab: collects data structures and functions of a space-time slab
+	struct slab {
 		std::shared_ptr< dealii::Triangulation<dim> > tria;
 		double t_m; ///< left endpoint of \f$ I_n=(t_m, t_n) \f$
 		double t_n; ///< right endpoint of \f$ I_n=(t_m, t_n) \f$
@@ -116,22 +116,24 @@ public:
 		} dual;
 		
 		double tau_n() const { return (t_n-t_m); };
-	}; //end struct In
+	};
 	
-	std::list<struct In> In; 
+	// TODO rename to slabs
+	std::list<struct slab> In;
 	
 	struct {
+		// TODO: check place for storing polynomial degrees in space
 		unsigned int p_primal; ///< polynomial degree p of primal problem
 		unsigned int p_dual; ///< polynomial degree p of dual problem
 	} gdata;
-	
 	
 	dealii::GridIn<dim>            grid_in;
 	dealii::GridOut                grid_out;
 }; // end class Grid_DWR
 
+// TODO rename to slabs
 template<int dim, int spacedim>
-using In_grid_data_type = std::list<struct Grid_DWR<dim,spacedim>::In>;
+using In_grid_data_type = std::list<struct Grid_DWR<dim,spacedim>::slab>;
 
 } // namespace
 
