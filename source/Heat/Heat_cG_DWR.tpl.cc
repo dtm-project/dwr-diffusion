@@ -212,9 +212,9 @@ init_storage() {
 	
 	//////////////////////////////
 	// dual solution dof vector z:
-	In_z = std::make_shared<l_data_vectors_storage > ();
-	In_z->resize(N+1);
-	for (auto &element : *In_z) {
+	dual.storage.z = std::make_shared<l_data_vectors_storage > ();
+	dual.storage.z->resize(N+1);
+	for (auto &element : *dual.storage.z) {
 		element.x = std::make_shared< dealii::Vector<double> > ();
 	}
 	
@@ -1879,7 +1879,7 @@ compute_Ieff_L2final() {
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
-		In_z,
+		dual.storage.z,
 		In_eta
 	);
 	
@@ -1951,7 +1951,7 @@ compute_Ieff_L2global() {
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
-		In_z,
+		dual.storage.z,
 		In_eta
 	);
 
@@ -2014,7 +2014,7 @@ compute_Ieff_mean_final() {
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
-		In_z,
+		dual.storage.z,
 		In_eta
 	);
 	
@@ -2090,7 +2090,7 @@ compute_Ieff_mean_global() {
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
-		In_z,
+		dual.storage.z,
 		In_eta
 	);
 	
@@ -2223,7 +2223,7 @@ compute_Ieff_point_final() {
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
 		dual.storage.u,
-		In_z,
+		dual.storage.z,
 		In_eta
 	);
 	
@@ -2443,7 +2443,7 @@ refine_grids_dwr() {
 // // 	
 // // 	error_estimator.DWR->estimate(
 // // 		dual.storage.u,
-// // 		In_z,
+// // 		dual.storage.z,
 // // 		In_eta
 // // 	);
 // // 	
@@ -2549,7 +2549,7 @@ void
 Heat_cG_DWR<dim>::
 primal_and_dual_solution_output() {
 	auto Inth_u_output(primal.storage.u->begin());
-	auto Inth_z_output(In_z->begin());
+	auto Inth_z_output(dual.storage.z->begin());
 	auto In_grid_output(grid->slabs.begin());
 	for (unsigned int n{0}; n <= (data.T-data.t0)/data.tau_n; ++n,++Inth_u_output,++Inth_z_output) {
 		if (n == 0) {
@@ -2723,16 +2723,16 @@ solve_dual_problem() {
 	auto endIn_dual(grid->slabs.rend());
 	auto Inth_dual_prev(grid->slabs.rbegin());
 	auto endIn_dual_prev(grid->slabs.rend());
-	auto In_zth(In_z->rbegin());
-	auto endIn_zth(In_z->rend());
+	auto In_zth(dual.storage.z->rbegin());
+	auto endIn_zth(dual.storage.z->rend());
 	auto In_uth_test(dual.storage.u->rbegin());
 	auto endIn_uth_test(dual.storage.u->rend());
 	
 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
 		if (n == ((data.T-data.t0)/data.tau_n)) {
 			// Compute "initial condition" z_N and store it in dual.z_old and
-			// afterwards store this in the last element of list In_z (recognize
-			// that the list-iterator of In_z ist starting at the last element (In_z->rbegin())
+			// afterwards store this in the last element of list dual.storage.z (recognize
+			// that the list-iterator of dual.storage.z ist starting at the last element (dual.storage.z->rbegin())
 			
 			// Set iterator for primal solution u_kh (needed only for global L2-Error)
 			rit_In_uback = In_uth_test;
@@ -2753,9 +2753,9 @@ solve_dual_problem() {
 			
 			dual_compute_initial_condition();
 
-			// Store initial condition z_N (dual.z_old) in the last element of list In_z
-			In_z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
-			*(In_z->back().x) = *(dual.z_old);
+			// Store initial condition z_N (dual.z_old) in the last element of list dual.storage.z
+			dual.storage.z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
+			*(dual.storage.z->back().x) = *(dual.z_old);
 			
 		}
 		else if (n == ((data.T-data.t0)/data.tau_n)-1) {
@@ -2770,7 +2770,7 @@ solve_dual_problem() {
 			++In_uth_test;
 			rit_In_uback = In_uth_test;
 
-			++In_zth; // "increase" iterator of list In_z. (running backward from last to first element)
+			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
 			++Inth_dual; // "increase" iterator of list In (grids).
 			// Set iterators
 			rit_In_grid = Inth_dual;
@@ -2787,7 +2787,7 @@ solve_dual_problem() {
 
 			dual_solve();
 
-			// Save current solution (dual.z) in list In_z;
+			// Save current solution (dual.z) in list dual.storage.z;
 			In_zth->x->reinit(rit_In_grid->dual.dof->n_dofs());
 			*(In_zth->x) = *(dual.z);
 			
@@ -2813,7 +2813,7 @@ solve_dual_problem() {
 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
 			++In_uth_test;
 			rit_In_uback = In_uth_test;
-			++In_zth; // increase iterator of list In_z, points now on first element of list In-Z
+			++In_zth; // increase iterator of list dual.storage.z, points now on first element of list In-Z
 			// Set iterators
 			rit_In_grid = Inth_dual;
 			rit_In_grid_previous = Inth_dual_prev;
@@ -2829,7 +2829,7 @@ solve_dual_problem() {
 			
 			dual_solve();
 			
-			// Store z_0 (dual.z) in the first element of list In_z.
+			// Store z_0 (dual.z) in the first element of list dual.storage.z.
 			In_zth->x->reinit(rit_In_grid->dual.dof->n_dofs());
 			*(In_zth->x) = *(dual.z);
 			
@@ -2847,7 +2847,7 @@ solve_dual_problem() {
 			++In_uth_test;
 			rit_In_uback = In_uth_test;
 
-			++In_zth; // "increase" iterator of list In_z. (running backward from last to first element)
+			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
 			++Inth_dual; // "increase" iterator of list In (grids).
 			// Set iterators
 			rit_In_grid = Inth_dual;
@@ -2864,7 +2864,7 @@ solve_dual_problem() {
 			
 			dual_solve();
 			
-			// Save current solution (dual.z) in list In_z
+			// Save current solution (dual.z) in list dual.storage.z
 			In_zth->x->reinit(rit_In_grid->dual.dof->n_dofs());
 			*(In_zth->x) = *(dual.z);
 			
@@ -2989,7 +2989,7 @@ run() {
 		// 	}
 		// 	std::cout << "Anzahl Gitter = " << grid->slabs.size() << std::endl;
 		// 	dual.storage.u->clear();
-		// 	In_z->clear();
+		// 	dual.storage.z->clear();
 		// 	primal.storage.u->clear();
 		// 	In_eta->clear();
 		// 	// Refine time_mesh global:

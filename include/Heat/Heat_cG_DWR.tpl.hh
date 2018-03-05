@@ -207,7 +207,7 @@ protected:
 		// storage container
 		struct {
 			data_vectors_storage u; ///< primal solutions interpolated into dual FE room list
-// 			data_vectors_storage In_u; ///< primal solutions interpolated into dual FE room list
+			data_vectors_storage z; ///< dual solutions list
 		} storage;
 		
 		
@@ -229,10 +229,6 @@ protected:
 	} dual;
 	
 	// list of primal and dual solutions
-	
-	data_vectors_storage In_z; ///< dual solutions list
-	
-	
 	
 	data_vectors_storage In_eta; ///< error_indicators list
 	
