@@ -108,14 +108,6 @@ set_BoundaryValues_dual(std::shared_ptr< dealii::Function<dim> > _BoundaryValues
 template<int dim>
 void
 Heat_cG_DWR<dim>::
-set_ConvectionField(std::shared_ptr< dealii::TensorFunction<1,dim> > _ConvectionField) {
-	ConvectionField = _ConvectionField;
-}
-
-
-template<int dim>
-void
-Heat_cG_DWR<dim>::
 set_f(std::shared_ptr< dealii::Function<dim> > f) {
 	function.f = f;
 }
@@ -148,6 +140,8 @@ set_data(
 	double t0,
 	double T,
 	double tau_n) {
+	
+	// TODO: simplify
 	data.p_primal = p_primal;
 	data.p_dual   = p_dual;
 	data.global_refinement = global_refinement;
@@ -191,7 +185,6 @@ init(const unsigned int global_refinement) {
 		function.f,
 		function.f_dual
 	);
-	
 }
 
 
@@ -206,7 +199,8 @@ init_storage() {
 	In_uprimal = std::make_shared<l_data_vectors_storage > ();
 	In_eta = std::make_shared<l_data_vectors_storage > ();
 	
-	for (unsigned int i{0}; i <= data.time_steps; ++i) {//TODO 160
+	for (unsigned int i{0}; i <= data.time_steps; ++i) {
+		//TODO 160
 		In_u->emplace_back();
 		In_z->emplace_back();
 		In_uprimal->emplace_back();
@@ -252,7 +246,6 @@ primal_init_data_output() {
 	primal.data_output.set_data_field_names(data_field_names);
 	primal.data_output.set_data_component_interpretation_field(dci_field);
 	primal.data_output.set_data_output_patches(primal.data_output_patches);
-	
 }
 
 
@@ -285,8 +278,6 @@ dual_init_data_output() {
 	dual.data_output.set_data_field_names(data_field_names);
 	dual.data_output.set_data_component_interpretation_field(dci_field);
 	dual.data_output.set_data_output_patches(dual.data_output_patches);
-
-	
 }
 
 
@@ -336,7 +327,7 @@ dual_reinit() {
 	dual.Je.reinit(rit_In_grid->dual.dof->n_dofs());
 	dual.system_rhs.reinit(rit_In_grid->dual.dof->n_dofs());
 	
-	//TEST
+	//TEST // TODO
 	dual.Je_old_interpolated.reinit(rit_In_grid->dual.dof->n_dofs());
 	
 // 	dual.solution_vectors.resize(0);
@@ -369,9 +360,7 @@ primal_compute_initial_condition() {
 								*(grid->In.front().dual.constraints),
 								*(dual.u));
 	grid->In.front().dual.constraints->distribute(*(dual.u));
-
 }
-
 
 
 template<int dim>
@@ -391,6 +380,8 @@ primal_assemble_system() {
 	primal.system_matrix = 0;
 	
 	
+// 	// TODO: warum p+2?
+// 	
 	// Setup a Gaussian quadrature formula
 	// NOTE: We take p+1 quadrature points
 	dealii::QGauss<dim> quad ( it_In_grid->primal.fe->tensor_degree()+2 ); //alter GaussLobatto
@@ -442,23 +433,24 @@ primal_assemble_system() {
 		// Initialise the full matrix for the cell assembly with 0.
 		local_M = 0;
 		local_A = 0;
-
 		
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
 		for (unsigned int i(0); i < it_In_grid->primal.fe->dofs_per_cell; ++i)
 		for (unsigned int j(0); j < it_In_grid->primal.fe->dofs_per_cell; ++j)
 		for (unsigned int q(0); q < quad.size(); ++q) {
-			local_M(i,j) +=(
-				(fe_values.shape_value(i,q)*
-				fe_values.shape_value(j,q))*
-				fe_values.JxW(q));
-			local_A(i,j) +=(
-				(fe_values.shape_grad(i,q) *
-				(epsilon->value(fe_values.quadrature_point(q), 0)*
-				fe_values.shape_grad(j,q))
-				)*
-				fe_values.JxW(q));
+			local_M(i,j) += (
+				fe_values.shape_value(i,q) *
+				fe_values.shape_value(j,q) *
+				fe_values.JxW(q)
+			);
+			
+			local_A(i,j) += (
+				fe_values.shape_grad(i,q) *
+				epsilon->value(fe_values.quadrature_point(q), 0) *
+				fe_values.shape_grad(j,q) *
+				fe_values.JxW(q)
+			);
 		}
 		
 		// Store the global indices into the vector local_dof_indices.
@@ -471,15 +463,20 @@ primal_assemble_system() {
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		Assert(it_In_grid->primal.constraints.use_count(), dealii::ExcNotInitialized());
+		Assert(
+			it_In_grid->primal.constraints.use_count(),
+			dealii::ExcNotInitialized()
+		);
 		
 		it_In_grid->primal.constraints->distribute_local_to_global(
 			local_M, local_dof_indices, primal.M
 		);
+		
 		it_In_grid->primal.constraints->distribute_local_to_global(
 			local_A, local_dof_indices, primal.A
 		);
 	}
+	
 	// Put the computed matrices into the system matrix (for later solving Ax=b)
 	// Here A = system_matrix =  M + tau_n*A
 	primal.system_matrix.copy_from(primal.M);
@@ -616,16 +613,6 @@ primal_solve() {
 		*(primal.u),
 		primal.system_rhs
 	);
-	
-// 	// solve with cg
-// 	dealii::SolverControl sc(1000, 1e-10, false, true);
-// 	dealii::SolverCG< > lss(sc);
-// 	dealii::PreconditionJacobi<> precondition;
-// 	precondition.initialize(primal.system_matrix, .6);
-// 	lss.solve(
-// 		primal.system_matrix,*(primal.u),primal.system_rhs,
-// 		precondition
-// 	); //statt precondition auch dealii::PreconditionIdentity() möglich
 	
 	////////////////////////////////////////////////////////////////////////////
 	// solve linear system directly

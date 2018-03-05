@@ -69,13 +69,9 @@ public:
 	virtual void set_epsilon(std::shared_ptr< dealii::Function<dim> > epsilon);
 	
 	virtual void set_BoundaryValues(std::shared_ptr< dealii::Function<dim> > BoundaryValues);
-	
 	virtual void set_BoundaryValues_dual(std::shared_ptr< dealii::Function<dim> > BoundaryValues_dual);
 	
-	virtual void set_ConvectionField(std::shared_ptr< dealii::TensorFunction<1,dim> > ConvectionField);
-	
 	virtual void set_f(std::shared_ptr< dealii::Function<dim> > f);
-	
 	virtual void set_f_dual(std::shared_ptr< dealii::Function<dim> > f_dual);
 	
 	virtual void set_evaluation_point(dealii::Point<dim> evaluation_point);
@@ -224,30 +220,28 @@ protected:
 	data_vectors_storage In_uprimal; ///< primal solutions list
 	data_vectors_storage In_eta; ///< error_indicators list
 	
-	std::shared_ptr< Heat::Grid_DWR<dim,1> > 		grid;
+	std::shared_ptr< Heat::Grid_DWR<dim,1> > grid;
+	
 	// iterators for list of grids
 	typename In_grid_data_type<dim,1>::iterator it_In_grid;
 	typename In_grid_data_type<dim,1>::iterator it_In_grid_previous;/// only for primal/dual_interp_to_next_grid fct.
 	typename In_grid_data_type<dim,1>::reverse_iterator rit_In_grid;/// only for rbegin(),rend()
 	typename In_grid_data_type<dim,1>::reverse_iterator rit_In_grid_previous; /// only for primal/dual_interp_to_next_grid fct.
 	
+	
 	//TEST TODO
 	typename l_data_vectors_storage::reverse_iterator rit_In_uback;
 	
-	std::shared_ptr< dealii::Function<dim> > 			epsilon;
-	
-	std::shared_ptr< dealii::Function<dim> > 			BoundaryValues;
-	
-	std::shared_ptr< dealii::Function<dim> >			BoundaryValues_dual;
-	
-	std::shared_ptr< dealii::TensorFunction<1,dim> >	ConvectionField;
+	std::shared_ptr< dealii::Function<dim> > epsilon;
+	std::shared_ptr< dealii::Function<dim> > BoundaryValues;
+	std::shared_ptr< dealii::Function<dim> > BoundaryValues_dual;
 	
 	double L2Error;
 	double L2Error_global;
 	
 	struct {
-		std::shared_ptr< dealii::Function<dim> > 		f; ///< Force function.
-		std::shared_ptr< dealii::Function<dim> >		f_dual;
+		std::shared_ptr< dealii::Function<dim> > f; ///< Force function.
+		std::shared_ptr< dealii::Function<dim> > f_dual;
 	} function;
 	
 	struct {
