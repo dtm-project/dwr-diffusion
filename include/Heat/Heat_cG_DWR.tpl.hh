@@ -167,18 +167,23 @@ protected:
 	virtual void do_data_output(const double cycle);
 	
 	struct {
-		dealii::SparseMatrix<double> M; 				///< primal problem mass matrix
-		dealii::SparseMatrix<double> A; 				///< primal problem stiffness matrix
-		dealii::SparseMatrix<double> system_matrix; 	///< primal problem system matrix (M+tau_n*A)
+		dealii::SparseMatrix<double> M; ///< primal problem mass matrix
+		dealii::SparseMatrix<double> A; ///< primal problem stiffness matrix
+		dealii::SparseMatrix<double> system_matrix; ///< primal problem system matrix (M+tau_n*A)
+		
 		std::shared_ptr< dealii::Vector<double> > u; 	///< primal problem solution
 		std::shared_ptr< dealii::Vector<double> > u_old; ///< primal solution from one time step ago
 		std::shared_ptr< dealii::Vector<double> > u_old_interpolated; ///< u_old interpolated to next grid
-		dealii::Vector<double> f;       				///< primal problem f
-		dealii::Vector<double> f_old;       				///< NEW
-		dealii::Vector<double> system_rhs; 				///< primal problem system_rhs vector 
-														///((tau_n*f_0) + (M*u_old_interpolated))
+		
+		dealii::Vector<double> f; ///< primal problem f
+		dealii::Vector<double> f_old; ///< NEW
+		
+		/// primal problem system_rhs vector ((tau_n*f_0) + (M*u_old_interpolated))
+		dealii::Vector<double> system_rhs;
+		
+		
 // TODO
-		dealii::Vector<double> testvector;
+// 		dealii::Vector<double> testvector;
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
@@ -216,7 +221,9 @@ protected:
 	// list of primal and dual solutions
 	data_vectors_storage In_u; ///< primal solutions interpolated into dual FE room list
 	data_vectors_storage In_z; ///< dual solutions list
+	
 	data_vectors_storage In_uprimal; ///< primal solutions list
+	
 	data_vectors_storage In_eta; ///< error_indicators list
 	
 	std::shared_ptr< Heat::Grid_DWR<dim,1> > grid;

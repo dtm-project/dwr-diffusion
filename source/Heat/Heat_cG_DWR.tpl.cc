@@ -317,7 +317,6 @@ primal_reinit() {
 	
 	primal.f.reinit(it_In_grid->primal.dof->n_dofs());
 	primal.system_rhs.reinit(it_In_grid->primal.dof->n_dofs());
-	primal.testvector.reinit(it_In_grid->primal.dof->n_dofs());
 }
 
 
