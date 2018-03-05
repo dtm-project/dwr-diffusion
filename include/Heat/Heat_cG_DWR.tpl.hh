@@ -97,7 +97,6 @@ public:
 	
 	virtual void run();
 
-
 protected:
 	virtual void init(const unsigned int global_refinement);
 	virtual void init_storage();
@@ -183,6 +182,7 @@ protected:
 		dealii::Vector<double> f_old;       				///< NEW
 		dealii::Vector<double> system_rhs; 				///< primal problem system_rhs vector 
 														///((tau_n*f_0) + (M*u_old_interpolated))
+// TODO
 		dealii::Vector<double> testvector;
 		
 		// Data Output
@@ -231,7 +231,7 @@ protected:
 	typename In_grid_data_type<dim,1>::reverse_iterator rit_In_grid;/// only for rbegin(),rend()
 	typename In_grid_data_type<dim,1>::reverse_iterator rit_In_grid_previous; /// only for primal/dual_interp_to_next_grid fct.
 	
-	//TEST
+	//TEST TODO
 	typename l_data_vectors_storage::reverse_iterator rit_In_uback;
 	
 	std::shared_ptr< dealii::Function<dim> > 			epsilon;
@@ -240,7 +240,7 @@ protected:
 	
 	std::shared_ptr< dealii::Function<dim> >			BoundaryValues_dual;
 	
-	std::shared_ptr< dealii::TensorFunction<1,dim> >	ConvectionField; 
+	std::shared_ptr< dealii::TensorFunction<1,dim> >	ConvectionField;
 	
 	double L2Error;
 	double L2Error_global;

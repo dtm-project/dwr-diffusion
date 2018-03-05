@@ -35,18 +35,17 @@
 
 namespace storage {
 namespace data {
-	
+
 /// Build struct for solution vectors of primal and dual Problem
 struct In_vectors {
-	std::shared_ptr< dealii::Vector<double> >  x;
+	std::shared_ptr< dealii::Vector<double> > x;
 }; //end struct In-Vectors
 
 using s_In_vectors = struct In_vectors;
 
-} // end namespace data 
-} // end namespace storage
+}}
+
 using l_data_vectors_storage = std::list< storage::data::s_In_vectors>;
 using data_vectors_storage = std::shared_ptr< l_data_vectors_storage >;
-
 
 #endif

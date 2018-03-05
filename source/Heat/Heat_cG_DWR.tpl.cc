@@ -173,7 +173,6 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 init(const unsigned int global_refinement) {
-
 	// create grid and distribute dofs
 	grid->initialize_grids(data.t0, data.T, data.tau_n);
 	grid->generate();
