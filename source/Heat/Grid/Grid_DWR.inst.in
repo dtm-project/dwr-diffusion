@@ -1,0 +1,43 @@
+/**
+ * @file Grid_DWR.inst.in
+ * @author Marius Paul Bruchhaeuser (MPB), Uwe Koecher (UK)
+ * @date 2017-08-01, Heat/DWR, MPB, UK
+ * @date 2016-02-10, condiffrea, UK
+ * @date 2016-01-14, condiff, UK
+ * @date 2016-01-12, UK
+ * @date 2015-11-11, UK
+ * @date 2015-05-15, UK
+ *
+ * @brief Grid_DWR instantiation file
+ */
+
+/*  Copyright (C) 2012-2016 by Marius Paul Bruchhaeuser, Uwe Koecher          */
+/*                                                                            */
+/*  This file is part of DTM++.                                               */
+/*                                                                            */
+/*  DTM++ is free software: you can redistribute it and/or modify             */
+/*  it under the terms of the GNU Lesser General Public License as            */
+/*  published by the Free Software Foundation, either                         */
+/*  version 3 of the License, or (at your option) any later version.          */
+/*                                                                            */
+/*  DTM++ is distributed in the hope that it will be useful,                  */
+/*  but WITHOUT ANY WARRANTY; without even the implied warranty of            */
+/*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             */
+/*  GNU Lesser General Public License for more details.                       */
+/*                                                                            */
+/*  You should have received a copy of the GNU Lesser General Public License  */
+/*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
+
+#ifndef __Grid_DWR_inst_in
+#define __Grid_DWR_inst_in
+
+
+namespace Heat {
+
+template class Grid_DWR<1,1>;
+template class Grid_DWR<2,1>;
+template class Grid_DWR<3,1>;
+
+} // namespaces
+
+#endif
