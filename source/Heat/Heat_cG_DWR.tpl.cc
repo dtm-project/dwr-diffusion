@@ -204,9 +204,9 @@ init_storage() {
 	
 	////////////////////////////////
 	// primal solution dof vector u:
-	In_u = std::make_shared<l_data_vectors_storage > ();
-	In_u->resize(N+1);
-	for (auto &element : *In_u) {
+	dual.storage.u = std::make_shared<l_data_vectors_storage > ();
+	dual.storage.u->resize(N+1);
+	for (auto &element : *dual.storage.u) {
 		element.x = std::make_shared< dealii::Vector<double> > ();
 	}
 	
@@ -896,7 +896,7 @@ dual_compute_initial_condition_L2final() {
 // 	dealii::VectorTools::integrate_difference(
 // 		*(grid->slabs.back().dual.mapping),
 // 		*(grid->slabs.back().dual.dof),
-// 		*(In_u->back().x),
+// 		*(dual.storage.u->back().x),
 // 		*(BoundaryValues_dual),
 // 		difference_per_cell2,
 // 		dealii::QGauss<dim>(4),
@@ -905,7 +905,7 @@ dual_compute_initial_condition_L2final() {
 // 	const double L_2error_dual = difference_per_cell2.l2_norm();
 // 	
 // 	*(dual_initial_condition) = *(u_int_exact);
-// 	*(dual_initial_condition) -= *(In_u->back().x);
+// 	*(dual_initial_condition) -= *(dual.storage.u->back().x);
 // 	*(dual_initial_condition) *= (1./L_2error_dual);
 // 
 // 	
@@ -1250,7 +1250,7 @@ dual_assemble_Je_L2final() {
 	u_final->reinit(rit_In_grid->dual.dof->n_dofs());
 	dealii::VectorTools::interpolate_to_different_mesh(
 		*(rit_In_grid_previous->dual.dof),
-		*(In_u->back().x),
+		*(dual.storage.u->back().x),
 		*(rit_In_grid->dual.dof),
 		*(rit_In_grid->dual.constraints),
 		*(u_final)
@@ -1878,7 +1878,7 @@ compute_Ieff_L2final() {
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
-		In_u,
+		dual.storage.u,
 		In_z,
 		In_eta
 	);
@@ -1950,7 +1950,7 @@ compute_Ieff_L2global() {
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
-		In_u,
+		dual.storage.u,
 		In_z,
 		In_eta
 	);
@@ -2013,7 +2013,7 @@ compute_Ieff_mean_final() {
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
-		In_u,
+		dual.storage.u,
 		In_z,
 		In_eta
 	);
@@ -2089,7 +2089,7 @@ compute_Ieff_mean_global() {
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
-		In_u,
+		dual.storage.u,
 		In_z,
 		In_eta
 	);
@@ -2222,7 +2222,7 @@ compute_Ieff_point_final() {
 	// the local contributions of one time-interval I_n within the vector erroro_indicators
 	// and all these vectors within the list In_eta.
 	error_estimator.DWR->estimate(
-		In_u,
+		dual.storage.u,
 		In_z,
 		In_eta
 	);
@@ -2396,8 +2396,8 @@ compute_global_STL2_error() {
 	/////////////// Rechteckregel //////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////
 	
-// 	auto In_u_error(In_u->begin());
-// 	auto endIn_u_error(In_u->end());
+// 	auto In_u_error(dual.storage.u->begin());
+// 	auto endIn_u_error(dual.storage.u->end());
 // 	auto In_error(grid->slabs.begin());
 // 	auto endIn_error(grid->slabs.end());
 // 	Variable for local L2Error
@@ -2442,7 +2442,7 @@ refine_grids_dwr() {
 // // 	error_indicators->reinit(it_In_grid->tria->n_active_cells());
 // // 	
 // // 	error_estimator.DWR->estimate(
-// // 		In_u,
+// // 		dual.storage.u,
 // // 		In_z,
 // // 		In_eta
 // // 	);
@@ -2579,8 +2579,8 @@ solve_primal_problem() {
 	auto endIn_primal(grid->slabs.end());
 	auto Inth_primal_prev(grid->slabs.begin());
 	auto endIn_primal_prev(grid->slabs.end());
-	auto In_uth(In_u->begin());
-	auto endIn_uth(In_u->end());
+	auto In_uth(dual.storage.u->begin());
+	auto endIn_uth(dual.storage.u->end());
 	auto In_uthprimal(primal.storage.u->begin());
 	auto endIn_uthprimal(primal.storage.u->end());
 
@@ -2588,7 +2588,7 @@ solve_primal_problem() {
 		if (n == 0) {
 			// Compute initial condition u_0 and store it in primal.slab.u_old,
 			// interpolate it to dual FE-room and store it in dual.u and last
-			// but not least store this in the first element of list In_u.
+			// but not least store this in the first element of list dual.storage.u.
 			
 			// Output of time_step 1 at time-point t_0
 			data.primal_time = (n*data.tau_n); 
@@ -2607,9 +2607,9 @@ solve_primal_problem() {
 			primal_compute_initial_condition();
 
 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
-			// in the first element of list In_u
-			In_u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
-			*(In_u->front().x) = *(dual.u);
+			// in the first element of list dual.storage.u
+			dual.storage.u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
+			*(dual.storage.u->front().x) = *(dual.u);
 			// Store initial condition (primal.slab.u_old) in the first element of list In-uprimal
 			primal.storage.u->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
 			*(primal.storage.u->front().x) = *(primal.slab.u_old);
@@ -2624,7 +2624,7 @@ solve_primal_problem() {
 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
 					<< data.primal_time << std::endl;
 
-			++In_uth; //increase iterator of list In_u
+			++In_uth; //increase iterator of list dual.storage.u
 			++In_uthprimal; //increase iterator of list primal.storage.u
 			// Set iterators
 			it_In_grid = Inth_primal;
@@ -2656,7 +2656,7 @@ solve_primal_problem() {
 			// interpolate current solution to dual fe-room
 			interpolate_primal_to_dual();
 
-			// Save current interpolated solution in list In_u
+			// Save current interpolated solution in list dual.storage.u
 			In_uth->x->reinit(it_In_grid->dual.dof->n_dofs());
 			*(In_uth->x) = *(dual.u);
 
@@ -2669,7 +2669,7 @@ solve_primal_problem() {
 			++data.primal_timestep_number;
 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
 					<< data.primal_time << std::endl;
-			++In_uth; //increase iterator of list In_u
+			++In_uth; //increase iterator of list dual.storage.u
 			++In_uthprimal; //increase iterator of list primal.storage.u
 			++Inth_primal; //increase iterator of list In (grids)
 			// Set iterators
@@ -2704,7 +2704,7 @@ solve_primal_problem() {
 			// interpolate current solution to dual fe-room
 			interpolate_primal_to_dual();
 
-			// Save current interpolated solution (dual.u) in list In_u
+			// Save current interpolated solution (dual.u) in list dual.storage.u
 			In_uth->x->reinit(it_In_grid->dual.dof->n_dofs());
 			*(In_uth->x) = *(dual.u);
 
@@ -2725,8 +2725,8 @@ solve_dual_problem() {
 	auto endIn_dual_prev(grid->slabs.rend());
 	auto In_zth(In_z->rbegin());
 	auto endIn_zth(In_z->rend());
-	auto In_uth_test(In_u->rbegin());
-	auto endIn_uth_test(In_u->rend());
+	auto In_uth_test(dual.storage.u->rbegin());
+	auto endIn_uth_test(dual.storage.u->rend());
 	
 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
 		if (n == ((data.T-data.t0)/data.tau_n)) {
@@ -2988,7 +2988,7 @@ run() {
 		// 	grid->slabs.push_back(grid->slabs.front()); // use insert instead of push_back
 		// 	}
 		// 	std::cout << "Anzahl Gitter = " << grid->slabs.size() << std::endl;
-		// 	In_u->clear();
+		// 	dual.storage.u->clear();
 		// 	In_z->clear();
 		// 	primal.storage.u->clear();
 		// 	In_eta->clear();

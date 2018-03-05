@@ -183,11 +183,10 @@ protected:
 		/// primal problem system_rhs vector ((tau_n*f_0) + (M*u_old_interpolated))
 		dealii::Vector<double> system_rhs;
 		
-		// storage TODO
+		// storage container
 		struct {
 			data_vectors_storage u; ///< primal solutions list
 		} storage;
-// 		data_vectors_storage In_uprimal; ///< primal solutions list
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
@@ -204,6 +203,13 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > z; ///< dual problem solution
 		std::shared_ptr< dealii::Vector<double> > z_old;	///< dual solution from time step ago
 		std::shared_ptr< dealii::Vector<double> > z_old_interpolated;	///< z_old interpolated to next grid
+		
+		// storage container
+		struct {
+			data_vectors_storage u; ///< primal solutions interpolated into dual FE room list
+// 			data_vectors_storage In_u; ///< primal solutions interpolated into dual FE room list
+		} storage;
+		
 		
 		Heat::types::error_functional Je_type;		 ///< target functional type for rhs of dual problem
 		dealii::Vector<double> Je;                   ///< dual problem rhs
@@ -223,7 +229,7 @@ protected:
 	} dual;
 	
 	// list of primal and dual solutions
-	data_vectors_storage In_u; ///< primal solutions interpolated into dual FE room list
+	
 	data_vectors_storage In_z; ///< dual solutions list
 	
 	
