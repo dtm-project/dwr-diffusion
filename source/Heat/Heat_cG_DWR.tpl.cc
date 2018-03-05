@@ -308,10 +308,11 @@ primal_reinit() {
 	primal.A.reinit(*(it_In_grid->primal.sp));
 	primal.system_matrix.reinit(*(it_In_grid->primal.sp));
 	
-	primal.u = std::make_shared< dealii::Vector<double> > ();
-	primal.u->reinit(it_In_grid->primal.dof->n_dofs());
-	primal.u_old_interpolated = std::make_shared< dealii::Vector<double> > ();
-	primal.u_old_interpolated->reinit(it_In_grid->primal.dof->n_dofs());
+	primal.slab.u = std::make_shared< dealii::Vector<double> > ();
+	primal.slab.u->reinit(it_In_grid->primal.dof->n_dofs());
+	
+	primal.slab.u_old_interpolated = std::make_shared< dealii::Vector<double> > ();
+	primal.slab.u_old_interpolated->reinit(it_In_grid->primal.dof->n_dofs());
 	dual.u = std::make_shared< dealii::Vector<double> > ();
 	dual.u->reinit(it_In_grid->dual.dof->n_dofs());
 	
@@ -355,20 +356,21 @@ Heat_cG_DWR<dim>::
 primal_compute_initial_condition() {
 	Assert(grid->slabs.front().primal.dof.use_count(), dealii::ExcNotInitialized());
 	
-	primal.u_old = std::make_shared< dealii::Vector<double> > ();
-	primal.u_old->reinit(grid->slabs.front().primal.dof->n_dofs());
+	primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
+	primal.slab.u_old->reinit(grid->slabs.front().primal.dof->n_dofs());
+	
 	dual.u = std::make_shared< dealii::Vector<double> > ();
 	dual.u->reinit(grid->slabs.front().dual.dof->n_dofs());
 	
 	dealii::VectorTools::interpolate(
 		*(grid->slabs.front().primal.dof),
 		*(BoundaryValues),
-		*(primal.u_old)
+		*(primal.slab.u_old)
 	);
-	grid->slabs.front().primal.constraints->distribute(*(primal.u_old));
+	grid->slabs.front().primal.constraints->distribute(*(primal.slab.u_old));
 
 	dealii::FETools::interpolate(*(grid->slabs.front().primal.dof),
-								*(primal.u_old),
+								*(primal.slab.u_old),
 								*(grid->slabs.front().dual.dof),
 								*(grid->slabs.front().dual.constraints),
 								*(dual.u));
@@ -586,10 +588,10 @@ Heat_cG_DWR<dim>::
 primal_interpolate_to_next_grid() {
 	dealii::VectorTools::interpolate_to_different_mesh(
 		*(it_In_grid_previous->primal.dof),
-		*(primal.u_old),
+		*(primal.slab.u_old),
 		*(it_In_grid->primal.dof),
 		*(it_In_grid->primal.constraints),
-		*(primal.u_old_interpolated)
+		*(primal.slab.u_old_interpolated)
 	);
 }
 
@@ -599,7 +601,7 @@ void
 Heat_cG_DWR<dim>::
 primal_assemble_rhs() {
 	primal.system_rhs = 0;
-	primal.M.vmult(primal.system_rhs, *(primal.u_old_interpolated));
+	primal.M.vmult(primal.system_rhs, *(primal.slab.u_old_interpolated));
 	primal.system_rhs.add(data.tau_n, primal.f);
 }
 
@@ -623,7 +625,7 @@ primal_solve() {
 	dealii::MatrixTools::apply_boundary_values(
 		boundary_values,
 		primal.system_matrix,
-		*(primal.u),
+		*(primal.slab.u),
 		primal.system_rhs
 	);
 	
@@ -631,11 +633,11 @@ primal_solve() {
 	// solve linear system directly
 	dealii::SparseDirectUMFPACK iA;
 	iA.initialize(primal.system_matrix);
-	iA.vmult(*(primal.u), primal.system_rhs);
+	iA.vmult(*(primal.slab.u), primal.system_rhs);
 	
 	////////////////////////////////////////////////////////////////////////////
 	// distribute hanging node constraints on solution
-	it_In_grid->primal.constraints->distribute(*primal.u);
+	it_In_grid->primal.constraints->distribute(*primal.slab.u);
 }
 
 
@@ -645,7 +647,7 @@ Heat_cG_DWR<dim>::
 interpolate_primal_to_dual() {
 	dealii::FETools::interpolate(
 		*(it_In_grid->primal.dof),
-		*(primal.u),
+		*(primal.slab.u),
 		*(it_In_grid->dual.dof),
 		*(it_In_grid->dual.constraints),
 		*(dual.u)
@@ -659,7 +661,7 @@ Heat_cG_DWR<dim>::
 primal_do_data_output(const double n) {
 	const double solution_time = n;
 	
-	primal.data_output.write_data("primal", primal.u, solution_time);
+	primal.data_output.write_data("primal", primal.slab.u, solution_time);
 }
 
 
@@ -675,7 +677,7 @@ primal_process_solution(const unsigned int cycle) {
 	
 	dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
 												*(it_In_grid->primal.dof),
-												*(primal.u),
+												*(primal.slab.u),
 												*(BoundaryValues),
 												difference_per_cell,
 												q_iterated,//dealii::QGauss<dim>(4),//q_iterated,//dealii::QGauss<dim>(4),// q_iterated (alternativ)
@@ -685,7 +687,7 @@ primal_process_solution(const unsigned int cycle) {
 	
 // 	dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
 // 												*(it_In_grid->primal.dof),
-// 												*(primal.u),
+// 												*(primal.slab.u),
 // 												*(BoundaryValues),
 // 												difference_per_cell,
 // 												dealii::QGauss<dim>(4),
@@ -1827,7 +1829,7 @@ Heat_cG_DWR<dim>::
 do_data_output(const double cycle) {
 	const double solution_time = cycle;
 	
-	primal.data_output.write_data("primal", primal.u, solution_time);
+	primal.data_output.write_data("primal", primal.slab.u, solution_time);
 	dual.data_output.write_data("dual", dual.solution_vectors, solution_time);
 }
 
@@ -2457,7 +2459,7 @@ refine_grids_dwr() {
 // // 	dealii::VectorTools::integrate_difference (
 // // 		*(it_In_grid->primal.mapping),
 // // 		*(it_In_grid->primal.dof),
-// // 		*primal.u,
+// // 		*primal.slab.u,
 // // 		*BoundaryValues,
 // // 		difference_per_cell,
 // // 		q_iterated, //dealii::QGauss<dim> ( it_In_grid->primal.fe->tensor_degree()+1 ),
@@ -2584,7 +2586,7 @@ solve_primal_problem() {
 
 	for (unsigned int n{0}; n <= ((data.T-data.t0)/data.tau_n); ++n) {
 		if (n == 0) {
-			// Compute initial condition u_0 and store it in primal.u_old,
+			// Compute initial condition u_0 and store it in primal.slab.u_old,
 			// interpolate it to dual FE-room and store it in dual.u and last
 			// but not least store this in the first element of list In_u.
 			
@@ -2608,9 +2610,9 @@ solve_primal_problem() {
 			// in the first element of list In_u
 			In_u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
 			*(In_u->front().x) = *(dual.u);
-			// Store initial condition (primal.u_old) in the first element of list In-uprimal
+			// Store initial condition (primal.slab.u_old) in the first element of list In-uprimal
 			In_uprimal->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
-			*(In_uprimal->front().x) = *(primal.u_old);
+			*(In_uprimal->front().x) = *(primal.slab.u_old);
 			
 		}
 		else if (n == 1) {
@@ -2642,14 +2644,14 @@ solve_primal_problem() {
 			primal_solve();
 // 				primal.M.print(std::cout);
 // 				std::cout << "" << std::endl;
-			//Save current solution for next time step in primal.u_old 
+			//Save current solution for next time step in primal.slab.u_old 
 			// (needed within primal_assemble_rhs() of next timestep)
-			primal.u_old = std::make_shared< dealii::Vector<double> > ();
-			primal.u_old->reinit(it_In_grid->primal.dof->n_dofs());
-			*(primal.u_old) = *(primal.u);
+			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
+			primal.slab.u_old->reinit(it_In_grid->primal.dof->n_dofs());
+			*(primal.slab.u_old) = *(primal.slab.u);
 			// Save current  solution in list In_uprimal
 			In_uthprimal->x->reinit(it_In_grid->primal.dof->n_dofs());
-			*(In_uthprimal->x) = *(primal.u);
+			*(In_uthprimal->x) = *(primal.slab.u);
 			
 			// interpolate current solution to dual fe-room
 			interpolate_primal_to_dual();
@@ -2690,14 +2692,14 @@ solve_primal_problem() {
 			primal_assemble_rhs();
 			primal_solve();
 			
-			//Save current solution for next time step in primal.u_old 
+			//Save current solution for next time step in primal.slab.u_old 
 			// (needed within primal_assemble_rhs() of next timestep)
-			primal.u_old = std::make_shared< dealii::Vector<double> > ();
-			primal.u_old->reinit(it_In_grid->primal.dof->n_dofs());
-			*(primal.u_old) = *(primal.u);
+			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
+			primal.slab.u_old->reinit(it_In_grid->primal.dof->n_dofs());
+			*(primal.slab.u_old) = *(primal.slab.u);
 			// Save current  solution in list In_uprimal
 			In_uthprimal->x->reinit(it_In_grid->primal.dof->n_dofs());
-			*(In_uthprimal->x) = *(primal.u);
+			*(In_uthprimal->x) = *(primal.slab.u);
 
 			// interpolate current solution to dual fe-room
 			interpolate_primal_to_dual();

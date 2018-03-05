@@ -171,9 +171,11 @@ protected:
 		dealii::SparseMatrix<double> A; ///< primal problem stiffness matrix
 		dealii::SparseMatrix<double> system_matrix; ///< primal problem system matrix (M+tau_n*A)
 		
-		std::shared_ptr< dealii::Vector<double> > u; 	///< primal problem solution
-		std::shared_ptr< dealii::Vector<double> > u_old; ///< primal solution from one time step ago
-		std::shared_ptr< dealii::Vector<double> > u_old_interpolated; ///< u_old interpolated to next grid
+		struct {
+			std::shared_ptr< dealii::Vector<double> > u; 	///< primal problem solution
+			std::shared_ptr< dealii::Vector<double> > u_old; ///< primal solution from one time step ago
+			std::shared_ptr< dealii::Vector<double> > u_old_interpolated; ///< u_old interpolated to next grid
+		} slab;
 		
 		dealii::Vector<double> f; ///< primal problem f
 		dealii::Vector<double> f_old; ///< NEW
