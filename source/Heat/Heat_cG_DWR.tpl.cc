@@ -101,6 +101,7 @@ set_BoundaryValues(std::shared_ptr< dealii::Function<dim> > _BoundaryValues) {
 }
 
 
+// TODO: remove this function
 template<int dim>
 void
 Heat_cG_DWR<dim>::
@@ -117,6 +118,7 @@ set_f(std::shared_ptr< dealii::Function<dim> > f) {
 }
 
 
+// TODO: remove this function
 template<int dim>
 void
 Heat_cG_DWR<dim>::
@@ -125,6 +127,7 @@ set_f_dual(std::shared_ptr< dealii::Function<dim> > f_dual) {
 }
 
 
+// TODO: remove this function
 template<int dim>
 void
 Heat_cG_DWR<dim>::
@@ -133,6 +136,7 @@ set_evaluation_point(dealii::Point<dim> evaluation_point) {
 }
 
 
+// TODO: remove this function with parameter input
 template<int dim>
 void
 Heat_cG_DWR<dim>::
@@ -143,6 +147,7 @@ set_data(
 	double t0,
 	double T,
 	double tau_n) {
+	
 	data.p_primal = p_primal;
 	data.p_dual   = p_dual;
 	data.global_refinement = global_refinement;
@@ -168,7 +173,9 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 init(const unsigned int global_refinement) {
-	// create grid and distribute dofs
+	////////////////////////////////////////////////////////////////////////////
+	// create grid
+	//
 	grid->initialize_slabs(
 		data.p_primal,
 		data.p_dual,
@@ -182,17 +189,17 @@ init(const unsigned int global_refinement) {
 	grid->refine_global(global_refinement);
 	
 	////////////////////////////////////////////////////////////////////////////
-	// init error estimators
+	// init error estimator
 	//
-	error_estimator.DWR = std::make_shared<
-		Heat::DWR::ErrorEstimator<dim> > ();
+	error_estimator.DWR = std::make_shared<Heat::DWR::ErrorEstimator<dim> > ();
+	
 	error_estimator.DWR->set_objects(
 		grid,
 		epsilon,
 		BoundaryValues,
-		BoundaryValues_dual,
+		BoundaryValues_dual, // TODO
 		function.f,
-		function.f_dual
+		function.f_dual // TODO
 	);
 }
 
@@ -201,45 +208,48 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 init_storage() {
+	////////////////////////////////////////////////////////////////////////////
 	// init storage containers for vector data
 	
 	// get number of time steps
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	
-	////////////////////////////////
-	// primal solution dof vector u:
-	dual.storage.u = std::make_shared<l_data_vectors_storage > ();
-	dual.storage.u->resize(N+1);
-	for (auto &element : *dual.storage.u) {
-		element.x = std::make_shared< dealii::Vector<double> > ();
-	}
-	
-	//////////////////////////////
-	// dual solution dof vector z:
-	dual.storage.z = std::make_shared<l_data_vectors_storage > ();
-	dual.storage.z->resize(N+1);
-	for (auto &element : *dual.storage.z) {
-		element.x = std::make_shared< dealii::Vector<double> > ();
-	}
-	
-	/////////////////////////////////////////////////////////////
-	// primal solution dof vector on dual solution space uprimal:
-	// TODO: naming of this vector
-	primal.storage.u = std::make_shared< l_data_vectors_storage > ();
+	///////////////////////////////////////////////////////////
+	// primal solution dof vectors u (on primal solution space)
+	//
+	primal.storage.u = std::make_shared< storage_data_vectors > ();
 	primal.storage.u->resize(N+1);
 	for (auto &element : *primal.storage.u) {
 		element.x = std::make_shared< dealii::Vector<double> > ();
 	}
 	
-	////////////////////////
-	// auxiliary vector eta:
-	dual.storage.eta = std::make_shared<l_data_vectors_storage > ();
+	/////////////////////////////////////////////////////////
+	// primal solution dof vectors u (on dual solution space)
+	dual.storage.u = std::make_shared< storage_data_vectors > ();
+	dual.storage.u->resize(N+1);
+	for (auto &element : *dual.storage.u) {
+		element.x = std::make_shared< dealii::Vector<double> > ();
+	}
+	
+	///////////////////////////////////////////////////////
+	// dual solution dof vectors z (on dual solution space)
+	dual.storage.z = std::make_shared< storage_data_vectors > ();
+	dual.storage.z->resize(N+1);
+	for (auto &element : *dual.storage.z) {
+		element.x = std::make_shared< dealii::Vector<double> > ();
+	}
+	
+	/////////////////////////////////////////////////
+	// auxiliary vectors eta (on dual solution space)
+	dual.storage.eta = std::make_shared< storage_data_vectors > ();
 	dual.storage.eta->resize(N);
 	for (auto &element : *dual.storage.eta) {
 		element.x = std::make_shared< dealii::Vector<double> > ();
 	}
 }
 
+
+// TODO:
 template<int dim>
 void
 Heat_cG_DWR<dim>::
@@ -267,6 +277,7 @@ primal_init_data_output() {
 }
 
 
+// TODO
 template<int dim>
 void
 Heat_cG_DWR<dim>::

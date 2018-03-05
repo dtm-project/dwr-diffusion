@@ -196,9 +196,9 @@ public:
 	);
 	
 	virtual void estimate(
-		data_vectors_storage In_u, ///< list of primal problem solution on dual space
-		data_vectors_storage In_z, ///< list of dual problem solution
-		data_vectors_storage In_eta ///< list of error_indicators (eta^n)
+		std::shared_ptr< storage_data_vectors > In_u, ///< list of primal problem solution on dual space
+		std::shared_ptr< storage_data_vectors > In_z, ///< list of dual problem solution
+		std::shared_ptr< storage_data_vectors > In_eta ///< list of error_indicators (eta^n)
 	);
 
 protected:
@@ -246,9 +246,10 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > z_old; ///< dual problem solution
 		
 	} dual;
-	data_vectors_storage In_u;
-	data_vectors_storage In_z;
-	data_vectors_storage In_eta;
+	
+	std::shared_ptr< storage_data_vectors > In_u;
+	std::shared_ptr< storage_data_vectors > In_z;
+	std::shared_ptr< storage_data_vectors > In_eta;
 	
 	std::shared_ptr< Heat::Grid_DWR<dim,1> > grid;
 	

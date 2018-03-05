@@ -1,10 +1,13 @@
 /**
  * @file Data_vecectors.tpl.hh
- * @author Uwe Koecher (UK), Marius Paul Bruchhaeuser (MPB)
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-03-05, updated data structures and types, UK
  * @date 2017-07-27, Heat/DWR, UK, MPB
  */
 
-/*  Copyright (C) 2012-2017 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,28 +27,24 @@
 #ifndef __Data_vectors_tpl_hh
 #define __Data_vectors_tpl_hh
 
-// DTM++ includes
-
 // dealii includes
 #include <deal.II/lac/vector.h>
 
 // C++ includes
 #include <list>
 
-
 namespace storage {
 namespace data {
 
-/// Build struct for solution vectors of primal and dual Problem
-struct In_vectors {
+struct s_vectors {
 	std::shared_ptr< dealii::Vector<double> > x;
-}; //end struct In-Vectors
+};
 
-using s_In_vectors = struct In_vectors;
+using vectors = struct s_vectors;
 
 }}
 
-using l_data_vectors_storage = std::list< storage::data::s_In_vectors>;
-using data_vectors_storage = std::shared_ptr< l_data_vectors_storage >;
+/// storage container data type: list for shared_ptr to vectors
+using storage_data_vectors = std::list< storage::data::vectors>;
 
 #endif

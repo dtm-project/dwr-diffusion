@@ -259,9 +259,9 @@ template<int dim>
 void
 ErrorEstimator<dim>::
 estimate(
-	data_vectors_storage _In_u, ///< list of primal problem solution on dual space
-	data_vectors_storage _In_z, ///< list of dual problem solution
-	data_vectors_storage _In_eta ///< list of error_indicators (eta^n)
+	std::shared_ptr< storage_data_vectors > _In_u, ///< list of primal problem solution on dual space
+	std::shared_ptr< storage_data_vectors > _In_z, ///< list of dual problem solution
+	std::shared_ptr< storage_data_vectors > _In_eta ///< list of error_indicators (eta^n)
 ) {
 	In_u = _In_u;
 	In_z = _In_z;

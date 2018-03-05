@@ -56,6 +56,7 @@
 #include <list>
 #include <iterator>
 
+// TODO: rename Heat -> heat (namespace non-capitalised letters)
 namespace Heat {
 
 template<int dim>
@@ -65,7 +66,7 @@ public:
 	virtual ~Heat_cG_DWR() = default;
 	
 	virtual void set_error_functional_type(
-		const typename Heat::types::error_functional &error_functional_type
+		const Heat::types::error_functional &error_functional_type
 	);
 	
 	virtual void set_grid(std::shared_ptr< Heat::Grid_DWR<dim,1> > grid);
@@ -189,7 +190,7 @@ protected:
 		
 		// storage container
 		struct {
-			data_vectors_storage u; ///< primal solutions list
+			std::shared_ptr< storage_data_vectors > u; ///< primal solutions list
 		} storage;
 		
 		// Data Output
@@ -210,10 +211,10 @@ protected:
 		
 		// storage container
 		struct {
-			data_vectors_storage u; ///< primal solutions interpolated into dual FE room list
-			data_vectors_storage z; ///< dual solutions list
+			std::shared_ptr< storage_data_vectors > u; ///< primal solutions interpolated into dual FE room list
+			std::shared_ptr< storage_data_vectors > z; ///< dual solutions list
 			
-			data_vectors_storage eta; ///< error_indicators list
+			std::shared_ptr< storage_data_vectors > eta; ///< error_indicators list
 		} storage;
 		
 		
@@ -244,7 +245,7 @@ protected:
 	
 	
 	//TEST TODO
-	typename l_data_vectors_storage::reverse_iterator rit_In_uback;
+	typename storage_data_vectors::reverse_iterator rit_In_uback;
 	
 	std::shared_ptr< dealii::Function<dim> > epsilon;
 	std::shared_ptr< dealii::Function<dim> > BoundaryValues;
