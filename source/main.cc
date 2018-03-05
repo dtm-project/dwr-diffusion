@@ -1,6 +1,10 @@
 /**
  * @file main.cc
- * @author Marius Paul Bruchhaeuser (MPB), Uwe Koecher (UK)
+ * 
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-03-05, UK
  * @date 2017-08-01, Heat/DWR, UK
  * @date 2016-01-15, condiff/SUPG, UK
  * @date 2016-01-12, UK
@@ -30,28 +34,15 @@
 // DEFINES
 
 ////////////////////////////////////////////////////////////////////////////////
-// MPI Usage: Limit the numbers of threads to 1, since MPI+X has a poor
-// performance (for at least Trilinos/Epetra).
-// Undefine the variable USE_MPI_WITHOUT_THREADS if you want to use MPI+X,
-// this would use as many threads per process as deemed useful by TBB.
-#define USE_MPI_WITHOUT_THREADS
-
-// We will further restrict to use a single process only,
-// so we can enable threading parallelism safely by
-// #undef USE_MPI_WITHOUT_THREADS
-
-#ifdef USE_MPI_WITHOUT_THREADS
-#define MPIX_THREADS 28 //28
-#else
-#define MPIX_THREADS dealii::numbers::invalid_unsigned_int
-#endif
+#define MPIX_THREADS 2 //28
+// #define MPIX_THREADS dealii::numbers::invalid_unsigned_int
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
-#include <Heat/Heat_cG_DWR.tpl.hh>
+#include <Heat/Heat_cGp_dG0__cGq_cG1_DWR.tpl.hh>
 #include <Heat/BoundaryValues/BoundaryValues.hh>
 #include <Heat/Forces/Forces.hh>
 #include <Heat/Grid/Grid_DWR.tpl.hh>
@@ -124,8 +115,8 @@ int main(int argc, char *argv[]) {
 		//
 		const unsigned int DIM=2;
 		
-		const unsigned int p_primal = 1;
-		const unsigned int p_dual   = 2;
+		const unsigned int p_primal = 1; // polynomial degree on primal space
+		const unsigned int q_dual   = 2; // polynomial degree on dual space
 		
 		const unsigned int global_refine = 3;
 		
@@ -137,7 +128,7 @@ int main(int argc, char *argv[]) {
 		dealii::Point<DIM> evaluation_point(0.5, 0.5);
 		
 		unsigned int data_output_patches_primal = p_primal;
-		unsigned int data_output_patches_dual = p_dual;
+		unsigned int data_output_patches_dual = q_dual;
 		
 		// choose error functional / goal functional type J()
 		auto error_functional_type = Heat::types::error_functional::L2_final;
@@ -145,8 +136,8 @@ int main(int argc, char *argv[]) {
 		////////////////////////////////////////////////////////////////////////
 		// check
 		Assert(
-			(p_primal < p_dual),
-			dealii::ExcMessage("Error: set p_primal < p_dual")
+			(p_primal < q_dual),
+			dealii::ExcMessage("Error: set p_primal < q_dual")
 		);
 		
 		////////////////////////////////////////////////////////////////////////
@@ -179,7 +170,7 @@ int main(int argc, char *argv[]) {
 		// Begin application
 		//
 		
-		auto problem = std::make_shared< Heat::Heat_cG_DWR<DIM> > ();
+		auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
 		
 		problem->set_error_functional_type(error_functional_type);
 		problem->set_grid(grid);
@@ -193,7 +184,7 @@ int main(int argc, char *argv[]) {
 		
 		problem->set_data(
 			p_primal,
-			p_dual,
+			q_dual,
 			global_refine,
 			t0,
 			T,

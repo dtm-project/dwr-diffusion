@@ -79,7 +79,7 @@ public:
 	
 	virtual void initialize_slabs(
 		const unsigned int &p_primal,
-		const unsigned int &p_dual,
+		const unsigned int &q_dual,
 		const double &t0,
 		const double &T,
 		const double &tau_n

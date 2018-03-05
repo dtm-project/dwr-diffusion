@@ -68,7 +68,7 @@ void
 Grid_DWR<dim,spacedim>::
 initialize_slabs(
 	const unsigned int &p_primal,
-	const unsigned int &p_dual,
+	const unsigned int &q_dual,
 	const double &t0,
 	const double &T,
 	const double &tau_n) {
@@ -130,7 +130,7 @@ initialize_slabs(
 		);
 		
 		slab.dual.fe = std::make_shared< dealii::FE_Q<dim> > (
-			p_dual
+			q_dual
 		);
 		
 		slab.dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
@@ -138,7 +138,7 @@ initialize_slabs(
 		slab.dual.sp = std::make_shared< dealii::SparsityPattern >();
 		
 		slab.dual.mapping = std::make_shared< dealii::MappingQ<dim> > (
-			p_dual
+			q_dual
 		);
 	}
 	
