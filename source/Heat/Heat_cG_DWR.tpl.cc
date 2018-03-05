@@ -340,26 +340,26 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 primal_compute_initial_condition() {
-	Assert(grid->In.front().primal.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.front().primal.dof.use_count(), dealii::ExcNotInitialized());
 	
 	primal.u_old = std::make_shared< dealii::Vector<double> > ();
-	primal.u_old->reinit(grid->In.front().primal.dof->n_dofs());
+	primal.u_old->reinit(grid->slabs.front().primal.dof->n_dofs());
 	dual.u = std::make_shared< dealii::Vector<double> > ();
-	dual.u->reinit(grid->In.front().dual.dof->n_dofs());
+	dual.u->reinit(grid->slabs.front().dual.dof->n_dofs());
 	
 	dealii::VectorTools::interpolate(
-		*(grid->In.front().primal.dof),
+		*(grid->slabs.front().primal.dof),
 		*(BoundaryValues),
 		*(primal.u_old)
 	);
-	grid->In.front().primal.constraints->distribute(*(primal.u_old));
+	grid->slabs.front().primal.constraints->distribute(*(primal.u_old));
 
-	dealii::FETools::interpolate(*(grid->In.front().primal.dof),
+	dealii::FETools::interpolate(*(grid->slabs.front().primal.dof),
 								*(primal.u_old),
-								*(grid->In.front().dual.dof),
-								*(grid->In.front().dual.constraints),
+								*(grid->slabs.front().dual.dof),
+								*(grid->slabs.front().dual.constraints),
 								*(dual.u));
-	grid->In.front().dual.constraints->distribute(*(dual.u));
+	grid->slabs.front().dual.constraints->distribute(*(dual.u));
 }
 
 
@@ -766,7 +766,7 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 dual_compute_initial_condition_L2final() {
-	Assert(grid->In.back().dual.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.back().dual.dof.use_count(), dealii::ExcNotInitialized());
 
 ////////////////////////////////////////////////////////////////////////////////
 	// To solve dual problem backward without error functional, instead an rhs given
@@ -774,16 +774,16 @@ dual_compute_initial_condition_L2final() {
 ////////////////////////////////////////////////////////////////////////////////
 	
 // 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+// 	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 // 	
 // 	BoundaryValues_dual->set_time(data.T);
 // 	
 // 	dealii::VectorTools::interpolate(
-// 		*(grid->In.back().dual.dof),
+// 		*(grid->slabs.back().dual.dof),
 // 		*(BoundaryValues_dual),
 // 		*(dual.z_old)
 // 	);
-// 	grid->In.back().dual.constraints->distribute(*(dual.z_old));
+// 	grid->slabs.back().dual.constraints->distribute(*(dual.z_old));
 
 ////////////////////////////////////////////////////////////////////////////////
 // 	//To solve dual problem for error functional J(phi)=(phi_N^-,e_N^-)/norm(e_N^-),
@@ -791,30 +791,30 @@ dual_compute_initial_condition_L2final() {
 ////////////////////////////////////////////////////////////////////////////////
 	
 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 	std::shared_ptr< dealii::Vector<double> > primal_u_exact;
 	primal_u_exact = std::make_shared< dealii::Vector<double> > ();
-	primal_u_exact->reinit(grid->In.back().primal.dof->n_dofs());
+	primal_u_exact->reinit(grid->slabs.back().primal.dof->n_dofs());
 	std::shared_ptr< dealii::Vector<double> > dual_initial_condition;
 	dual_initial_condition = std::make_shared< dealii::Vector<double> > ();
-	dual_initial_condition->reinit(grid->In.back().primal.dof->n_dofs());
+	dual_initial_condition->reinit(grid->slabs.back().primal.dof->n_dofs());
 	
 	BoundaryValues_dual->set_time(data.T);
 	
 	dealii::VectorTools::interpolate(
-		*(grid->In.back().primal.mapping),
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.mapping),
+		*(grid->slabs.back().primal.dof),
 		*(BoundaryValues_dual),
 		*(primal_u_exact)
 	);
-	grid->In.back().primal.constraints->distribute(*(primal_u_exact));	
+	grid->slabs.back().primal.constraints->distribute(*(primal_u_exact));	
 	
-	dealii::Vector<double> difference_per_cell1 (grid->In.back().tria->n_active_cells());
+	dealii::Vector<double> difference_per_cell1 (grid->slabs.back().tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 	dealii::VectorTools::integrate_difference(
-		*(grid->In.back().primal.mapping),
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.mapping),
+		*(grid->slabs.back().primal.dof),
 		*(In_uprimal->back().x),
 		*(BoundaryValues_dual),
 		difference_per_cell1,
@@ -829,10 +829,10 @@ dual_compute_initial_condition_L2final() {
 	
 	// Interpolate initial condition into dual FE room.
 	dealii::FETools::interpolate(
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.dof),
 		*(dual_initial_condition),
-		*(grid->In.back().dual.dof),
-		*(grid->In.back().dual.constraints),
+		*(grid->slabs.back().dual.dof),
+		*(grid->slabs.back().dual.constraints),
 		*(dual.z_old)
 	);
 	
@@ -841,46 +841,46 @@ dual_compute_initial_condition_L2final() {
 ////////////////////////////////////////////////////////////////////////////////
 	
 // 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+// 	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 // 	std::shared_ptr< dealii::Vector<double> > primal_u_exact;
 // 	primal_u_exact = std::make_shared< dealii::Vector<double> > ();
-// 	primal_u_exact->reinit(grid->In.back().primal.dof->n_dofs());
+// 	primal_u_exact->reinit(grid->slabs.back().primal.dof->n_dofs());
 // 	std::shared_ptr< dealii::Vector<double> > u_int_exact;
 // 	u_int_exact = std::make_shared< dealii::Vector<double> > ();
-// 	u_int_exact->reinit(grid->In.back().dual.dof->n_dofs());
+// 	u_int_exact->reinit(grid->slabs.back().dual.dof->n_dofs());
 // 	std::shared_ptr< dealii::Vector<double> > dual_initial_condition;
 // 	dual_initial_condition = std::make_shared< dealii::Vector<double> > ();
-// 	dual_initial_condition->reinit(grid->In.back().dual.dof->n_dofs());
+// 	dual_initial_condition->reinit(grid->slabs.back().dual.dof->n_dofs());
 // 	
 // 	BoundaryValues_dual->set_time(data.T);
 // 	
 // // 	dealii::VectorTools::interpolate(
-// // 		*(grid->In.back().primal.mapping),
-// // 		*(grid->In.back().primal.dof),
+// // 		*(grid->slabs.back().primal.mapping),
+// // 		*(grid->slabs.back().primal.dof),
 // // 		*(BoundaryValues_dual),
 // // 		*(primal_u_exact)
 // // 	);
-// // 	grid->In.back().primal.constraints->distribute(*(primal_u_exact));	
+// // 	grid->slabs.back().primal.constraints->distribute(*(primal_u_exact));	
 // // 	dealii::FETools::interpolate(
-// // 		*(grid->In.back().primal.dof),
+// // 		*(grid->slabs.back().primal.dof),
 // // 		*(primal_u_exact),
-// // 		*(grid->In.back().dual.dof),
-// // 		*(grid->In.back().dual.constraints),
+// // 		*(grid->slabs.back().dual.dof),
+// // 		*(grid->slabs.back().dual.constraints),
 // // 		*(u_int_exact)
 // // 	);
 // 	
 // 	dealii::VectorTools::interpolate(
-// 		*(grid->In.back().dual.mapping),
-// 		*(grid->In.back().dual.dof),
+// 		*(grid->slabs.back().dual.mapping),
+// 		*(grid->slabs.back().dual.dof),
 // 		*(BoundaryValues_dual),
 // 		*(u_int_exact)
 // 	);
-// 	grid->In.back().dual.constraints->distribute(*(u_int_exact));
+// 	grid->slabs.back().dual.constraints->distribute(*(u_int_exact));
 // 	
-// 	dealii::Vector<double> difference_per_cell2 (grid->In.back().tria->n_active_cells());
+// 	dealii::Vector<double> difference_per_cell2 (grid->slabs.back().tria->n_active_cells());
 // 	dealii::VectorTools::integrate_difference(
-// 		*(grid->In.back().dual.mapping),
-// 		*(grid->In.back().dual.dof),
+// 		*(grid->slabs.back().dual.mapping),
+// 		*(grid->slabs.back().dual.dof),
 // 		*(In_u->back().x),
 // 		*(BoundaryValues_dual),
 // 		difference_per_cell2,
@@ -903,13 +903,13 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 dual_compute_initial_condition_L2global() {
-	Assert(grid->In.back().dual.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.back().dual.dof.use_count(), dealii::ExcNotInitialized());
 ////////////////////////////////////////////////////////////////////////////////
 	// Initial condition for global L2Error-functional
 ////////////////////////////////////////////////////////////////////////////////
 	
 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 }
 
 
@@ -923,7 +923,7 @@ dual_compute_initial_condition_mean_final() {
 ////////////////////////////////////////////////////////////////////////////////
 	
 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 	
 	for (unsigned int i=0; i < dual.z_old->size(); ++i) {
 		(*(dual.z_old))[i] = 1.;
@@ -935,13 +935,13 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 dual_compute_initial_condition_mean_global() {
-	Assert(grid->In.back().dual.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.back().dual.dof.use_count(), dealii::ExcNotInitialized());
 ////////////////////////////////////////////////////////////////////////////////
 	// Initial condition for global mean-functional
 ////////////////////////////////////////////////////////////////////////////////
 	
 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 }
 
 
@@ -954,10 +954,10 @@ dual_compute_initial_condition_point_final() {
 ////////////////////////////////////////////////////////////////////////////////
 	
 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-	dual.z_old->reinit(grid->In.back().dual.dof->n_dofs());
+	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 	
-	auto cell = grid->In.back().dual.dof->begin_active();
-	auto endc = grid->In.back().dual.dof->end();
+	auto cell = grid->slabs.back().dual.dof->begin_active();
+	auto endc = grid->slabs.back().dual.dof->end();
 	
 	for (; cell != endc; ++cell) {
 	for (unsigned int vertex = 0;
@@ -1215,12 +1215,12 @@ dual_assemble_Je_L2final() {
 	double L2Error_final;
 	L2Error_final = 0;
 	// Computaion of global exact error J(e)
-	dealii::Vector<double> difference_per_cell (grid->In.back().tria->n_active_cells());
+	dealii::Vector<double> difference_per_cell (grid->slabs.back().tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 	dealii::VectorTools::integrate_difference(
-		*(grid->In.back().primal.mapping),
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.mapping),
+		*(grid->slabs.back().primal.dof),
 		*(In_uprimal->back().x),
 		*(BoundaryValues_dual),
 		difference_per_cell,
@@ -1895,13 +1895,13 @@ compute_Ieff_L2final() {
 	double L2Error_final;
 	L2Error_final = 0;
 	// Computaion of global exact error J(e)
-	dealii::Vector<double> difference_per_cell (grid->In.back().tria->n_active_cells());
+	dealii::Vector<double> difference_per_cell (grid->slabs.back().tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 	BoundaryValues_dual->set_time(data.T);
 	dealii::VectorTools::integrate_difference(
-		*(grid->In.back().primal.mapping),
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.mapping),
+		*(grid->slabs.back().primal.dof),
 		*(In_uprimal->back().x),
 		*(BoundaryValues_dual),
 		difference_per_cell,
@@ -2032,13 +2032,13 @@ compute_Ieff_mean_final() {
 	double MeanValue_final;
 	MeanValue_final = 0;
 	// Computaion of global exact error J(e)
-	dealii::Vector<double> difference_per_cell (grid->In.back().tria->n_active_cells());
+	dealii::Vector<double> difference_per_cell (grid->slabs.back().tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 	BoundaryValues_dual->set_time(data.T);
 	dealii::VectorTools::integrate_difference(
-		*(grid->In.back().primal.mapping),
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.mapping),
+		*(grid->slabs.back().primal.dof),
 		*(In_uprimal->back().x),
 		*(BoundaryValues_dual),
 		difference_per_cell,
@@ -2106,8 +2106,8 @@ compute_Ieff_mean_global() {
 	
 	auto In_u_error(In_uprimal->begin());
 	auto endIn_u_error(In_uprimal->end());
-	auto In_error(grid->In.begin());
-	auto endIn_error(grid->In.end());
+	auto In_error(grid->slabs.begin());
+	auto endIn_error(grid->slabs.end());
 	// Variable for local L2Error
 	double MeanValue_exact;
 	MeanValue_exact = 0.;
@@ -2116,9 +2116,9 @@ compute_Ieff_mean_global() {
 // 	// Vector for global errors on each cell K (E_K in dealii notation)
 // 	dealii::Vector<double> global_diff (it_In_grid->tria->n_active_cells());
 	// Loop over all time-intervals I_n (n=1,...,N(=number of grids))
-	for (unsigned int n{0};n <= grid->In.size(); ++n,++In_u_error) {
+	for (unsigned int n{0};n <= grid->slabs.size(); ++n,++In_u_error) {
 		
-		if (n == grid->In.size()) {
+		if (n == grid->slabs.size()) {
 			++In_error;
 			it_In_grid = In_error;
 			BoundaryValues->set_time(n*data.tau_n);
@@ -2133,7 +2133,7 @@ compute_Ieff_mean_global() {
 			double MeanValue_local = std::accumulate(difference_per_cell.begin(),
                                 difference_per_cell.end(), 0.);
 			MeanValue_exact += (data.tau_n/2.)*MeanValue_local;
-		} // end if (n == grid->In.size())
+		} // end if (n == grid->slabs.size())
 		else if (n == 0) {
 			it_In_grid = In_error;
 			BoundaryValues->set_time(n*data.tau_n);
@@ -2246,8 +2246,8 @@ compute_Ieff_point_final() {
 	dealii::Vector<double> result(1);
 	
 	dealii::VectorTools::point_difference(
-		*(grid->In.back().primal.mapping),
-		*(grid->In.back().primal.dof),
+		*(grid->slabs.back().primal.mapping),
+		*(grid->slabs.back().primal.dof),
 		*(In_uprimal->back().x),
 		*(BoundaryValues_dual),
 		result,
@@ -2280,17 +2280,17 @@ Heat_cG_DWR<dim>::
 compute_global_STL2_error() {
 	auto In_u_error(In_uprimal->begin());
 	auto endIn_u_error(In_uprimal->end());
-	auto In_error(grid->In.begin());
-	auto endIn_error(grid->In.end());
+	auto In_error(grid->slabs.begin());
+	auto endIn_error(grid->slabs.end());
 	// Variable for local L2Error
 	double L2Error_local;
 	L2Error_local = 0;
 // 	// Vector for global errors on each cell K (E_K in dealii notation)
 // 	dealii::Vector<double> global_diff (it_In_grid->tria->n_active_cells());
 	// Loop over all time-intervals I_n (n=1,...,N(=number of grids))
-	for (unsigned int n{0};n <= grid->In.size(); ++n,++In_u_error) {
+	for (unsigned int n{0};n <= grid->slabs.size(); ++n,++In_u_error) {
 		
-		if (n == grid->In.size()) {
+		if (n == grid->slabs.size()) {
 			++In_error;
 			it_In_grid = In_error;
 			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
@@ -2310,7 +2310,7 @@ compute_global_STL2_error() {
 			L2_error_error_end *= L2_error_error_end;
 			L2_error_error_end *= (data.tau_n/2.);
 			L2Error_local += L2_error_error_end;
-		} // end if (n == grid->In.size())
+		} // end if (n == grid->slabs.size())
 		else if (n == 0) {
 			it_In_grid = In_error;
 			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
@@ -2383,15 +2383,15 @@ compute_global_STL2_error() {
 	
 // 	auto In_u_error(In_u->begin());
 // 	auto endIn_u_error(In_u->end());
-// 	auto In_error(grid->In.begin());
-// 	auto endIn_error(grid->In.end());
+// 	auto In_error(grid->slabs.begin());
+// 	auto endIn_error(grid->slabs.end());
 // 	Variable for local L2Error
 // 	double L2Error_local;
 // 	L2Error_local = 0;
 // 	Vector for global errors on each cell K (E_K in dealii notation)
 // 	dealii::Vector<double> global_diff (it_In_grid->tria->n_active_cells());
 // 	Loop over all time-intervals I_n (n=1,...,N(=number of grids))
-// 	for (unsigned int n{1};n <= grid->In.size(); ++n,++In_error) {
+// 	for (unsigned int n{1};n <= grid->slabs.size(); ++n,++In_error) {
 // 		
 // 			++In_u_error;
 // 			it_In_grid = In_error;
@@ -2465,8 +2465,8 @@ refine_grids_dwr() {
 // // 	////////////////////////////////////////////////////////////////////////////
 	
 	// Build up a loop over all grids:
-	auto Inth(grid->In.begin());
-	auto endInth(grid->In.end());
+	auto Inth(grid->slabs.begin());
+	auto endInth(grid->slabs.end());
 	auto In_etath(In_eta->begin());
 	
 	for (; Inth != endInth; ++Inth) {
@@ -2535,7 +2535,7 @@ Heat_cG_DWR<dim>::
 primal_and_dual_solution_output() {
 	auto Inth_u_output(In_uprimal->begin());
 	auto Inth_z_output(In_z->begin());
-	auto In_grid_output(grid->In.begin());
+	auto In_grid_output(grid->slabs.begin());
 	for (unsigned int n{0}; n <= (data.T-data.t0)/data.tau_n; ++n,++Inth_u_output,++Inth_z_output) {
 		if (n == 0) {
 			it_In_grid = In_grid_output;
@@ -2560,10 +2560,10 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 solve_primal_problem() {
-	auto Inth_primal(grid->In.begin());
-	auto endIn_primal(grid->In.end());
-	auto Inth_primal_prev(grid->In.begin());
-	auto endIn_primal_prev(grid->In.end());
+	auto Inth_primal(grid->slabs.begin());
+	auto endIn_primal(grid->slabs.end());
+	auto Inth_primal_prev(grid->slabs.begin());
+	auto endIn_primal_prev(grid->slabs.end());
 	auto In_uth(In_u->begin());
 	auto endIn_uth(In_u->end());
 	auto In_uthprimal(In_uprimal->begin());
@@ -2593,10 +2593,10 @@ solve_primal_problem() {
 
 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
 			// in the first element of list In_u
-			In_u->front().x->reinit(grid->In.front().dual.dof->n_dofs());
+			In_u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
 			*(In_u->front().x) = *(dual.u);
 			// Store initial condition (primal.u_old) in the first element of list In-uprimal
-			In_uprimal->front().x->reinit(grid->In.front().primal.dof->n_dofs());
+			In_uprimal->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
 			*(In_uprimal->front().x) = *(primal.u_old);
 			
 		}
@@ -2704,10 +2704,10 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 solve_dual_problem() {
-	auto Inth_dual(grid->In.rbegin());
-	auto endIn_dual(grid->In.rend());
-	auto Inth_dual_prev(grid->In.rbegin());
-	auto endIn_dual_prev(grid->In.rend());
+	auto Inth_dual(grid->slabs.rbegin());
+	auto endIn_dual(grid->slabs.rend());
+	auto Inth_dual_prev(grid->slabs.rbegin());
+	auto endIn_dual_prev(grid->slabs.rend());
 	auto In_zth(In_z->rbegin());
 	auto endIn_zth(In_z->rend());
 	auto In_uth_test(In_u->rbegin());
@@ -2739,7 +2739,7 @@ solve_dual_problem() {
 			dual_compute_initial_condition();
 
 			// Store initial condition z_N (dual.z_old) in the last element of list In_z
-			In_z->back().x->reinit(grid->In.back().dual.dof->n_dofs());
+			In_z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
 			*(In_z->back().x) = *(dual.z_old);
 			
 		}
@@ -2880,11 +2880,11 @@ run() {
 	init(data.global_refinement); //TODO 160 //Für Konvergenztest in der Zeit
 													// einfach data.time_steps durch 
 													// bspsw 160 (max Anz an Zeitschritten) ersetzen
-	std::cout << "n von In = " << grid->In.size() << std::endl;
+	std::cout << "n von In = " << grid->slabs.size() << std::endl;
 	
 	//TEST iterator it_In_grid_previous
-// 	auto Inth_test(grid->In.begin());
-// 	auto endIn_test(grid->In.end());
+// 	auto Inth_test(grid->slabs.begin());
+// 	auto endIn_test(grid->slabs.end());
 // 	for (unsigned int i{1}; i <= 5; ++i,++Inth_test) {
 // 		Inth_test->tria->refine_global(i);
 // 		std::cout << "Zellen = " << Inth_test->tria->n_active_cells() << std::endl;
@@ -2892,15 +2892,15 @@ run() {
 	//TEST ENDE iterator it_In_grid_previous
 	
 // 	//TEST BEGIN
-// 	grid->In.front().tria->refine_global(1);
-// 	grid->In.push_back(grid->In.front());
-// 	auto Inth(grid->In.begin());
-// 	auto endIn(grid->In.end());
+// 	grid->slabs.front().tria->refine_global(1);
+// 	grid->slabs.push_back(grid->slabs.front());
+// 	auto Inth(grid->slabs.begin());
+// 	auto endIn(grid->slabs.end());
 // 	for (unsigned int n{1}; n <= 25; ++n) {
-// 	grid->In.push_back(grid->In.front());
+// 	grid->slabs.push_back(grid->slabs.front());
 // 	}
 
-// 	std::cout << "n von In = " << grid->In.size() << std::endl;
+// 	std::cout << "n von In = " << grid->slabs.size() << std::endl;
 // 	//TEST END
 
 
@@ -2970,9 +2970,9 @@ run() {
 		
 		// 	//TEST
 		// 	for (unsigned int n{1}; n <= 75; ++n) {
-		// 	grid->In.push_back(grid->In.front()); // use insert instead of push_back
+		// 	grid->slabs.push_back(grid->slabs.front()); // use insert instead of push_back
 		// 	}
-		// 	std::cout << "Anzahl Gitter = " << grid->In.size() << std::endl;
+		// 	std::cout << "Anzahl Gitter = " << grid->slabs.size() << std::endl;
 		// 	In_u->clear();
 		// 	In_z->clear();
 		// 	In_uprimal->clear();

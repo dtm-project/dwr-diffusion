@@ -52,8 +52,8 @@ namespace Heat {
 template<int dim, int spacedim>
 Grid_DWR<dim,spacedim>::
 ~Grid_DWR() {
-	auto slab(In.begin());
-	auto ends(In.end());
+	auto slab(slabs.begin());
+	auto ends(slabs.end());
 	
 	for (; slab != ends; ++slab) {
 		slab->primal.dof->clear();
@@ -81,8 +81,8 @@ initialize_grids(
 	const double &t0,
 	const double &T,
 	const double &tau_n) {
-	if ( In.empty() ) {
-		std::cout << "Initialize In objects " << std::endl;
+	if ( slabs.empty() ) {
+		std::cout << "Initialize slabs objects " << std::endl;
 		
 		// determine initial time intervals
 		unsigned int numoftimeintervals;
@@ -96,8 +96,8 @@ initialize_grids(
 		
 		// init spatial "grids" of each slab
 		for (unsigned int i{1}; i<= numoftimeintervals; ++i) {
-			In.emplace_back();
-			auto &slab = In.back();
+			slabs.emplace_back();
+			auto &slab = slabs.back();
 			
 			slab.tria = std::make_shared< dealii::Triangulation<dim> >(
 				typename dealii::Triangulation<dim>::MeshSmoothing(
@@ -124,13 +124,13 @@ initialize_grids(
 		// init temporal "grids" of each slab
 		{
 			unsigned int n{1};
-			for (auto &slab : In) {
+			for (auto &slab : slabs) {
 				slab.t_m = (n-1)*tau_n+t0;
 				slab.t_n = n*tau_n + t0;
 				++n;
 			}
 			
-			auto &last_slab = In.back();
+			auto &last_slab = slabs.back();
 			if ( std::abs(last_slab.t_n - T) >= std::numeric_limits< double >::epsilon()*T) {
 				last_slab.t_n = T;
 			}
@@ -153,8 +153,8 @@ generate() {
 	const double a(0.);
 	const double b(1.);
 	
-	auto slab(In.begin());
-	auto ends(In.end());
+	auto slab(slabs.begin());
+	auto ends(slabs.end());
 	
 	for (; slab != ends; ++slab) {
 		dealii::GridGenerator::hyper_cube(
@@ -170,8 +170,8 @@ template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 refine_global(const unsigned int n) {
-	auto slab(In.begin());
-	auto ends(In.end());
+	auto slab(slabs.begin());
+	auto ends(slabs.end());
 	
 	for (; slab != ends; ++slab) {
 		slab->tria->refine_global(n);
@@ -187,8 +187,8 @@ set_boundary_indicators() {
 	// TODO: remove the following code and set an assert
 	
 	// set boundary indicators
-	auto slab(In.begin());
-	auto ends(In.end());
+	auto slab(slabs.begin());
+	auto ends(slabs.end());
 	
 	for (; slab != ends; ++slab) {
 		auto cell(slab->tria->begin_active());
@@ -216,8 +216,8 @@ Grid_DWR<dim,spacedim>::
 distribute() {
 	// Distribute the degrees of freedom (dofs)
 	// Start itererator over all list-elements
-	auto slab(In.begin());
-	auto ends(In.end());
+	auto slab(slabs.begin());
+	auto ends(slabs.end());
 	for (; slab != ends; ++slab) {
 		////////////////////////////////////////////////////////////////////////////
 		// distribute primal dofs, create constraints and sparsity pattern sp

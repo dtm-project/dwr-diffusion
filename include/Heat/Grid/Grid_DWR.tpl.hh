@@ -119,7 +119,7 @@ public:
 	};
 	
 	// TODO rename to slabs
-	std::list<struct slab> In;
+	std::list<struct slab> slabs;
 	
 	struct {
 		// TODO: check place for storing polynomial degrees in space

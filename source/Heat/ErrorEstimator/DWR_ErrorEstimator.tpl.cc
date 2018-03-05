@@ -267,10 +267,10 @@ estimate(
 	In_z = _In_z;
 	In_eta = _In_eta;
 	
-	auto Inth(grid->In.begin());
-// 	auto endIn(grid->In.end());
-	auto Inth_old(grid->In.begin());
-// 	auto endIn_old(grid->In.end());
+	auto Inth(grid->slabs.begin());
+// 	auto endIn(grid->slabs.end());
+	auto Inth_old(grid->slabs.begin());
+// 	auto endIn_old(grid->slabs.end());
 	auto In_etath(In_eta->begin());
 // 	auto endIn_etath(In_eta->end());
 	auto In_uth(In_u->begin());
@@ -283,7 +283,7 @@ estimate(
 // 	auto endIn_zth_old(In_z->end());
 	
 	// Loop over all time-intervals I_n (n=1,..,N) = #grids
-	for (unsigned int n{1}; n <= grid->In.size(); ++n) {
+	for (unsigned int n{1}; n <= grid->slabs.size(); ++n) {
 
 		if (n == 1) {
 			std::cout << "I_n: t_m = " << Inth->t_m << std::endl;
