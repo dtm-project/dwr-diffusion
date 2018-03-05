@@ -168,7 +168,7 @@ void
 Heat_cG_DWR<dim>::
 init(const unsigned int global_refinement) {
 	// create grid and distribute dofs
-	grid->initialize_grids(data.t0, data.T, data.tau_n);
+	grid->initialize_slabs(data.t0, data.T, data.tau_n);
 	grid->generate();
 	grid->refine_global(global_refinement);
 	

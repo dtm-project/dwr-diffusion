@@ -1,6 +1,8 @@
 /**
  * @file Grid_DWR.tpl.hh
- * @author Marius Paul Bruchhaeuser (MPB), Uwe Koecher (UK)
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * @date 2018-03-05, work on the data structures, UK
  * @date 2017-08-01, Heat/DWR, UK
  * @date 2016-02-10, condiffrea, UK
  * @date 2016-01-14, condiff, UK
@@ -10,7 +12,7 @@
  * @date (2012-07-26), 2013-08-15, ElasticWave, UK
  */
 
-/*  Copyright (C) 2012-2017 by Marius Paul Bruchhaeuser, Uwe Koecher          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -75,7 +77,7 @@ public:
 	Grid_DWR() = default;
 	virtual ~Grid_DWR();
 	
-	virtual void initialize_grids(
+	virtual void initialize_slabs(
 		const double &t0,
 		const double &T,
 		const double &tau_n

@@ -1,6 +1,8 @@
 /**
  * @file Grid_DWR.tpl.cc
- * @author Marius Paul Bruchhaeuser (MPB), Uwe Koecher (UK)
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * @date 2018-03-05, work on the data structures, UK
  * @date 2017-08-01, Heat/DWR, MPB, UK
  * @date 2016-02-10, condiffrea, UK
  * @date 2016-01-14, condiff, UK
@@ -11,7 +13,7 @@
  * @brief Grid_DWR instantiation file
  */
 
-/*  Copyright (C) 2012-2016 by Marius Paul Bruchhaeuser, Uwe Koecher          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -48,10 +50,10 @@
 // class declaration
 namespace Heat {
 
-/// Destructor. Clears DoFHandler.
 template<int dim, int spacedim>
 Grid_DWR<dim,spacedim>::
 ~Grid_DWR() {
+	// clear all dof handlers
 	auto slab(slabs.begin());
 	auto ends(slabs.end());
 	
@@ -68,6 +70,7 @@ Grid_DWR<dim,spacedim>::
 set_data(
 	const unsigned int p_primal,
 	const unsigned int p_dual) {
+	// TODO
 	gdata.p_primal = p_primal;
 	gdata.p_dual   = p_dual;
 }
@@ -77,7 +80,7 @@ set_data(
 template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
-initialize_grids(
+initialize_slabs(
 	const double &t0,
 	const double &T,
 	const double &tau_n) {
