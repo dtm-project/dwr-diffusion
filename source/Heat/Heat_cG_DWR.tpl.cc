@@ -136,16 +136,13 @@ set_data(
 	const unsigned int p_primal,
 	const unsigned int p_dual,
 	const unsigned int global_refinement,
-	const unsigned int time_steps,
 	double t0,
 	double T,
 	double tau_n) {
-	
-	// TODO: simplify
 	data.p_primal = p_primal;
 	data.p_dual   = p_dual;
 	data.global_refinement = global_refinement;
-	data.time_steps = time_steps;
+	
 	data.t0 = t0;
 	data.T = T;
 	data.tau_n = tau_n;
@@ -200,34 +197,43 @@ template<int dim>
 void
 Heat_cG_DWR<dim>::
 init_storage() {
-	std::cout << "Initialize In_u, In_z and In_uprimal" << std::endl;
+	// init storage containers for vector data
 	
+	// get number of time steps
+	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+	
+	////////////////////////////////
+	// primal solution dof vector u:
 	In_u = std::make_shared<l_data_vectors_storage > ();
-	In_z = std::make_shared<l_data_vectors_storage > ();
-	In_uprimal = std::make_shared<l_data_vectors_storage > ();
-	In_eta = std::make_shared<l_data_vectors_storage > ();
-	
-	for (unsigned int i{0}; i <= data.time_steps; ++i) {
-		//TODO 160
-		In_u->emplace_back();
-		In_z->emplace_back();
-		In_uprimal->emplace_back();
-		auto &element = In_u->back();
-		auto &element1 = In_z->back();
-		auto &element2 = In_uprimal->back();
+	In_u->resize(N+1);
+	for (auto &element : *In_u) {
 		element.x = std::make_shared< dealii::Vector<double> > ();
-		element1.x = std::make_shared< dealii::Vector<double> > ();
-		element2.x = std::make_shared< dealii::Vector<double> > ();
-	} // end for loop i-->Initilization of primal and dual list of solution vectors
-	
-	// Prepare storage for error indicators vector eta(=sum over eta_K) 
-	for (unsigned int i{1}; i <= data.time_steps; ++i) {
-		In_eta->emplace_back();
-		auto &element = In_eta->back();
-		element.x = std::make_shared<dealii::Vector<double> > ();
 	}
-	std::cout << "In_u hat Groesse " << In_u->size() << std::endl;
-	std::cout << "In_uprimal hat Groesse " << In_uprimal->size() << std::endl;
+	
+	//////////////////////////////
+	// dual solution dof vector z:
+	In_z = std::make_shared<l_data_vectors_storage > ();
+	In_z->resize(N+1);
+	for (auto &element : *In_z) {
+		element.x = std::make_shared< dealii::Vector<double> > ();
+	}
+	
+	/////////////////////////////////////////////////////////////
+	// primal solution dof vector on dual solution space uprimal:
+	// TODO: naming of this vector
+	In_uprimal = std::make_shared<l_data_vectors_storage > ();
+	In_uprimal->resize(N+1);
+	for (auto &element : *In_uprimal) {
+		element.x = std::make_shared< dealii::Vector<double> > ();
+	}
+	
+	////////////////////////
+	// auxiliary vector eta:
+	In_eta = std::make_shared<l_data_vectors_storage > ();
+	In_eta->resize(N);
+	for (auto &element : *In_eta) {
+		element.x = std::make_shared< dealii::Vector<double> > ();
+	}
 }
 
 template<int dim>

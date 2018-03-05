@@ -132,7 +132,6 @@ int main(int argc, char *argv[]) {
 		double t0 = 0.;
 		double T  = 0.5;
 		double tau_n = 0.02;
-		const unsigned int time_steps = ((T-t0)/tau_n);
 		
 // 		dealii::Point<DIM> evaluation_point(0.1875, 0.125);
 		dealii::Point<DIM> evaluation_point(0.5, 0.5);
@@ -196,7 +195,6 @@ int main(int argc, char *argv[]) {
 			p_primal,
 			p_dual,
 			global_refine,
-			time_steps,
 			t0,
 			T,
 			tau_n
