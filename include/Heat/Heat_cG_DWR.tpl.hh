@@ -1,12 +1,16 @@
 /**
- * @file Heat_cG_DWR.tpl.cc
- * @author Marius Paul Bruchhaeuser (MPB), Uwe Koecher (UK)
+ * @file Heat_cG_DWR.tpl.hh
+ * 
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-03-05, UK
  * @date 2017-08-01, Heat/DWR, MPB, UK
  *
  * @brief Heat/DWR Problem
  */
 
-/*  Copyright (C) 2012-2017 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
