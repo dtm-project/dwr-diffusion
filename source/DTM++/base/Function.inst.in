@@ -32,12 +32,10 @@
 
 namespace DTM {
 
-template class Function<1,1>;
-
 template class Function<2,1>;
-template class Function<2,2>;
-
 template class Function<3,1>;
+
+template class Function<2,2>;
 template class Function<3,3>;
 
 } // namespaces

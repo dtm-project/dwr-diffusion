@@ -41,11 +41,11 @@ TensorFunction<rank,dim,NumberType>::
 value(
 	const dealii::Point<dim,NumberType> &
 ) const {
+	// make sure, that we do not call this base function.
 	AssertThrow(false, dealii::ExcNotImplemented());
-	value_type y;
-	y=0;
 	
-	return y;
+	// to avoid -Wreturn-type warning, we
+	return value_type ();
 }
 
 
