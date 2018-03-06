@@ -34,7 +34,7 @@
 // DEFINES
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MPIX_THREADS 2 //28
+#define MPIX_THREADS 28 //28
 // #define MPIX_THREADS dealii::numbers::invalid_unsigned_int
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -120,9 +120,9 @@ int main(int argc, char *argv[]) {
 		
 		const unsigned int global_refine = 3;
 		
-		double t0 = 0.;
+		double t0 = 0.0;
 		double T  = 0.5;
-		double tau_n = 0.02;
+		double tau_n = 0.01;
 		
 // 		dealii::Point<DIM> evaluation_point(0.1875, 0.125);
 		dealii::Point<DIM> evaluation_point(0.5, 0.5);
@@ -148,23 +148,33 @@ int main(int argc, char *argv[]) {
 		////////////////////////////////////////////////////////////////////////
 		// functions
 		//
-		auto epsilon = std::make_shared< dealii::ConstantFunction<DIM> > (1.e-00); ///< diffusion coefficient
-		auto alpha = std::make_shared< dealii::ConstantFunction<DIM> > (50.e-00); ///< coefficient for Hartmann fct.
+		
+		/// diffusion coefficient epsilon:
+		auto epsilon = std::make_shared< dealii::ConstantFunction<DIM> > (1.e-00);
+		
+		/// coefficient for Hartmann fct:
+		auto alpha = std::make_shared< dealii::ConstantFunction<DIM> > (50.e-00);
+		
+		// boundary values and exact solution:
+// 		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon);
 		
 		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
-		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon); ///< boundary values/ exact solution
+		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_Hartmann<DIM> > (alpha);
 		
+		// Force:
+// 		auto f = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues);
 		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only! 
-		auto f = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues); ///< rhs
+		auto f = std::make_shared< Heat::Hartmann<DIM> > (epsilon,alpha,BoundaryValues);
 		
 		///////////////////////////////////////
 		// TODO: avoid the following functions:
 		
 		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
-		auto BoundaryValues_dual = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon); ///< boundary values/ exact solution
+		auto BoundaryValues_dual =
+			std::make_shared< Heat::BoundaryValues_Hartmann<DIM> > (alpha); ///< boundary values/ exact solution
 		
 		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only!
-		auto f_dual = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues); ///< rhs
+		auto f_dual = std::make_shared< Heat::Hartmann<DIM> > (epsilon,alpha,BoundaryValues); ///< rhs
 		
 		////////////////////////////////////////////////////////////////////////
 		// Begin application
