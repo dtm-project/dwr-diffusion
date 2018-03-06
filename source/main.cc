@@ -4,7 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  * 
- * @date 2018-03-05, UK
+ * @date 2018-03-06, new implementation, UK
  * @date 2017-08-01, Heat/DWR, UK
  * @date 2016-01-15, condiff/SUPG, UK
  * @date 2016-01-12, UK
@@ -34,13 +34,15 @@
 // DEFINES
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MPIX_THREADS 28 //28
-// #define MPIX_THREADS dealii::numbers::invalid_unsigned_int
+// #define MPIX_THREADS 1
+// #define MPIX_THREADS 28
+#define MPIX_THREADS dealii::numbers::invalid_unsigned_int
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
+
+#include <heat/parameters/ParameterHandler.hh>
 
 
 // DEAL.II includes
