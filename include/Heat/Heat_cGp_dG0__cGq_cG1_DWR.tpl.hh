@@ -260,6 +260,10 @@ protected:
 	struct {
 		std::shared_ptr< dealii::Function<dim> > f; ///< Force function.
 		std::shared_ptr< dealii::Function<dim> > f_dual; // TODO remove this
+		
+		std::shared_ptr< dealii::Function<dim> > epsilon;
+		std::shared_ptr< dealii::Function<dim> > BoundaryValues;
+		std::shared_ptr< dealii::Function<dim> > BoundaryValues_dual; // TODO remove this
 	} function;
 	
 	struct {
@@ -284,18 +288,11 @@ protected:
 	} data;
 	
 	
-	
-	
-	
-	
 	//TEST TODO remove this
 	typename storage_data_vectors::reverse_iterator rit_In_uback;
 	
 	
-	// TODO: move those to struct function:
-	std::shared_ptr< dealii::Function<dim> > epsilon;
-	std::shared_ptr< dealii::Function<dim> > BoundaryValues;
-	std::shared_ptr< dealii::Function<dim> > BoundaryValues_dual; // TODO remove this
+	
 	
 	// TODO
 	double L2Error;

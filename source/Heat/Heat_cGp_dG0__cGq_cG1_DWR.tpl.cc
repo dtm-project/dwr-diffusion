@@ -89,7 +89,7 @@ template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 set_epsilon(std::shared_ptr< dealii::Function<dim> > _epsilon) {
-	epsilon = _epsilon;
+	function.epsilon = _epsilon;
 }
 
 
@@ -97,7 +97,7 @@ template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 set_BoundaryValues(std::shared_ptr< dealii::Function<dim> > _BoundaryValues) {
-	BoundaryValues = _BoundaryValues;
+	function.BoundaryValues = _BoundaryValues;
 }
 
 
@@ -106,7 +106,7 @@ template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 set_BoundaryValues_dual(std::shared_ptr< dealii::Function<dim> > _BoundaryValues_dual) {
-	BoundaryValues_dual = _BoundaryValues_dual;
+	function.BoundaryValues_dual = _BoundaryValues_dual;
 }
 
 
@@ -195,9 +195,9 @@ init(const unsigned int global_refinement) {
 	
 	error_estimator.DWR->set_objects(
 		grid,
-		epsilon,
-		BoundaryValues,
-		BoundaryValues_dual, // TODO
+		function.epsilon,
+		function.BoundaryValues,
+		function.BoundaryValues_dual, // TODO
 		function.f,
 		function.f_dual // TODO
 	);
@@ -379,7 +379,7 @@ primal_compute_initial_condition() {
 	
 	dealii::VectorTools::interpolate(
 		*(grid->slabs.front().primal.dof),
-		*(BoundaryValues),
+		*(function.BoundaryValues),
 		*(primal.slab.u_old)
 	);
 	grid->slabs.front().primal.constraints->distribute(*(primal.slab.u_old));
@@ -483,7 +483,7 @@ primal_assemble_system() {
 			
 			local_A(i,j) += (
 				fe_values.shape_grad(i,q) *
-				epsilon->value(fe_values.quadrature_point(q), 0) *
+				function.epsilon->value(fe_values.quadrature_point(q), 0) *
 				fe_values.shape_grad(j,q) *
 				fe_values.JxW(q)
 			);
@@ -524,7 +524,7 @@ template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 primal_set_time(double t_1) {
-	BoundaryValues->set_time(t_1);
+	function.BoundaryValues->set_time(t_1);
 	function.f->set_time(t_1);
 }
 
@@ -639,7 +639,7 @@ primal_solve() {
 		static_cast< dealii::types::boundary_id > (
 			Heat::types::boundary_id::Dirichlet
 		),
-		*(BoundaryValues),
+		*(function.BoundaryValues),
 		boundary_values
 	);
 	
@@ -694,12 +694,12 @@ primal_process_solution(const unsigned int cycle) {
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 	
-// 	BoundaryValues->set_time(data.T);
+// 	function.BoundaryValues->set_time(data.T);
 	
 	dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 												*(primal.iterator.slab->primal.dof),
 												*(primal.slab.u),
-												*(BoundaryValues),
+												*(function.BoundaryValues),
 												difference_per_cell,
 												q_iterated,//dealii::QGauss<dim>(4),//q_iterated,//dealii::QGauss<dim>(4),// q_iterated (alternativ)
 												dealii::VectorTools::L2_norm);
@@ -709,7 +709,7 @@ primal_process_solution(const unsigned int cycle) {
 // 	dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 // 												*(primal.iterator.slab->primal.dof),
 // 												*(primal.slab.u),
-// 												*(BoundaryValues),
+// 												*(function.BoundaryValues),
 // 												difference_per_cell,
 // 												dealii::QGauss<dim>(4),
 // 												dealii::VectorTools::H1_seminorm);
@@ -812,11 +812,11 @@ dual_compute_initial_condition_L2final() {
 // 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
 // 	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 // 	
-// 	BoundaryValues_dual->set_time(data.T);
+// 	function.BoundaryValues_dual->set_time(data.T);
 // 	
 // 	dealii::VectorTools::interpolate(
 // 		*(grid->slabs.back().dual.dof),
-// 		*(BoundaryValues_dual),
+// 		*(function.BoundaryValues_dual),
 // 		*(dual.z_old)
 // 	);
 // 	grid->slabs.back().dual.constraints->distribute(*(dual.z_old));
@@ -835,12 +835,12 @@ dual_compute_initial_condition_L2final() {
 	dual_initial_condition = std::make_shared< dealii::Vector<double> > ();
 	dual_initial_condition->reinit(grid->slabs.back().primal.dof->n_dofs());
 	
-	BoundaryValues_dual->set_time(data.T);
+	function.BoundaryValues_dual->set_time(data.T);
 	
 	dealii::VectorTools::interpolate(
 		*(grid->slabs.back().primal.mapping),
 		*(grid->slabs.back().primal.dof),
-		*(BoundaryValues_dual),
+		*(function.BoundaryValues_dual),
 		*(primal_u_exact)
 	);
 	grid->slabs.back().primal.constraints->distribute(*(primal_u_exact));	
@@ -852,7 +852,7 @@ dual_compute_initial_condition_L2final() {
 		*(grid->slabs.back().primal.mapping),
 		*(grid->slabs.back().primal.dof),
 		*(primal.storage.u->back().x),
-		*(BoundaryValues_dual),
+		*(function.BoundaryValues_dual),
 		difference_per_cell1,
 		q_iterated,//dealii::QGauss<dim>(4),
 		dealii::VectorTools::L2_norm
@@ -888,12 +888,12 @@ dual_compute_initial_condition_L2final() {
 // 	dual_initial_condition = std::make_shared< dealii::Vector<double> > ();
 // 	dual_initial_condition->reinit(grid->slabs.back().dual.dof->n_dofs());
 // 	
-// 	BoundaryValues_dual->set_time(data.T);
+// 	function.BoundaryValues_dual->set_time(data.T);
 // 	
 // // 	dealii::VectorTools::interpolate(
 // // 		*(grid->slabs.back().primal.mapping),
 // // 		*(grid->slabs.back().primal.dof),
-// // 		*(BoundaryValues_dual),
+// // 		*(function.BoundaryValues_dual),
 // // 		*(primal_u_exact)
 // // 	);
 // // 	grid->slabs.back().primal.constraints->distribute(*(primal_u_exact));	
@@ -908,7 +908,7 @@ dual_compute_initial_condition_L2final() {
 // 	dealii::VectorTools::interpolate(
 // 		*(grid->slabs.back().dual.mapping),
 // 		*(grid->slabs.back().dual.dof),
-// 		*(BoundaryValues_dual),
+// 		*(function.BoundaryValues_dual),
 // 		*(u_int_exact)
 // 	);
 // 	grid->slabs.back().dual.constraints->distribute(*(u_int_exact));
@@ -918,7 +918,7 @@ dual_compute_initial_condition_L2final() {
 // 		*(grid->slabs.back().dual.mapping),
 // 		*(grid->slabs.back().dual.dof),
 // 		*(dual.storage.u->back().x),
-// 		*(BoundaryValues_dual),
+// 		*(function.BoundaryValues_dual),
 // 		difference_per_cell2,
 // 		dealii::QGauss<dim>(4),
 // 		dealii::VectorTools::L2_norm
@@ -1098,7 +1098,7 @@ dual_assemble_system() {
 				fe_values.JxW(q));
 			local_A(i,j) +=(
 				(fe_values.shape_grad(i,q) *
-				(epsilon->value(fe_values.quadrature_point(q), 0)*
+				(function.epsilon->value(fe_values.quadrature_point(q), 0)*
 				fe_values.shape_grad(j,q)))*
 				fe_values.JxW(q));
 
@@ -1132,7 +1132,7 @@ template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_set_time(double t_2) {
-	BoundaryValues_dual->set_time(t_2);
+	function.BoundaryValues_dual->set_time(t_2);
 // 	function.f_dual->set_time(t_2);
 }
 
@@ -1247,7 +1247,7 @@ dual_assemble_Je_L2final() {
 	Assert(dual.iterator.slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	dual.Je = 0;
-	BoundaryValues_dual->set_time(data.T);
+	function.BoundaryValues_dual->set_time(data.T);
 	double L2Error_final;
 	L2Error_final = 0;
 	// Computaion of global exact error J(e)
@@ -1258,7 +1258,7 @@ dual_assemble_Je_L2final() {
 		*(grid->slabs.back().primal.mapping),
 		*(grid->slabs.back().primal.dof),
 		*(primal.storage.u->back().x),
-		*(BoundaryValues_dual),
+		*(function.BoundaryValues_dual),
 		difference_per_cell,
 		q_iterated,//dealii::QGauss<dim>(4),
 		dealii::VectorTools::L2_norm
@@ -1323,7 +1323,7 @@ dual_assemble_Je_L2final() {
 		
 	// stationärer Fall	
 		// Set up the exact solution vector
-		BoundaryValues_dual->value_list(fe_values.get_quadrature_points(),
+		function.BoundaryValues_dual->value_list(fe_values.get_quadrature_points(),
 								   exact_solution_values);
 		// Set up the computed solution vector
 		// TODO Interpolate z_N to grid of z_N-1
@@ -1424,7 +1424,7 @@ dual_assemble_Je_L2global() {
 		
 	// stationärer Fall	
 		// Set up the exact solution vector
-		BoundaryValues_dual->value_list(fe_values.get_quadrature_points(),
+		function.BoundaryValues_dual->value_list(fe_values.get_quadrature_points(),
 								   exact_solution_values);
 		// Set up the computed solution vector
 		fe_values.get_function_values(*(rit_In_uback->x),
@@ -1886,12 +1886,12 @@ compute_Ieff_L2final() {
 	dealii::Vector<double> difference_per_cell (grid->slabs.back().tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
-	BoundaryValues_dual->set_time(data.T);
+	function.BoundaryValues_dual->set_time(data.T);
 	dealii::VectorTools::integrate_difference(
 		*(grid->slabs.back().primal.mapping),
 		*(grid->slabs.back().primal.dof),
 		*(primal.storage.u->back().x),
-		*(BoundaryValues_dual),
+		*(function.BoundaryValues_dual),
 		difference_per_cell,
 		q_iterated,//dealii::QGauss<dim>(4),
 		dealii::VectorTools::L2_norm
@@ -2023,12 +2023,12 @@ compute_Ieff_mean_final() {
 	dealii::Vector<double> difference_per_cell (grid->slabs.back().tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
-	BoundaryValues_dual->set_time(data.T);
+	function.BoundaryValues_dual->set_time(data.T);
 	dealii::VectorTools::integrate_difference(
 		*(grid->slabs.back().primal.mapping),
 		*(grid->slabs.back().primal.dof),
 		*(primal.storage.u->back().x),
-		*(BoundaryValues_dual),
+		*(function.BoundaryValues_dual),
 		difference_per_cell,
 		q_iterated,//dealii::QGauss<dim>(4),
 		dealii::VectorTools::mean
@@ -2109,12 +2109,12 @@ compute_Ieff_mean_global() {
 		if (n == grid->slabs.size()) {
 			++In_error;
 			primal.iterator.slab = In_error;
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::mean);
@@ -2124,12 +2124,12 @@ compute_Ieff_mean_global() {
 		} // end if (n == grid->slabs.size())
 		else if (n == 0) {
 			primal.iterator.slab = In_error;
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::mean);
@@ -2139,12 +2139,12 @@ compute_Ieff_mean_global() {
 		}
 		else if (n == 1) {
 			primal.iterator.slab = In_error;
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::mean);
@@ -2155,12 +2155,12 @@ compute_Ieff_mean_global() {
 		else {
 		++In_error;
 		primal.iterator.slab = In_error;
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::mean);
@@ -2230,14 +2230,14 @@ compute_Ieff_point_final() {
 	point_value_difference_final = 0;
 	// Computaion of exact error J(e)
 
-	BoundaryValues_dual->set_time(data.T);
+	function.BoundaryValues_dual->set_time(data.T);
 	dealii::Vector<double> result(1);
 	
 	dealii::VectorTools::point_difference(
 		*(grid->slabs.back().primal.mapping),
 		*(grid->slabs.back().primal.dof),
 		*(primal.storage.u->back().x),
-		*(BoundaryValues_dual),
+		*(function.BoundaryValues_dual),
 		result,
 		dual.evaluation_point
 	);	
@@ -2285,11 +2285,11 @@ compute_global_STL2_error() {
 			const dealii::QTrapez<1> q_trapez;
 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::L2_norm);
@@ -2305,11 +2305,11 @@ compute_global_STL2_error() {
 			const dealii::QTrapez<1> q_trapez;
 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::L2_norm);
@@ -2325,11 +2325,11 @@ compute_global_STL2_error() {
 			const dealii::QTrapez<1> q_trapez;
 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
-			BoundaryValues->set_time(n*data.tau_n);
+			function.BoundaryValues->set_time(n*data.tau_n);
 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::L2_norm);
@@ -2346,11 +2346,11 @@ compute_global_STL2_error() {
 		const dealii::QTrapez<1> q_trapez;
 		const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
-		BoundaryValues->set_time(n*data.tau_n);
+		function.BoundaryValues->set_time(n*data.tau_n);
 		dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
 													*(primal.iterator.slab->primal.dof),
 													*(In_u_error->x),
-													*(BoundaryValues),
+													*(function.BoundaryValues),
 													difference_per_cell,
 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 													dealii::VectorTools::L2_norm);
@@ -2387,11 +2387,11 @@ compute_global_STL2_error() {
 // 			const dealii::QTrapez<1> q_trapez;
 // 			const dealii::QIterated<dim> q_iterated (q_trapez,10);
 // 		std::cout << "tau_n ist = " << data.tau_n << std::endl;
-// 			BoundaryValues->set_time(n*data.tau_n);
+// 			function.BoundaryValues->set_time(n*data.tau_n);
 // 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->dual.mapping),
 // 													*(primal.iterator.slab->dual.dof),
 // 													*(In_u_error->x),
-// 													*(BoundaryValues),
+// 													*(function.BoundaryValues),
 // 													difference_per_cell,
 // 													q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
 // 													dealii::VectorTools::L2_norm);
@@ -2433,7 +2433,7 @@ refine_grids_dwr() {
 // // 		*(primal.iterator.slab->primal.mapping),
 // // 		*(primal.iterator.slab->primal.dof),
 // // 		*primal.slab.u,
-// // 		*BoundaryValues,
+// // 		*function.BoundaryValues,
 // // 		difference_per_cell,
 // // 		q_iterated, //dealii::QGauss<dim> ( primal.iterator.slab->primal.fe->tensor_degree()+1 ),
 // // 		dealii::VectorTools::L2_norm);
