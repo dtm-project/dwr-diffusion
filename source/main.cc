@@ -42,11 +42,6 @@
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
-#include <Heat/Heat_cGp_dG0__cGq_cG1_DWR.tpl.hh>
-#include <Heat/BoundaryValues/BoundaryValues.hh>
-#include <Heat/Forces/Forces.hh>
-#include <Heat/Grid/Grids.hh>
-#include <Heat/types/error_functional.hh>
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
@@ -113,100 +108,74 @@ int main(int argc, char *argv[]) {
 		////////////////////////////////////////////////////////////////////////
 		// Init application
 		//
-		const unsigned int DIM=2;
+// 		const unsigned int DIM=2;
+// 		
+// 		const unsigned int p_primal = 1; // polynomial degree on primal space
+// 		const unsigned int q_dual   = 2; // polynomial degree on dual space
+// 		
+// 		const unsigned int global_refine = 3;
+// 		
+// 		double t0 = 0.0;
+// 		double T  = 0.5;
+// 		double tau_n = 0.01;
+// 		
+// 		unsigned int data_output_patches_primal = p_primal;
+// 		unsigned int data_output_patches_dual = q_dual;
+// 		
+// 		// choose error functional / goal functional type J()
+// 		auto error_functional_type = Heat::types::error_functional::L2_final;
 		
-		const unsigned int p_primal = 1; // polynomial degree on primal space
-		const unsigned int q_dual   = 2; // polynomial degree on dual space
+// 		////////////////////////////////////////////////////////////////////////
+// 		// check
+// 		Assert(
+// 			(p_primal < q_dual),
+// 			dealii::ExcMessage("Error: set p_primal < q_dual")
+// 		);
 		
-		const unsigned int global_refine = 3;
-		
-		double t0 = 0.0;
-		double T  = 0.5;
-		double tau_n = 0.01;
-		
-// 		dealii::Point<DIM> evaluation_point(0.1875, 0.125);
-		dealii::Point<DIM> evaluation_point(0.5, 0.5);
-		
-		unsigned int data_output_patches_primal = p_primal;
-		unsigned int data_output_patches_dual = q_dual;
-		
-		// choose error functional / goal functional type J()
-		auto error_functional_type = Heat::types::error_functional::L2_final;
-		
-		////////////////////////////////////////////////////////////////////////
-		// check
-		Assert(
-			(p_primal < q_dual),
-			dealii::ExcMessage("Error: set p_primal < q_dual")
-		);
-		
-		////////////////////////////////////////////////////////////////////////
-		// grid
-		//
-		auto grid = std::make_shared< Heat::Grid_DWR_0<DIM,1> > ();
+// 		////////////////////////////////////////////////////////////////////////
+// 		// grid
+// 		//
+// 		auto grid = std::make_shared< Heat::Grid_DWR_0<DIM,1> > ();
 		
 		////////////////////////////////////////////////////////////////////////
 		// functions
 		//
 		
-		/// diffusion coefficient epsilon:
-		auto epsilon = std::make_shared< dealii::ConstantFunction<DIM> > (1.e-00);
+// 		/// diffusion coefficient epsilon:
+// 		auto epsilon = std::make_shared< dealii::ConstantFunction<DIM> > (1.e-00);
 		
-		/// coefficient for Hartmann fct:
-		auto alpha = std::make_shared< dealii::ConstantFunction<DIM> > (50.e-00);
-		
-		// boundary values and exact solution:
+// 		// boundary values and exact solution:
 // 		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon);
 		
-		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
-		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_Hartmann<DIM> > (alpha);
-		
-		// Force:
+// 		// Force:
 // 		auto f = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues);
-		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only! 
-		auto f = std::make_shared< Heat::Hartmann<DIM> > (epsilon,alpha,BoundaryValues);
-		
-		///////////////////////////////////////
-		// TODO: avoid the following functions:
-		
-		// Use (alpha) instead of (epsilon) for BV_Hartmann only!
-		auto BoundaryValues_dual =
-			std::make_shared< Heat::BoundaryValues_Hartmann<DIM> > (alpha); ///< boundary values/ exact solution
-		
-		// Use (epsilon,alpha,BV) instead of (epsilon,BV) for Hartmann only!
-		auto f_dual = std::make_shared< Heat::Hartmann<DIM> > (epsilon,alpha,BoundaryValues); ///< rhs
 		
 		////////////////////////////////////////////////////////////////////////
 		// Begin application
 		//
 		
-		auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
+// 		auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
+// 		problem->set_error_functional_type(error_functional_type);
+// 		problem->set_grid(grid);
+// 		problem->set_epsilon(epsilon);
+// 		problem->set_BoundaryValues(BoundaryValues);
+// 		problem->set_f(f);
 		
-		problem->set_error_functional_type(error_functional_type);
-		problem->set_grid(grid);
+// 		problem->set_data(
+// 			p_primal,
+// 			q_dual,
+// 			global_refine,
+// 			t0,
+// 			T,
+// 			tau_n
+// 		);
 		
-		problem->set_epsilon(epsilon);
-		problem->set_BoundaryValues(BoundaryValues);
-		problem->set_BoundaryValues_dual(BoundaryValues_dual);
-		problem->set_f(f);
-		problem->set_f_dual(f_dual);
-		problem->set_evaluation_point(evaluation_point);
+// 		problem->set_data_output_patches(
+// 			data_output_patches_primal,
+// 			data_output_patches_dual
+// 		);
 		
-		problem->set_data(
-			p_primal,
-			q_dual,
-			global_refine,
-			t0,
-			T,
-			tau_n
-		);
-		
-		problem->set_data_output_patches(
-			data_output_patches_primal,
-			data_output_patches_dual
-		);
-		
-		problem->run();
+// 		problem->run();
 		
 		DTM::pout << std::endl << "Goodbye." << std::endl;
 		
