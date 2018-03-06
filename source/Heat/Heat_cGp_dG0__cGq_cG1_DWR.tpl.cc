@@ -257,7 +257,7 @@ primal_init_data_output() {
 	////////////////////////////////////////////////////////////////////////////
 	// INIT DATA OUTPUT
 	//
-	Assert(it_In_grid->primal.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.dof.use_count(), dealii::ExcNotInitialized());
 	
 	DTM::pout << "Heat DWR: primal solution data output: patches = " << primal.data_output_patches << std::endl;
 	
@@ -268,7 +268,7 @@ primal_init_data_output() {
 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
 	
 	primal.data_output.set_DoF_data(
-		it_In_grid->primal.dof
+		it_slab->primal.dof
 	);
 	
 	primal.data_output.set_data_field_names(data_field_names);
@@ -285,7 +285,7 @@ dual_init_data_output() {
 	////////////////////////////////////////////////////////////////////////////
 	// INIT DATA OUTPUT
 	//
-	Assert(rit_In_grid->dual.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.dof.use_count(), dealii::ExcNotInitialized());
 	
 	DTM::pout << "Heat DWR: dual solution   data output: patches = " << dual.data_output_patches << std::endl;
 	
@@ -298,10 +298,10 @@ dual_init_data_output() {
 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
 	
 // 	dual.data_output.set_DoF_data(
-// 		rit_In_grid->dual.dof
+// 		rit_slab->dual.dof
 // 	);
 	dual.data_output.set_DoF_data(
-		it_In_grid->dual.dof
+		it_slab->dual.dof
 	);
 	
 	dual.data_output.set_data_field_names(data_field_names);
@@ -315,24 +315,24 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 primal_reinit() {
 	// now create vectors and matricies for primal problem
-	Assert(it_In_grid->primal.dof.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->dual.dof.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.sp.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.sp.use_count(), dealii::ExcNotInitialized());
 	
-	primal.M.reinit(*(it_In_grid->primal.sp));
-	primal.A.reinit(*(it_In_grid->primal.sp));
-	primal.system_matrix.reinit(*(it_In_grid->primal.sp));
+	primal.M.reinit(*(it_slab->primal.sp));
+	primal.A.reinit(*(it_slab->primal.sp));
+	primal.system_matrix.reinit(*(it_slab->primal.sp));
 	
 	primal.slab.u = std::make_shared< dealii::Vector<double> > ();
-	primal.slab.u->reinit(it_In_grid->primal.dof->n_dofs());
+	primal.slab.u->reinit(it_slab->primal.dof->n_dofs());
 	
 	primal.slab.u_old_interpolated = std::make_shared< dealii::Vector<double> > ();
-	primal.slab.u_old_interpolated->reinit(it_In_grid->primal.dof->n_dofs());
+	primal.slab.u_old_interpolated->reinit(it_slab->primal.dof->n_dofs());
 	dual.u = std::make_shared< dealii::Vector<double> > ();
-	dual.u->reinit(it_In_grid->dual.dof->n_dofs());
+	dual.u->reinit(it_slab->dual.dof->n_dofs());
 	
-	primal.f.reinit(it_In_grid->primal.dof->n_dofs());
-	primal.system_rhs.reinit(it_In_grid->primal.dof->n_dofs());
+	primal.f.reinit(it_slab->primal.dof->n_dofs());
+	primal.system_rhs.reinit(it_slab->primal.dof->n_dofs());
 }
 
 
@@ -341,23 +341,23 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_reinit() {
 	// now create vectors and matricies for dual problem
-	Assert(rit_In_grid->dual.dof.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.sp.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.sp.use_count(), dealii::ExcNotInitialized());
 	
-	dual.M.reinit(*(rit_In_grid->dual.sp));
-	dual.A.reinit(*(rit_In_grid->dual.sp));
-	dual.system_matrix.reinit(*(rit_In_grid->dual.sp));
+	dual.M.reinit(*(rit_slab->dual.sp));
+	dual.A.reinit(*(rit_slab->dual.sp));
+	dual.system_matrix.reinit(*(rit_slab->dual.sp));
 	
 	dual.z = std::make_shared< dealii::Vector<double> > ();
-	dual.z->reinit(rit_In_grid->dual.dof->n_dofs());
+	dual.z->reinit(rit_slab->dual.dof->n_dofs());
 	dual.z_old_interpolated = std::make_shared< dealii::Vector<double> > ();
-	dual.z_old_interpolated->reinit(rit_In_grid->dual.dof->n_dofs());
+	dual.z_old_interpolated->reinit(rit_slab->dual.dof->n_dofs());
 	
-	dual.Je.reinit(rit_In_grid->dual.dof->n_dofs());
-	dual.system_rhs.reinit(rit_In_grid->dual.dof->n_dofs());
+	dual.Je.reinit(rit_slab->dual.dof->n_dofs());
+	dual.system_rhs.reinit(rit_slab->dual.dof->n_dofs());
 	
 	//TEST // TODO
-	dual.Je_old_interpolated.reinit(rit_In_grid->dual.dof->n_dofs());
+	dual.Je_old_interpolated.reinit(rit_slab->dual.dof->n_dofs());
 	
 // 	dual.solution_vectors.resize(0);
 // 	dual.solution_vectors.push_back(dual.u);
@@ -404,9 +404,9 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 primal_assemble_system() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	// ASSEMBLY ////////////////////////////////////////////////////////////////
 	
@@ -420,13 +420,13 @@ primal_assemble_system() {
 // 	
 	// Setup a Gaussian quadrature formula
 	// NOTE: We take p+1 quadrature points
-	dealii::QGauss<dim> quad ( it_In_grid->primal.fe->tensor_degree()+2 ); //alter GaussLobatto
+	dealii::QGauss<dim> quad ( it_slab->primal.fe->tensor_degree()+2 ); //alter GaussLobatto
 	
 	// Setup a FE_Values object.
 	// This is needed to get the needed information from the FiniteElement
 	dealii::FEValues<dim> fe_values(
-		*(it_In_grid->primal.mapping),
-		*(it_In_grid->primal.fe),
+		*(it_slab->primal.mapping),
+		*(it_slab->primal.fe),
 		quad,
 		dealii::update_values | 
 		dealii::update_gradients | // update shape function gradient values
@@ -439,10 +439,10 @@ primal_assemble_system() {
 	// efficiently.
 	// Afterwards they will be distributed into the global (sparse) matrix A.
 	dealii::FullMatrix<double> local_M(
-		it_In_grid->primal.fe->dofs_per_cell, it_In_grid->primal.fe->dofs_per_cell
+		it_slab->primal.fe->dofs_per_cell, it_slab->primal.fe->dofs_per_cell
 	);
 	dealii::FullMatrix<double> local_A(
-		it_In_grid->primal.fe->dofs_per_cell, it_In_grid->primal.fe->dofs_per_cell
+		it_slab->primal.fe->dofs_per_cell, it_slab->primal.fe->dofs_per_cell
 	);
 	
 	// Setup a small vector, to store the global dof indices.
@@ -450,15 +450,15 @@ primal_assemble_system() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		it_In_grid->primal.fe->dofs_per_cell
+		it_slab->primal.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = it_In_grid->primal.dof->begin_active();
-	auto endc = it_In_grid->primal.dof->end();
+	auto cell = it_slab->primal.dof->begin_active();
+	auto endc = it_slab->primal.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// First we have to compute the values of the gradients and
@@ -472,8 +472,8 @@ primal_assemble_system() {
 		
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
-		for (unsigned int i(0); i < it_In_grid->primal.fe->dofs_per_cell; ++i)
-		for (unsigned int j(0); j < it_In_grid->primal.fe->dofs_per_cell; ++j)
+		for (unsigned int i(0); i < it_slab->primal.fe->dofs_per_cell; ++i)
+		for (unsigned int j(0); j < it_slab->primal.fe->dofs_per_cell; ++j)
 		for (unsigned int q(0); q < quad.size(); ++q) {
 			local_M(i,j) += (
 				fe_values.shape_value(i,q) *
@@ -492,7 +492,7 @@ primal_assemble_system() {
 		// Store the global indices into the vector local_dof_indices.
 		// The cell object will give us the information.
 		Assert(
-			(local_dof_indices.size() == it_In_grid->primal.fe->dofs_per_cell),
+			(local_dof_indices.size() == it_slab->primal.fe->dofs_per_cell),
 			dealii::ExcNotInitialized()
 		);
 		cell->get_dof_indices(local_dof_indices);
@@ -500,15 +500,15 @@ primal_assemble_system() {
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
 		Assert(
-			it_In_grid->primal.constraints.use_count(),
+			it_slab->primal.constraints.use_count(),
 			dealii::ExcNotInitialized()
 		);
 		
-		it_In_grid->primal.constraints->distribute_local_to_global(
+		it_slab->primal.constraints->distribute_local_to_global(
 			local_M, local_dof_indices, primal.M
 		);
 		
-		it_In_grid->primal.constraints->distribute_local_to_global(
+		it_slab->primal.constraints->distribute_local_to_global(
 			local_A, local_dof_indices, primal.A
 		);
 	}
@@ -534,19 +534,19 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 primal_assemble_f() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(it_In_grid->primal.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(it_slab->primal.constraints.use_count(), dealii::ExcNotInitialized());
 	Assert(function.f.use_count(), dealii::ExcNotInitialized());
 	primal.f = 0;
 	
-	dealii::QGauss<dim> quad ( it_In_grid->primal.fe->tensor_degree()+2 ); //GaussLobatto
+	dealii::QGauss<dim> quad ( it_slab->primal.fe->tensor_degree()+2 ); //GaussLobatto
 	
 	// Setup a FE_Values object.
 	// This is needed to get the needed information from the FiniteElement
 	dealii::FEValues<dim> fe_values(
-		*(it_In_grid->primal.mapping),
-		*(it_In_grid->primal.fe),
+		*(it_slab->primal.mapping),
+		*(it_slab->primal.fe),
 		quad,
 		dealii::update_values |
 		dealii::update_gradients |
@@ -555,7 +555,7 @@ primal_assemble_f() {
 	);
 	
 	dealii::Vector<double> local_f(
-		it_In_grid->primal.fe->dofs_per_cell
+		it_slab->primal.fe->dofs_per_cell
 	);
 	
 	// Setup a small vector, to store the global dof indices.
@@ -563,14 +563,14 @@ primal_assemble_f() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		it_In_grid->primal.fe->dofs_per_cell
+		it_slab->primal.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblies. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
-	auto cell = it_In_grid->primal.dof->begin_active();
-	auto endc = it_In_grid->primal.dof->end();
+	auto cell = it_slab->primal.dof->begin_active();
+	auto endc = it_slab->primal.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// The reinit of the fe_values object on the current cell.
@@ -581,7 +581,7 @@ primal_assemble_f() {
 
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
-		for (unsigned int i(0); i < it_In_grid->primal.fe->dofs_per_cell; ++i)
+		for (unsigned int i(0); i < it_slab->primal.fe->dofs_per_cell; ++i)
 		for (unsigned int q(0); q < quad.size(); ++q) {
 			local_f(i) +=(
 				(fe_values.shape_value(i,q) *
@@ -596,7 +596,7 @@ primal_assemble_f() {
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		it_In_grid->primal.constraints->distribute_local_to_global(
+		it_slab->primal.constraints->distribute_local_to_global(
 			local_f, local_dof_indices, primal.f
 		);
 	}
@@ -608,10 +608,10 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 primal_interpolate_to_next_grid() {
 	dealii::VectorTools::interpolate_to_different_mesh(
-		*(it_In_grid_previous->primal.dof),
+		*(it_slab_previous->primal.dof),
 		*(primal.slab.u_old),
-		*(it_In_grid->primal.dof),
-		*(it_In_grid->primal.constraints),
+		*(it_slab->primal.dof),
+		*(it_slab->primal.constraints),
 		*(primal.slab.u_old_interpolated)
 	);
 }
@@ -635,7 +635,7 @@ primal_solve() {
 	// apply Dirichlet boundary values
 	std::map<dealii::types::global_dof_index, double> boundary_values;
 	dealii::VectorTools::interpolate_boundary_values(
-		*(it_In_grid->primal.dof),
+		*(it_slab->primal.dof),
 		static_cast< dealii::types::boundary_id > (
 			Heat::types::boundary_id::Dirichlet
 		),
@@ -658,7 +658,7 @@ primal_solve() {
 	
 	////////////////////////////////////////////////////////////////////////////
 	// distribute hanging node constraints on solution
-	it_In_grid->primal.constraints->distribute(*primal.slab.u);
+	it_slab->primal.constraints->distribute(*primal.slab.u);
 }
 
 
@@ -667,10 +667,10 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 interpolate_primal_to_dual() {
 	dealii::FETools::interpolate(
-		*(it_In_grid->primal.dof),
+		*(it_slab->primal.dof),
 		*(primal.slab.u),
-		*(it_In_grid->dual.dof),
-		*(it_In_grid->dual.constraints),
+		*(it_slab->dual.dof),
+		*(it_slab->dual.constraints),
 		*(dual.u)
 	);
 }
@@ -690,14 +690,14 @@ template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 primal_process_solution(const unsigned int cycle) {
-	dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+	dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 	
 // 	BoundaryValues->set_time(data.T);
 	
-	dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-												*(it_In_grid->primal.dof),
+	dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+												*(it_slab->primal.dof),
 												*(primal.slab.u),
 												*(BoundaryValues),
 												difference_per_cell,
@@ -706,8 +706,8 @@ primal_process_solution(const unsigned int cycle) {
 	const double L2_error = difference_per_cell.l2_norm();
 	L2Error = L2_error;
 	
-// 	dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-// 												*(it_In_grid->primal.dof),
+// 	dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+// 												*(it_slab->primal.dof),
 // 												*(primal.slab.u),
 // 												*(BoundaryValues),
 // 												difference_per_cell,
@@ -716,8 +716,8 @@ primal_process_solution(const unsigned int cycle) {
 // 	const double H1_error = difference_per_cell.l2_norm();
 	
 	
-	const unsigned int n_active_cells=it_In_grid->tria->n_active_cells();
-	const unsigned int n_dofs=it_In_grid->primal.dof->n_dofs();
+	const unsigned int n_active_cells=it_slab->tria->n_active_cells();
+	const unsigned int n_dofs=it_slab->primal.dof->n_dofs();
 	
 	std::cout 	<< "Cycle " << cycle << ':'
 				<< std::endl
@@ -752,7 +752,7 @@ dual_compute_initial_condition() {
 		case Heat::types::error_functional::L2_final:
 			dual_compute_initial_condition_L2final();
 			// Initialize rhs_vector dual.Je_old 
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
 			break;
 			
 		case Heat::types::error_functional::L2_global:
@@ -761,8 +761,8 @@ dual_compute_initial_condition() {
 			//
 			dual_compute_initial_condition_L2global();
 			// Initialize rhs_vectors dual.Je_old and dual.Je
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
-			dual.Je.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
+			dual.Je.reinit(rit_slab->dual.dof->n_dofs());
 			// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
 			// and store it in dual.Je_old.
 			dual_assemble_Je_L2global();
@@ -772,14 +772,14 @@ dual_compute_initial_condition() {
 		case Heat::types::error_functional::mean_final:
 			dual_compute_initial_condition_mean_final();
 			// Initialize rhs_vector dual.Je_old 
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
 			break;
 			
 		case Heat::types::error_functional::mean_global:
 			dual_compute_initial_condition_mean_global();
 			// Initialize rhs_vectors dual.Je_old and dual.Je
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
-			dual.Je.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
+			dual.Je.reinit(rit_slab->dual.dof->n_dofs());
 			// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
 			// and store it in dual.Je_old.
 			dual_assemble_Je_mean_global();
@@ -789,7 +789,7 @@ dual_compute_initial_condition() {
 		case Heat::types::error_functional::point:
 			dual_compute_initial_condition_point_final();
 			// Initialize rhs_vectors dual.Je_old
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
 			break;
 			
 		default:
@@ -1017,9 +1017,9 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_assemble_system() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	// ASSEMBLY ////////////////////////////////////////////////////////////////
 	
@@ -1030,13 +1030,13 @@ dual_assemble_system() {
 	
 	// Setup a Gaussian quadrature formula
 	// NOTE: We take p+1 quadrature points
-	dealii::QGauss<dim> quad ( rit_In_grid->dual.fe->tensor_degree()+2);
+	dealii::QGauss<dim> quad ( rit_slab->dual.fe->tensor_degree()+2);
 	
 	// Setup a FE_Values object.
 	// This is needed to get the needed information from the FiniteElement
 	dealii::FEValues<dim> fe_values(
-		*(rit_In_grid->dual.mapping),
-		*(rit_In_grid->dual.fe),
+		*(rit_slab->dual.mapping),
+		*(rit_slab->dual.fe),
 		quad,
 		dealii::update_values | 
 		dealii::update_gradients | // update shape function gradient values
@@ -1049,10 +1049,10 @@ dual_assemble_system() {
 	// efficiently.
 	// Afterwards they will be distributed into the global (sparse) matrix M, A.
 	dealii::FullMatrix<double> local_M(
-		rit_In_grid->dual.fe->dofs_per_cell, rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell, rit_slab->dual.fe->dofs_per_cell
 	);
 	dealii::FullMatrix<double> local_A(
-		rit_In_grid->dual.fe->dofs_per_cell, rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell, rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Setup a small vector, to store the global dof indices.
@@ -1060,15 +1060,15 @@ dual_assemble_system() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = rit_In_grid->dual.dof->begin_active();
-	auto endc = rit_In_grid->dual.dof->end();
+	auto cell = rit_slab->dual.dof->begin_active();
+	auto endc = rit_slab->dual.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// First we have to compute the values of the gradients and
@@ -1083,8 +1083,8 @@ dual_assemble_system() {
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
 		for (unsigned int q(0); q < quad.size(); ++q)
-		for (unsigned int i(0); i < rit_In_grid->dual.fe->dofs_per_cell; ++i)
-		for (unsigned int j(0); j < rit_In_grid->dual.fe->dofs_per_cell; ++j){
+		for (unsigned int i(0); i < rit_slab->dual.fe->dofs_per_cell; ++i)
+		for (unsigned int j(0); j < rit_slab->dual.fe->dofs_per_cell; ++j){
 			// diffusion convection reaction
 			// loop to get the diagonal entries of the Hessian matrix (for Laplace(u_h))
 			// Define a variable to calculate Laplace(u_h)
@@ -1107,19 +1107,19 @@ dual_assemble_system() {
 		// Store the global indices into the vector local_dof_indices.
 		// The cell object will give us the information.
 		Assert(
-			(local_dof_indices.size() == rit_In_grid->dual.fe->dofs_per_cell),
+			(local_dof_indices.size() == rit_slab->dual.fe->dofs_per_cell),
 			dealii::ExcNotInitialized()
 		);
 		cell->get_dof_indices(local_dof_indices);
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+		Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 		
-		rit_In_grid->dual.constraints->distribute_local_to_global(
+		rit_slab->dual.constraints->distribute_local_to_global(
 			local_M, local_dof_indices, dual.M
 		);
-		rit_In_grid->dual.constraints->distribute_local_to_global(
+		rit_slab->dual.constraints->distribute_local_to_global(
 			local_A, local_dof_indices, dual.A
 		);
 	}
@@ -1242,9 +1242,9 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_assemble_Je_L2final() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	dual.Je = 0;
 	BoundaryValues_dual->set_time(data.T);
@@ -1268,21 +1268,21 @@ dual_assemble_Je_L2final() {
 	std::cout << "L2Error_final = " << L2Error_final << std::endl;
 	
 	auto u_final = std::make_shared< dealii::Vector<double> > ();
-	u_final->reinit(rit_In_grid->dual.dof->n_dofs());
+	u_final->reinit(rit_slab->dual.dof->n_dofs());
 	dealii::VectorTools::interpolate_to_different_mesh(
-		*(rit_In_grid_previous->dual.dof),
+		*(rit_slab_previous->dual.dof),
 		*(dual.storage.u->back().x),
-		*(rit_In_grid->dual.dof),
-		*(rit_In_grid->dual.constraints),
+		*(rit_slab->dual.dof),
+		*(rit_slab->dual.constraints),
 		*(u_final)
 	);
 	
- 	dealii::QGauss<dim> quad (rit_In_grid->dual.fe->tensor_degree()+2);
+ 	dealii::QGauss<dim> quad (rit_slab->dual.fe->tensor_degree()+2);
 	
 	// Setup a FE_Values object.
 	dealii::FEValues<dim> fe_values(
-		*(rit_In_grid->dual.mapping),
-		*(rit_In_grid->dual.fe),
+		*(rit_slab->dual.mapping),
+		*(rit_slab->dual.fe),
 		quad,
 		dealii::update_values |
 		dealii::update_gradients |
@@ -1290,7 +1290,7 @@ dual_assemble_Je_L2final() {
 		dealii::update_JxW_values);
 	
 	dealii::Vector<double> local_dual_Je (
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// stationärer Fall
@@ -1302,15 +1302,15 @@ dual_assemble_Je_L2final() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = rit_In_grid->dual.dof->begin_active();
-	auto endc = rit_In_grid->dual.dof->end();
+	auto cell = rit_slab->dual.dof->begin_active();
+	auto endc = rit_slab->dual.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// First we have to compute the values of the gradients and
@@ -1332,7 +1332,7 @@ dual_assemble_Je_L2final() {
 		
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
-		for (unsigned int i(0); i < rit_In_grid->dual.fe->dofs_per_cell; ++i)
+		for (unsigned int i(0); i < rit_slab->dual.fe->dofs_per_cell; ++i)
 		for (unsigned int q(0); q < quad.size(); ++q) {
 			local_dual_Je(i) +=
 				(1./L2Error_final) *
@@ -1344,16 +1344,16 @@ dual_assemble_Je_L2final() {
 		// Store the global indices into the vector local_dof_indices.
 		// The cell object will give us the information.
 		Assert(
-			(local_dof_indices.size() == rit_In_grid->dual.fe->dofs_per_cell),
+			(local_dof_indices.size() == rit_slab->dual.fe->dofs_per_cell),
 			dealii::ExcNotInitialized()
 		);
 		cell->get_dof_indices(local_dof_indices);
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+		Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 		
-		rit_In_grid->dual.constraints->distribute_local_to_global(
+		rit_slab->dual.constraints->distribute_local_to_global(
 			local_dual_Je, local_dof_indices, dual.Je
 		);
 		
@@ -1372,18 +1372,18 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_assemble_Je_L2global() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	dual.Je = 0;
 	
- 	dealii::QGauss<dim> quad (rit_In_grid->dual.fe->tensor_degree()+2);
+ 	dealii::QGauss<dim> quad (rit_slab->dual.fe->tensor_degree()+2);
 	
 	// Setup a FE_Values object.
 	dealii::FEValues<dim> fe_values(
-		*(rit_In_grid->dual.mapping),
-		*(rit_In_grid->dual.fe),
+		*(rit_slab->dual.mapping),
+		*(rit_slab->dual.fe),
 		quad,
 		dealii::update_values |
 		dealii::update_gradients |
@@ -1391,7 +1391,7 @@ dual_assemble_Je_L2global() {
 		dealii::update_JxW_values);
 	
 	dealii::Vector<double> local_dual_Je (
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// stationärer Fall
@@ -1403,15 +1403,15 @@ dual_assemble_Je_L2global() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = rit_In_grid->dual.dof->begin_active();
-	auto endc = rit_In_grid->dual.dof->end();
+	auto cell = rit_slab->dual.dof->begin_active();
+	auto endc = rit_slab->dual.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// First we have to compute the values of the gradients and
@@ -1432,7 +1432,7 @@ dual_assemble_Je_L2global() {
 		
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
-		for (unsigned int i(0); i < rit_In_grid->dual.fe->dofs_per_cell; ++i)
+		for (unsigned int i(0); i < rit_slab->dual.fe->dofs_per_cell; ++i)
 		for (unsigned int q(0); q < quad.size(); ++q) {
 			local_dual_Je(i) +=
 				(1./L2Error_global) *
@@ -1444,16 +1444,16 @@ dual_assemble_Je_L2global() {
 		// Store the global indices into the vector local_dof_indices.
 		// The cell object will give us the information.
 		Assert(
-			(local_dof_indices.size() == rit_In_grid->dual.fe->dofs_per_cell),
+			(local_dof_indices.size() == rit_slab->dual.fe->dofs_per_cell),
 			dealii::ExcNotInitialized()
 		);
 		cell->get_dof_indices(local_dof_indices);
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+		Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 		
-		rit_In_grid->dual.constraints->distribute_local_to_global(
+		rit_slab->dual.constraints->distribute_local_to_global(
 			local_dual_Je, local_dof_indices, dual.Je
 		);
 		
@@ -1471,18 +1471,18 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_assemble_Je_mean_final() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	dual.Je = 0;
 
- 	dealii::QGauss<dim> quad (rit_In_grid->dual.fe->tensor_degree()+2);
+ 	dealii::QGauss<dim> quad (rit_slab->dual.fe->tensor_degree()+2);
 	
 	// Setup a FE_Values object.
 	dealii::FEValues<dim> fe_values(
-		*(rit_In_grid->dual.mapping),
-		*(rit_In_grid->dual.fe),
+		*(rit_slab->dual.mapping),
+		*(rit_slab->dual.fe),
 		quad,
 		dealii::update_values |
 		dealii::update_gradients |
@@ -1490,7 +1490,7 @@ dual_assemble_Je_mean_final() {
 		dealii::update_JxW_values);
 	
 	dealii::Vector<double> local_dual_Je (
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Setup a small vector, to store the global dof indices.
@@ -1498,15 +1498,15 @@ dual_assemble_Je_mean_final() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = rit_In_grid->dual.dof->begin_active();
-	auto endc = rit_In_grid->dual.dof->end();
+	auto cell = rit_slab->dual.dof->begin_active();
+	auto endc = rit_slab->dual.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// First we have to compute the values of the gradients and
@@ -1519,7 +1519,7 @@ dual_assemble_Je_mean_final() {
 		
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
-		for (unsigned int i(0); i < rit_In_grid->dual.fe->dofs_per_cell; ++i)
+		for (unsigned int i(0); i < rit_slab->dual.fe->dofs_per_cell; ++i)
 		for (unsigned int q(0); q < quad.size(); ++q) {
 			local_dual_Je(i) +=
 				(fe_values.shape_value(i,q)* 
@@ -1529,16 +1529,16 @@ dual_assemble_Je_mean_final() {
 		// Store the global indices into the vector local_dof_indices.
 		// The cell object will give us the information.
 		Assert(
-			(local_dof_indices.size() == rit_In_grid->dual.fe->dofs_per_cell),
+			(local_dof_indices.size() == rit_slab->dual.fe->dofs_per_cell),
 			dealii::ExcNotInitialized()
 		);
 		cell->get_dof_indices(local_dof_indices);
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+		Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 		
-		rit_In_grid->dual.constraints->distribute_local_to_global(
+		rit_slab->dual.constraints->distribute_local_to_global(
 			local_dual_Je, local_dof_indices, dual.Je
 		);
 		
@@ -1556,18 +1556,18 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_assemble_Je_mean_global() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	dual.Je = 0;
 	
- 	dealii::QGauss<dim> quad (rit_In_grid->dual.fe->tensor_degree()+2);
+ 	dealii::QGauss<dim> quad (rit_slab->dual.fe->tensor_degree()+2);
 	
 	// Setup a FE_Values object.
 	dealii::FEValues<dim> fe_values(
-		*(rit_In_grid->dual.mapping),
-		*(rit_In_grid->dual.fe),
+		*(rit_slab->dual.mapping),
+		*(rit_slab->dual.fe),
 		quad,
 		dealii::update_values |
 		dealii::update_gradients |
@@ -1575,7 +1575,7 @@ dual_assemble_Je_mean_global() {
 		dealii::update_JxW_values);
 	
 	dealii::Vector<double> local_dual_Je (
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Setup a small vector, to store the global dof indices.
@@ -1583,15 +1583,15 @@ dual_assemble_Je_mean_global() {
 	// "Vector".
 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-		rit_In_grid->dual.fe->dofs_per_cell
+		rit_slab->dual.fe->dofs_per_cell
 	);
 	
 	// Now we do the real work, looping over all cells to compute the cell
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = rit_In_grid->dual.dof->begin_active();
-	auto endc = rit_In_grid->dual.dof->end();
+	auto cell = rit_slab->dual.dof->begin_active();
+	auto endc = rit_slab->dual.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		// First we have to compute the values of the gradients and
@@ -1604,7 +1604,7 @@ dual_assemble_Je_mean_global() {
 		
 		// Now loop over all shape function combinations and quadrature points
 		// to get the assembly.
-		for (unsigned int i(0); i < rit_In_grid->dual.fe->dofs_per_cell; ++i)
+		for (unsigned int i(0); i < rit_slab->dual.fe->dofs_per_cell; ++i)
 		for (unsigned int q(0); q < quad.size(); ++q) {
 			local_dual_Je(i) +=
 				(fe_values.shape_value(i,q)*
@@ -1614,16 +1614,16 @@ dual_assemble_Je_mean_global() {
 		// Store the global indices into the vector local_dof_indices.
 		// The cell object will give us the information.
 		Assert(
-			(local_dof_indices.size() == rit_In_grid->dual.fe->dofs_per_cell),
+			(local_dof_indices.size() == rit_slab->dual.fe->dofs_per_cell),
 			dealii::ExcNotInitialized()
 		);
 		cell->get_dof_indices(local_dof_indices);
 		
 		// Copy the local assembly to the global matrix.
 		// We use the constraint object, to set all constraints with that step.
-		Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+		Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 		
-		rit_In_grid->dual.constraints->distribute_local_to_global(
+		rit_slab->dual.constraints->distribute_local_to_global(
 			local_dual_Je, local_dof_indices, dual.Je
 		);
 		
@@ -1641,9 +1641,9 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_assemble_Je_point_final() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.fe.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(rit_In_grid->dual.constraints.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.fe.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(rit_slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 	
 	dual.Je = 0;
 
@@ -1651,8 +1651,8 @@ dual_assemble_Je_point_final() {
 	// assemblys. For this we need an iterator (kind of a pointer), which allows
 	// us, to iterate over each cell easily.
 	// We initialise it with the first active cell of our triangulation.
-	auto cell = rit_In_grid->dual.dof->begin_active();
-	auto endc = rit_In_grid->dual.dof->end();
+	auto cell = rit_slab->dual.dof->begin_active();
+	auto endc = rit_slab->dual.dof->end();
 	
 	for ( ; cell != endc; ++cell) {
 		for (unsigned int vertex = 0;
@@ -1672,10 +1672,10 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_interpolate_to_next_grid() {
 	dealii::VectorTools::interpolate_to_different_mesh(
-		*(rit_In_grid_previous->dual.dof),
+		*(rit_slab_previous->dual.dof),
 		*(dual.z_old),
-		*(rit_In_grid->dual.dof),
-		*(rit_In_grid->dual.constraints),
+		*(rit_slab->dual.dof),
+		*(rit_slab->dual.constraints),
 		*(dual.z_old_interpolated)
 	);
 	
@@ -1683,10 +1683,10 @@ dual_interpolate_to_next_grid() {
 	// the used error functional, for exmpl L^2error at final timepoint dual.Je 
 	// is always 0.
 	dealii::VectorTools::interpolate_to_different_mesh(
-		*(rit_In_grid_previous->dual.dof),
+		*(rit_slab_previous->dual.dof),
 		dual.Je_old,
-		*(rit_In_grid->dual.dof),
-		*(rit_In_grid->dual.constraints),
+		*(rit_slab->dual.dof),
+		*(rit_slab->dual.constraints),
 		dual.Je_old_interpolated
 	);
 }
@@ -1759,7 +1759,7 @@ dual_solve() {
 	// apply Dirichlet boundary values
 	std::map<dealii::types::global_dof_index, double> boundary_values;
 	dealii::VectorTools::interpolate_boundary_values(
-		*(rit_In_grid->dual.dof),
+		*(rit_slab->dual.dof),
 		static_cast< dealii::types::boundary_id > (
 			Heat::types::boundary_id::Dirichlet
 		),
@@ -1782,7 +1782,7 @@ dual_solve() {
 	
 	////////////////////////////////////////////////////////////////////////////
 	// distribute hanging node constraints on solution
-	rit_In_grid->dual.constraints->distribute(*(dual.z));
+	rit_slab->dual.constraints->distribute(*(dual.z));
 }
 
 
@@ -2102,17 +2102,17 @@ compute_Ieff_mean_global() {
 	const dealii::QTrapez<1> q_trapez;
 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 // 	// Vector for global errors on each cell K (E_K in dealii notation)
-// 	dealii::Vector<double> global_diff (it_In_grid->tria->n_active_cells());
+// 	dealii::Vector<double> global_diff (it_slab->tria->n_active_cells());
 	// Loop over all time-intervals I_n (n=1,...,N(=number of grids))
 	for (unsigned int n{0};n <= grid->slabs.size(); ++n,++In_u_error) {
 		
 		if (n == grid->slabs.size()) {
 			++In_error;
-			it_In_grid = In_error;
+			it_slab = In_error;
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2123,11 +2123,11 @@ compute_Ieff_mean_global() {
 			MeanValue_exact += (data.tau_n/2.)*MeanValue_local;
 		} // end if (n == grid->slabs.size())
 		else if (n == 0) {
-			it_In_grid = In_error;
+			it_slab = In_error;
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2138,11 +2138,11 @@ compute_Ieff_mean_global() {
 			MeanValue_exact += (data.tau_n/2.)*MeanValue_local;
 		}
 		else if (n == 1) {
-			it_In_grid = In_error;
+			it_slab = In_error;
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2154,11 +2154,11 @@ compute_Ieff_mean_global() {
 		}
 		else {
 		++In_error;
-		it_In_grid = In_error;
+		it_slab = In_error;
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2274,20 +2274,20 @@ compute_global_STL2_error() {
 	double L2Error_local;
 	L2Error_local = 0;
 // 	// Vector for global errors on each cell K (E_K in dealii notation)
-// 	dealii::Vector<double> global_diff (it_In_grid->tria->n_active_cells());
+// 	dealii::Vector<double> global_diff (it_slab->tria->n_active_cells());
 	// Loop over all time-intervals I_n (n=1,...,N(=number of grids))
 	for (unsigned int n{0};n <= grid->slabs.size(); ++n,++In_u_error) {
 		
 		if (n == grid->slabs.size()) {
 			++In_error;
-			it_In_grid = In_error;
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+			it_slab = In_error;
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 			const dealii::QTrapez<1> q_trapez;
 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2300,14 +2300,14 @@ compute_global_STL2_error() {
 			L2Error_local += L2_error_error_end;
 		} // end if (n == grid->slabs.size())
 		else if (n == 0) {
-			it_In_grid = In_error;
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+			it_slab = In_error;
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 			const dealii::QTrapez<1> q_trapez;
 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2320,14 +2320,14 @@ compute_global_STL2_error() {
 			L2Error_local += L2_error_error_end;
 		}
 		else if (n == 1) {
-			it_In_grid = In_error;
-			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+			it_slab = In_error;
+			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 			const dealii::QTrapez<1> q_trapez;
 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
 			BoundaryValues->set_time(n*data.tau_n);
-			dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+			dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2341,14 +2341,14 @@ compute_global_STL2_error() {
 		}
 		else {
 		++In_error;
-		it_In_grid = In_error;
-		dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+		it_slab = In_error;
+		dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 		const dealii::QTrapez<1> q_trapez;
 		const dealii::QIterated<dim> q_iterated (q_trapez,20);
 		
 		BoundaryValues->set_time(n*data.tau_n);
-		dealii::VectorTools::integrate_difference (*(it_In_grid->primal.mapping),
-													*(it_In_grid->primal.dof),
+		dealii::VectorTools::integrate_difference (*(it_slab->primal.mapping),
+													*(it_slab->primal.dof),
 													*(In_u_error->x),
 													*(BoundaryValues),
 													difference_per_cell,
@@ -2377,19 +2377,19 @@ compute_global_STL2_error() {
 // 	double L2Error_local;
 // 	L2Error_local = 0;
 // 	Vector for global errors on each cell K (E_K in dealii notation)
-// 	dealii::Vector<double> global_diff (it_In_grid->tria->n_active_cells());
+// 	dealii::Vector<double> global_diff (it_slab->tria->n_active_cells());
 // 	Loop over all time-intervals I_n (n=1,...,N(=number of grids))
 // 	for (unsigned int n{1};n <= grid->slabs.size(); ++n,++In_error) {
 // 		
 // 			++In_u_error;
-// 			it_In_grid = In_error;
-// 			dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+// 			it_slab = In_error;
+// 			dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 // 			const dealii::QTrapez<1> q_trapez;
 // 			const dealii::QIterated<dim> q_iterated (q_trapez,10);
 // 		std::cout << "tau_n ist = " << data.tau_n << std::endl;
 // 			BoundaryValues->set_time(n*data.tau_n);
-// 			dealii::VectorTools::integrate_difference (*(it_In_grid->dual.mapping),
-// 													*(it_In_grid->dual.dof),
+// 			dealii::VectorTools::integrate_difference (*(it_slab->dual.mapping),
+// 													*(it_slab->dual.dof),
 // 													*(In_u_error->x),
 // 													*(BoundaryValues),
 // 													difference_per_cell,
@@ -2412,7 +2412,7 @@ void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 refine_grids_dwr() {
 // // 	auto error_indicators = std::make_shared< dealii::Vector<double> > ();
-// // 	error_indicators->reinit(it_In_grid->tria->n_active_cells());
+// // 	error_indicators->reinit(it_slab->tria->n_active_cells());
 // // 	
 // // 	error_estimator.DWR->estimate(
 // // 		dual.storage.u,
@@ -2425,17 +2425,17 @@ refine_grids_dwr() {
 // // 	
 // // 	/// Compute J(u)-J(u_h)
 // // 	
-// // 	dealii::Vector<double> difference_per_cell (it_In_grid->tria->n_active_cells());
+// // 	dealii::Vector<double> difference_per_cell (it_slab->tria->n_active_cells());
 // // 	const dealii::QTrapez<1> q_trapez;
 // // 	const dealii::QIterated<dim> q_iterated (q_trapez,20);
 // // 	
 // // 	dealii::VectorTools::integrate_difference (
-// // 		*(it_In_grid->primal.mapping),
-// // 		*(it_In_grid->primal.dof),
+// // 		*(it_slab->primal.mapping),
+// // 		*(it_slab->primal.dof),
 // // 		*primal.slab.u,
 // // 		*BoundaryValues,
 // // 		difference_per_cell,
-// // 		q_iterated, //dealii::QGauss<dim> ( it_In_grid->primal.fe->tensor_degree()+1 ),
+// // 		q_iterated, //dealii::QGauss<dim> ( it_slab->primal.fe->tensor_degree()+1 ),
 // // 		dealii::VectorTools::L2_norm);
 // // 	const double L2_error = difference_per_cell.l2_norm();
 // // 	std::cout << "   L2-Fehler = " << L2_error << std::endl;
@@ -2526,14 +2526,14 @@ primal_and_dual_solution_output() {
 	auto In_grid_output(grid->slabs.begin());
 	for (unsigned int n{0}; n <= (data.T-data.t0)/data.tau_n; ++n,++Inth_u_output,++Inth_z_output) {
 		if (n == 0) {
-			it_In_grid = In_grid_output;
+			it_slab = In_grid_output;
 			primal_init_data_output();
 			dual_init_data_output();
 			primal.data_output.write_data("primal", (Inth_u_output->x), n);
 			dual.data_output.write_data("dual", (Inth_z_output->x), n);
 		}
 		else {
-			it_In_grid = In_grid_output;
+			it_slab = In_grid_output;
 			primal_init_data_output();
 			dual_init_data_output();
 			primal.data_output.write_data("primal", Inth_u_output->x, n);
@@ -2569,11 +2569,11 @@ solve_primal_problem() {
 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
 					<< data.primal_time << std::endl;
 			// Set iterators
-			it_In_grid = Inth_primal;
-			it_In_grid_previous = Inth_primal_prev; //needed for primal_interpolate_to_next_grid
+			it_slab = Inth_primal;
+			it_slab_previous = Inth_primal_prev; //needed for primal_interpolate_to_next_grid
 			
-			std::cout << "Zellen it = " << it_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << it_In_grid_previous->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it = " << it_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << it_slab_previous->tria->n_active_cells() << std::endl;
 			
 			// Set time to t0 and compute u_0:
 			primal_set_time(data.t0);
@@ -2600,11 +2600,11 @@ solve_primal_problem() {
 			++In_uth; //increase iterator of list dual.storage.u
 			++In_uthprimal; //increase iterator of list primal.storage.u
 			// Set iterators
-			it_In_grid = Inth_primal;
-			it_In_grid_previous = Inth_primal_prev; //for this timestep it_In_grid=it_In_grid_previous holds
+			it_slab = Inth_primal;
+			it_slab_previous = Inth_primal_prev; //for this timestep it_slab=it_slab_previous holds
 			
-			std::cout << "Zellen it = " << it_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << it_In_grid_previous->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it = " << it_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << it_slab_previous->tria->n_active_cells() << std::endl;
 			
 			primal_reinit();
 			primal_assemble_system();
@@ -2620,17 +2620,17 @@ solve_primal_problem() {
 			//Save current solution for next time step in primal.slab.u_old 
 			// (needed within primal_assemble_rhs() of next timestep)
 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-			primal.slab.u_old->reinit(it_In_grid->primal.dof->n_dofs());
+			primal.slab.u_old->reinit(it_slab->primal.dof->n_dofs());
 			*(primal.slab.u_old) = *(primal.slab.u);
 			// Save current  solution in list primal.storage.u
-			In_uthprimal->x->reinit(it_In_grid->primal.dof->n_dofs());
+			In_uthprimal->x->reinit(it_slab->primal.dof->n_dofs());
 			*(In_uthprimal->x) = *(primal.slab.u);
 			
 			// interpolate current solution to dual fe-room
 			interpolate_primal_to_dual();
 
 			// Save current interpolated solution in list dual.storage.u
-			In_uth->x->reinit(it_In_grid->dual.dof->n_dofs());
+			In_uth->x->reinit(it_slab->dual.dof->n_dofs());
 			*(In_uth->x) = *(dual.u);
 
 		}
@@ -2646,14 +2646,14 @@ solve_primal_problem() {
 			++In_uthprimal; //increase iterator of list primal.storage.u
 			++Inth_primal; //increase iterator of list In (grids)
 			// Set iterators
-			// For t_n, n > 1 it_In_grid_previous should always be the iterator
+			// For t_n, n > 1 it_slab_previous should always be the iterator
 			// that points on the previous element of the list, to which
-			// the iterator it_In_grid points ;-)
-			it_In_grid = Inth_primal;
-			it_In_grid_previous = Inth_primal_prev; 
+			// the iterator it_slab points ;-)
+			it_slab = Inth_primal;
+			it_slab_previous = Inth_primal_prev; 
 			
-			std::cout << "Zellen it = " << it_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << it_In_grid_previous->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it = " << it_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << it_slab_previous->tria->n_active_cells() << std::endl;
 			
 			primal_reinit();
 			primal_assemble_system();
@@ -2668,17 +2668,17 @@ solve_primal_problem() {
 			//Save current solution for next time step in primal.slab.u_old 
 			// (needed within primal_assemble_rhs() of next timestep)
 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-			primal.slab.u_old->reinit(it_In_grid->primal.dof->n_dofs());
+			primal.slab.u_old->reinit(it_slab->primal.dof->n_dofs());
 			*(primal.slab.u_old) = *(primal.slab.u);
 			// Save current  solution in list primal.storage.u
-			In_uthprimal->x->reinit(it_In_grid->primal.dof->n_dofs());
+			In_uthprimal->x->reinit(it_slab->primal.dof->n_dofs());
 			*(In_uthprimal->x) = *(primal.slab.u);
 
 			// interpolate current solution to dual fe-room
 			interpolate_primal_to_dual();
 
 			// Save current interpolated solution (dual.u) in list dual.storage.u
-			In_uth->x->reinit(it_In_grid->dual.dof->n_dofs());
+			In_uth->x->reinit(it_slab->dual.dof->n_dofs());
 			*(In_uth->x) = *(dual.u);
 
 			++Inth_primal_prev; // increase iterator of list "In-1" 
@@ -2715,12 +2715,12 @@ solve_dual_problem() {
 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
 						<< data.dual_time << std::endl;
 			// Set iterators
-			rit_In_grid = Inth_dual;
-			rit_In_grid_previous = Inth_dual_prev;
-			std::cout << "Zellen it = " << rit_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << rit_In_grid_previous->tria->n_active_cells() << std::endl;
+			rit_slab = Inth_dual;
+			rit_slab_previous = Inth_dual_prev;
+			std::cout << "Zellen it = " << rit_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << rit_slab_previous->tria->n_active_cells() << std::endl;
 			// Initialize rhs_vectors dual.Je_old and dual.Je
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
 			// Set time to t_N and compute z_N (at timepoint t_N = 0.5)
 			dual_set_time(data.T);
 			
@@ -2746,11 +2746,11 @@ solve_dual_problem() {
 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
 			++Inth_dual; // "increase" iterator of list In (grids).
 			// Set iterators
-			rit_In_grid = Inth_dual;
-			rit_In_grid_previous = Inth_dual_prev;
+			rit_slab = Inth_dual;
+			rit_slab_previous = Inth_dual_prev;
 			
-			std::cout << "Zellen it = " << rit_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << rit_In_grid_previous->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it = " << rit_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << rit_slab_previous->tria->n_active_cells() << std::endl;
 			
 			dual_reinit();
 			dual_assemble_system();
@@ -2761,16 +2761,16 @@ solve_dual_problem() {
 			dual_solve();
 
 			// Save current solution (dual.z) in list dual.storage.z;
-			In_zth->x->reinit(rit_In_grid->dual.dof->n_dofs());
+			In_zth->x->reinit(rit_slab->dual.dof->n_dofs());
 			*(In_zth->x) = *(dual.z);
 			
 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
 			// next time step in dual.z_old and dual.Je_old
 			// (needed within dual_assemble_rhs() of next time step) 
 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
-			dual.z_old->reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.z_old->reinit(rit_slab->dual.dof->n_dofs());
 			*(dual.z_old) = *(dual.z);
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
 			dual.Je_old = dual.Je;
 			
 			++Inth_dual_prev;
@@ -2788,11 +2788,11 @@ solve_dual_problem() {
 			rit_In_uback = In_uth_test;
 			++In_zth; // increase iterator of list dual.storage.z, points now on first element of list In-Z
 			// Set iterators
-			rit_In_grid = Inth_dual;
-			rit_In_grid_previous = Inth_dual_prev;
+			rit_slab = Inth_dual;
+			rit_slab_previous = Inth_dual_prev;
 			
-			std::cout << "Zellen it = " << rit_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << rit_In_grid_previous->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it = " << rit_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << rit_slab_previous->tria->n_active_cells() << std::endl;
 			
 			dual_reinit();
 			dual_assemble_system();
@@ -2803,7 +2803,7 @@ solve_dual_problem() {
 			dual_solve();
 			
 			// Store z_0 (dual.z) in the first element of list dual.storage.z.
-			In_zth->x->reinit(rit_In_grid->dual.dof->n_dofs());
+			In_zth->x->reinit(rit_slab->dual.dof->n_dofs());
 			*(In_zth->x) = *(dual.z);
 			
 			break;
@@ -2823,11 +2823,11 @@ solve_dual_problem() {
 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
 			++Inth_dual; // "increase" iterator of list In (grids).
 			// Set iterators
-			rit_In_grid = Inth_dual;
-			rit_In_grid_previous = Inth_dual_prev;
+			rit_slab = Inth_dual;
+			rit_slab_previous = Inth_dual_prev;
 			
-			std::cout << "Zellen it = " << rit_In_grid->tria->n_active_cells() << std::endl;
-			std::cout << "Zellen it_prev = " << rit_In_grid_previous->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it = " << rit_slab->tria->n_active_cells() << std::endl;
+			std::cout << "Zellen it_prev = " << rit_slab_previous->tria->n_active_cells() << std::endl;
 			
 			dual_reinit();
 			dual_assemble_system();
@@ -2838,16 +2838,16 @@ solve_dual_problem() {
 			dual_solve();
 			
 			// Save current solution (dual.z) in list dual.storage.z
-			In_zth->x->reinit(rit_In_grid->dual.dof->n_dofs());
+			In_zth->x->reinit(rit_slab->dual.dof->n_dofs());
 			*(In_zth->x) = *(dual.z);
 			
 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
 			// next time step in dual.z_old and dual.Je_old
 			// (needed within dual_assemble_rhs() of next time step) 
 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
-			dual.z_old->reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.z_old->reinit(rit_slab->dual.dof->n_dofs());
 			*(dual.z_old) = *(dual.z);
-			dual.Je_old.reinit(rit_In_grid->dual.dof->n_dofs());
+			dual.Je_old.reinit(rit_slab->dual.dof->n_dofs());
 			dual.Je_old = dual.Je;
 			
 			++Inth_dual_prev;
@@ -2870,14 +2870,14 @@ run() {
 													// bspsw 160 (max Anz an Zeitschritten) ersetzen
 	std::cout << "n von In = " << grid->slabs.size() << std::endl;
 	
-	//TEST iterator it_In_grid_previous
+	//TEST iterator it_slab_previous
 // 	auto Inth_test(grid->slabs.begin());
 // 	auto endIn_test(grid->slabs.end());
 // 	for (unsigned int i{1}; i <= 5; ++i,++Inth_test) {
 // 		Inth_test->tria->refine_global(i);
 // 		std::cout << "Zellen = " << Inth_test->tria->n_active_cells() << std::endl;
 // 	}
-	//TEST ENDE iterator it_In_grid_previous
+	//TEST ENDE iterator it_slab_previous
 	
 // 	//TEST BEGIN
 // 	grid->slabs.front().tria->refine_global(1);

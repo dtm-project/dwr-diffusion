@@ -176,31 +176,35 @@ protected:
 	virtual void dual_do_data_output(const double n);
 	virtual void do_data_output(const double cycle);
 	
+	/// primal: data structures for forward time marching
 	struct {
 		// storage container
 		struct {
 			std::shared_ptr< storage_data_vectors > u; ///< primal solutions list
 		} storage;
 		
+		
+		
+		
+		
+		
 		// TODO:
 		dealii::SparseMatrix<double> M; ///< primal problem mass matrix
 		dealii::SparseMatrix<double> A; ///< primal problem stiffness matrix
 		dealii::SparseMatrix<double> system_matrix; ///< primal problem system matrix (M+tau_n*A)
 		
-		// TODO:
 		struct {
 			std::shared_ptr< dealii::Vector<double> > u; 	///< primal problem solution
 			std::shared_ptr< dealii::Vector<double> > u_old; ///< primal solution from one time step ago
 			std::shared_ptr< dealii::Vector<double> > u_old_interpolated; ///< u_old interpolated to next grid
 		} slab;
 		
-		// TODO:
 		dealii::Vector<double> f; ///< primal problem f
 		dealii::Vector<double> f_old; ///< NEW
 		
-		// TODO:
 		/// primal problem system_rhs vector ((tau_n*f_0) + (M*u_old_interpolated))
 		dealii::Vector<double> system_rhs;
+		
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
@@ -270,18 +274,16 @@ protected:
 		unsigned int dual_timestep_number; ///< dual run variable (current dual timestep)
 	} data;
 	
+	/// iterator for slab struct elements for primal time marching
+	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_slab;
+	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_slab_previous;
 	
-	// TODO:
-	// iterators for list of grids
-	
-	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_In_grid;
-	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_In_grid_previous;/// only for primal/dual_interp_to_next_grid fct.
-	
-	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_In_grid;/// only for rbegin(),rend()
-	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_In_grid_previous; /// only for primal/dual_interp_to_next_grid fct.
+	/// reverse iterator for slab struct elements for dual time marching
+	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_slab;
+	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_slab_previous;
 	
 	
-	//TEST TODO
+	//TEST TODO remove this
 	typename storage_data_vectors::reverse_iterator rit_In_uback;
 	
 	
