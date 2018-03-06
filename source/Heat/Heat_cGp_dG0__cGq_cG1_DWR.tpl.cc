@@ -689,51 +689,45 @@ primal_do_data_output(const double n) {
 template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
-primal_process_solution(const unsigned int cycle) {
-	dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
-	const dealii::QTrapez<1> q_trapez;
-	const dealii::QIterated<dim> q_iterated (q_trapez,20);
-	
-// 	function.BoundaryValues->set_time(data.T);
-	
-	dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
-												*(primal.iterator.slab->primal.dof),
-												*(primal.slab.u),
-												*(function.BoundaryValues),
-												difference_per_cell,
-												q_iterated,//dealii::QGauss<dim>(4),//q_iterated,//dealii::QGauss<dim>(4),// q_iterated (alternativ)
-												dealii::VectorTools::L2_norm);
-	const double L2_error = difference_per_cell.l2_norm();
-	L2Error = L2_error;
-	
-// 	dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
-// 												*(primal.iterator.slab->primal.dof),
-// 												*(primal.slab.u),
-// 												*(function.BoundaryValues),
-// 												difference_per_cell,
-// 												dealii::QGauss<dim>(4),
-// 												dealii::VectorTools::H1_seminorm);
-// 	const double H1_error = difference_per_cell.l2_norm();
-	
-	
-	const unsigned int n_active_cells=primal.iterator.slab->tria->n_active_cells();
-	const unsigned int n_dofs=primal.iterator.slab->primal.dof->n_dofs();
-	
-	std::cout 	<< "Cycle " << cycle << ':'
-				<< std::endl
-				<< " Number of active cells: "
-				<< n_active_cells
-				<< std::endl
-				<< " Number of degrees of freedom: "
-				<< n_dofs
-				<< std::endl;
-				
-	primal.convergence_table.add_value("cycle",cycle);
-	primal.convergence_table.add_value("cells",n_active_cells);
-	primal.convergence_table.add_value("dofs",n_dofs);
-	primal.convergence_table.add_value("tau_n",data.tau_n);
-	primal.convergence_table.add_value("L2atT",L2_error);
-// 	primal.convergence_table.add_value("H1",H1_error);
+primal_process_solution(
+	const double &time,
+	const unsigned int &cycle
+) {
+	// for L2-error compuations
+	{
+		dealii::Vector<double> difference_per_cell (
+			primal.iterator.slab->tria->n_active_cells()
+		);
+		
+		const dealii::QTrapez<1> q_trapez;
+		const dealii::QIterated<dim> quad (q_trapez,20);
+		
+		function.BoundaryValues->set_time(time);
+		dealii::VectorTools::integrate_difference (
+			*(primal.iterator.slab->primal.mapping),
+			*(primal.iterator.slab->primal.dof),
+			*(primal.slab.u),
+			*(function.BoundaryValues),
+			difference_per_cell,
+			quad,
+			dealii::VectorTools::L2_norm
+		);
+		L2Error = difference_per_cell.l2_norm();
+		
+		const unsigned int n_active_cells=primal.iterator.slab->tria->n_active_cells();
+		const unsigned int n_dofs=primal.iterator.slab->primal.dof->n_dofs();
+		
+		std::cout
+			<< "Cycle " << cycle << ':' << std::endl
+			<< " Number of active cells: " << n_active_cells << std::endl
+			<< " Number of degrees of freedom: " << n_dofs << std::endl;
+		
+		primal.convergence_table.add_value("cycle",cycle);
+		primal.convergence_table.add_value("cells",n_active_cells);
+		primal.convergence_table.add_value("dofs",n_dofs);
+		primal.convergence_table.add_value("tau_n",data.tau_n);
+		primal.convergence_table.add_value("L2atT",L2Error);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2920,10 +2914,11 @@ run() {
 		/////////////// begin primal ///////////////////////////////////////////
 		////////////////////////////////////////////////////////////////////////
 		
+		// solve complete forward TMS
 		solve_primal_problem();
 		
 		// For convergence results
-		primal_process_solution(cycle);
+		primal_process_solution(data.T, cycle);
 
 		////////////////////////////////////////////////////////////////////////
 		///////////////////////// end primal ///////////////////////////////////

@@ -165,21 +165,8 @@ template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 generate() {
-	// TODO: Throws Exception in base class.
-	
-	// TODO: remove the following code and set an assert
-	const double a(0.);
-	const double b(1.);
-	
-	auto slab(slabs.begin());
-	auto ends(slabs.end());
-	
-	for (; slab != ends; ++slab) {
-		dealii::GridGenerator::hyper_cube(
-			*(slab->tria),
-			a,b,false
-		);
-	}
+	// base class does not implement this function
+	Assert(false, dealii::ExcNotImplemented());
 }
 
 
@@ -202,28 +189,8 @@ template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 set_boundary_indicators() {
-	// TODO: remove the following code and set an assert
-	
-	// set boundary indicators
-	auto slab(slabs.begin());
-	auto ends(slabs.end());
-	
-	for (; slab != ends; ++slab) {
-		auto cell(slab->tria->begin_active());
-		auto endc(slab->tria->end());
-		
-		for (; cell != endc; ++cell) {
-		if (cell->at_boundary()) {
-		for (unsigned int face(0);
-			face < dealii::GeometryInfo<dim>::faces_per_cell; ++face) {
-			if (cell->face(face)->at_boundary()) {
-				cell->face(face)->set_boundary_id(
-					static_cast<dealii::types::boundary_id> (
-						Heat::types::boundary_id::Dirichlet)
-				);
-			}
-		}}}
-	}
+	// base class does not implement this function
+	Assert(false, dealii::ExcNotImplemented());
 }
 
 

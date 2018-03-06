@@ -45,7 +45,7 @@
 #include <Heat/Heat_cGp_dG0__cGq_cG1_DWR.tpl.hh>
 #include <Heat/BoundaryValues/BoundaryValues.hh>
 #include <Heat/Forces/Forces.hh>
-#include <Heat/Grid/Grid_DWR.tpl.hh>
+#include <Heat/Grid/Grids.hh>
 #include <Heat/types/error_functional.hh>
 
 // DEAL.II includes
@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
 		////////////////////////////////////////////////////////////////////////
 		// grid
 		//
-		auto grid = std::make_shared< Heat::Grid_DWR<DIM,1> > ();
-
+		auto grid = std::make_shared< Heat::Grid_DWR_0<DIM,1> > ();
+		
 		////////////////////////////////////////////////////////////////////////
 		// functions
 		//

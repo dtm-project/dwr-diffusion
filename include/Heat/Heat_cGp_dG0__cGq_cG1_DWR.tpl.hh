@@ -115,8 +115,12 @@ protected:
 	virtual void primal_solve();
 	
 	virtual void interpolate_primal_to_dual();
-		
-	virtual void primal_process_solution(const unsigned int cycle);
+	
+	// TODO remove this function (only for L2-convergence tests)
+	virtual void primal_process_solution(
+		const double &time,
+		const unsigned int &cycle
+	);
 	// end primal problem
 	
 	// dual problem
@@ -262,6 +266,7 @@ protected:
 		std::shared_ptr< dealii::Function<dim> > f_dual; // TODO remove this
 		
 		std::shared_ptr< dealii::Function<dim> > epsilon;
+		
 		std::shared_ptr< dealii::Function<dim> > BoundaryValues;
 		std::shared_ptr< dealii::Function<dim> > BoundaryValues_dual; // TODO remove this
 	} function;
@@ -288,13 +293,10 @@ protected:
 	} data;
 	
 	
-	//TEST TODO remove this
+	// L2 tests:
+	// TODO remove this
 	typename storage_data_vectors::reverse_iterator rit_In_uback;
 	
-	
-	
-	
-	// TODO
 	double L2Error;
 	double L2Error_global;
 };
