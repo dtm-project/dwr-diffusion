@@ -32,6 +32,7 @@
 
 // PROJECT includes
 #include <Heat/Grid/Grid_DWR.tpl.hh>
+
 #include <Heat/ErrorEstimator/ErrorEstimators.hh>
 #include <Heat/Storage/Data_vectors.tpl.hh>
 #include <Heat/types/error_functional.hh>
@@ -272,10 +273,12 @@ protected:
 	
 	// TODO:
 	// iterators for list of grids
-	typename In_grid_data_type<dim,1>::iterator it_In_grid;
-	typename In_grid_data_type<dim,1>::iterator it_In_grid_previous;/// only for primal/dual_interp_to_next_grid fct.
-	typename In_grid_data_type<dim,1>::reverse_iterator rit_In_grid;/// only for rbegin(),rend()
-	typename In_grid_data_type<dim,1>::reverse_iterator rit_In_grid_previous; /// only for primal/dual_interp_to_next_grid fct.
+	
+	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_In_grid;
+	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_In_grid_previous;/// only for primal/dual_interp_to_next_grid fct.
+	
+	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_In_grid;/// only for rbegin(),rend()
+	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_In_grid_previous; /// only for primal/dual_interp_to_next_grid fct.
 	
 	
 	//TEST TODO

@@ -32,17 +32,18 @@
 #ifndef __Grid_DWR_tpl_hh
 #define __Grid_DWR_tpl_hh
 
+// PROJECT includes
 #include <Heat/types/boundary_id.hh>
+#include <Heat/Grid/slabs.tpl.hh>
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/index_set.h>
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/mpi.h>
-#include <deal.II/base/function.h>
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/distributed/grid_refinement.h>
+// #include <deal.II/distributed/tria.h>
+// #include <deal.II/distributed/grid_refinement.h>
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
@@ -51,7 +52,7 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/mapping.h>
 
-#include <deal.II/grid/filtered_iterator.h>
+// #include <deal.II/grid/filtered_iterator.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/grid_generator.h>
@@ -59,7 +60,7 @@
 #include <deal.II/grid/grid_out.h>
 
 #include <deal.II/lac/constraint_matrix.h>
-#include <deal.II/lac/trilinos_sparsity_pattern.h>
+#include <deal.II/lac/sparsity_pattern.h>
 
 #include <deal.II/numerics/vector_tools.h>
 
@@ -91,42 +92,15 @@ public:
 	
 	virtual void distribute();
 	
-	/// slab: collects data structures and functions of a space-time slab
-	struct slab {
-		std::shared_ptr< dealii::Triangulation<dim> > tria;
-		double t_m; ///< left endpoint of \f$ I_n=(t_m, t_n) \f$
-		double t_n; ///< right endpoint of \f$ I_n=(t_m, t_n) \f$
-		
-		struct {
-			std::shared_ptr< dealii::DoFHandler<dim> > dof;
-			std::shared_ptr< dealii::FiniteElement<dim> > fe;
-			std::shared_ptr< dealii::Mapping<dim> >  mapping;
-			
-			std::shared_ptr< dealii::ConstraintMatrix > constraints;
-			std::shared_ptr< dealii::SparsityPattern > sp;
-		} primal;
-		
-		struct {
-			std::shared_ptr< dealii::DoFHandler<dim> > dof;
-			std::shared_ptr< dealii::FiniteElement<dim> > fe;
-			std::shared_ptr< dealii::Mapping<dim> >  mapping;
-			
-			std::shared_ptr< dealii::ConstraintMatrix > constraints;
-			std::shared_ptr< dealii::SparsityPattern > sp;
-		} dual;
-		
-		double tau_n() const { return (t_n-t_m); };
-	};
+	DTM::types::spacetime::DWR::slabs<dim> slabs;
 	
-	std::list<struct slab> slabs;
+// 	std::list<struct slab> slabs;
 	
 	dealii::GridIn<dim>            grid_in;
 	dealii::GridOut                grid_out;
 }; // end class Grid_DWR
 
-// TODO rename to slabs
-template<int dim, int spacedim>
-using In_grid_data_type = std::list<struct Grid_DWR<dim,spacedim>::slab>;
+
 
 } // namespace
 
