@@ -183,9 +183,11 @@ protected:
 			std::shared_ptr< storage_data_vectors > u; ///< primal solutions list
 		} storage;
 		
-		
-		
-		
+		struct {
+			/// iterator for slab struct elements for forward time marching
+			typename DTM::types::spacetime::DWR::slabs<dim>::iterator slab;
+			typename DTM::types::spacetime::DWR::slabs<dim>::iterator slab_previous;
+		} iterator;
 		
 		
 		// TODO:
@@ -222,6 +224,13 @@ protected:
 			
 			std::shared_ptr< storage_data_vectors > eta; ///< error_indicators list
 		} storage;
+		
+		struct {
+			/// reverse iterator for slab struct elements for backward time marching
+			typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator slab;
+			typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator slab_previous;
+		} iterator;
+		
 		
 		// TODO:
 		std::shared_ptr< dealii::Vector<double> > u; ///< primal problem solution on dual space
@@ -274,13 +283,9 @@ protected:
 		unsigned int dual_timestep_number; ///< dual run variable (current dual timestep)
 	} data;
 	
-	/// iterator for slab struct elements for primal time marching
-	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_slab;
-	typename DTM::types::spacetime::DWR::slabs<dim>::iterator it_slab_previous;
 	
-	/// reverse iterator for slab struct elements for dual time marching
-	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_slab;
-	typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator rit_slab_previous;
+	
+	
 	
 	
 	//TEST TODO remove this
