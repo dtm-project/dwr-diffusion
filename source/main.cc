@@ -47,7 +47,6 @@
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
-#include <deal.II/base/function_parser.h>
 #include <deal.II/base/logstream.h>
 #include <deal.II/base/utilities.h>
 
@@ -76,7 +75,7 @@ int main(int argc, char *argv[]) {
 	
 	try {
 		////////////////////////////////////////////////////////////////////////
-		// Prepare output logging for deal.II
+		// Init application
 		//
 		
 		// Attach deallog to process output
@@ -85,13 +84,45 @@ int main(int argc, char *argv[]) {
 		DTM::pout
 			<< "****************************************"
 			<< "****************************************"
-			<< std::endl
-		;
+			<< std::endl;
 		
 		DTM::pout
-			<< "Hej, here is process " << MyPID+1 << " from " << NumProc
-			<< std::endl
-		;
+			<< "Hej, here is process " << MyPID+1 << " from " << NumProc << std::endl;
+		
+		// Check if an input parameter file is given.
+		AssertThrow(
+			!(argc < 2),
+			dealii::ExcMessage (
+				std::string ("===>\tUSAGE: ./dwr-heat <Input_Parameter_File.prm>"))
+		);
+		
+		// Check if the given input parameter file can be opened.
+		const std::string input_parameter_filename(argv[1]);
+		{
+			std::ifstream input_parameter_file(input_parameter_filename.c_str());
+			// Test if an Input Parameter File is potentially given.
+			AssertThrow(
+				input_parameter_file,
+				dealii::ExcMessage (
+					std::string ("===>\tERROR: Input parameter file <")
+					+ input_parameter_filename + "> not found."
+				)
+			);
+		}
+		
+		// Prepare input parameter handling:
+		auto parameter_handler =
+			std::make_shared< heat::dwr::ParameterHandler > ();
+		parameter_handler->parse_input(argv[1]);
+		
+		// Get minimal set of input parameters to drive the correct simulator
+		unsigned int dimension;
+		{
+			// Problem dimension
+			dimension = static_cast<unsigned int> (
+				parameter_handler->get_integer("dim")
+			);
+		}
 		
 		//
 		////////////////////////////////////////////////////////////////////////
@@ -108,74 +139,29 @@ int main(int argc, char *argv[]) {
 		
 		
 		////////////////////////////////////////////////////////////////////////
-		// Init application
+		// Begin application
 		//
-// 		const unsigned int DIM=2;
-// 		
-// 		const unsigned int p_primal = 1; // polynomial degree on primal space
-// 		const unsigned int q_dual   = 2; // polynomial degree on dual space
-// 		
-// 		const unsigned int global_refine = 3;
-// 		
-// 		double t0 = 0.0;
-// 		double T  = 0.5;
-// 		double tau_n = 0.01;
-// 		
-// 		unsigned int data_output_patches_primal = p_primal;
-// 		unsigned int data_output_patches_dual = q_dual;
-// 		
-// 		// choose error functional / goal functional type J()
-// 		auto error_functional_type = Heat::types::error_functional::L2_final;
 		
-// 		////////////////////////////////////////////////////////////////////////
-// 		// check
-// 		Assert(
-// 			(p_primal < q_dual),
-// 			dealii::ExcMessage("Error: set p_primal < q_dual")
-// 		);
+		// create simulator
+// 		std::shared_ptr< DTM::Problem > problem;
+		DTM::pout << "dwr-heat: dimension dim = " << dimension << std::endl;
+		
+		// select simulator
+// 		switch (dimension) {
+// 			case 2:
+// 			auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
+// 			break;
+// 		}
 		
 // 		////////////////////////////////////////////////////////////////////////
 // 		// grid
 // 		//
 // 		auto grid = std::make_shared< Heat::Grid_DWR_0<DIM,1> > ();
 		
-		////////////////////////////////////////////////////////////////////////
-		// functions
-		//
-		
-// 		/// diffusion coefficient epsilon:
-// 		auto epsilon = std::make_shared< dealii::ConstantFunction<DIM> > (1.e-00);
-		
-// 		// boundary values and exact solution:
-// 		auto BoundaryValues = std::make_shared< Heat::BoundaryValues_MH<DIM> > (epsilon);
-		
-// 		// Force:
-// 		auto f = std::make_shared< Heat::Moving_Hump<DIM> > (epsilon,BoundaryValues);
-		
-		////////////////////////////////////////////////////////////////////////
-		// Begin application
-		//
-		
-// 		auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
+// 		// choose error functional / goal functional type J()
+// 		auto error_functional_type = Heat::types::error_functional::L2_final;
 // 		problem->set_error_functional_type(error_functional_type);
 // 		problem->set_grid(grid);
-// 		problem->set_epsilon(epsilon);
-// 		problem->set_BoundaryValues(BoundaryValues);
-// 		problem->set_f(f);
-		
-// 		problem->set_data(
-// 			p_primal,
-// 			q_dual,
-// 			global_refine,
-// 			t0,
-// 			T,
-// 			tau_n
-// 		);
-		
-// 		problem->set_data_output_patches(
-// 			data_output_patches_primal,
-// 			data_output_patches_dual
-// 		);
 		
 // 		problem->run();
 		

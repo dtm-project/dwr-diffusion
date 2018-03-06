@@ -1,0 +1,40 @@
+# Overall space dimension:
+set dim = 2
+
+subsection Parameter Specification
+    ############################################################################
+    # Diffusion
+    set diffusion epsilon function = ConstantFunction
+    set diffusion epsilon options  = "1.0"
+    
+    ############################################################################
+    # Force
+    set force function = Force0
+    set force options  = ""
+    
+    ############################################################################
+    # Dirichlet boundary value functions
+    set dirichlet boundary u_D function = ZeroFunction
+    set dirichlet boundary u_D options  = ""
+    
+    ############################################################################
+    # Initial value functions
+    set initial displacement u0 function = ZeroFunction
+    set initial displacement u0 options  = ""
+end
+
+subsection Mesh Specification    
+    # Global refinement of the initial mesh
+    set global refinement = 0
+    
+    # Polynomial degrees
+    set primal p = 1
+    set dual q   = 2
+end
+
+subsection Time Integration
+    set initial time   = 0.0
+    set final time     = 1.0
+    set time step size = 1.0e-1
+end
+
