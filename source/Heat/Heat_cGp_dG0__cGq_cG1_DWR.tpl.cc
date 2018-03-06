@@ -1789,54 +1789,6 @@ dual_solve() {
 template<int dim>
 void
 Heat_cGp_dG0__cGq_cG1_DWR<dim>::
-dual_process_solution(const unsigned int cycle) {
-	dealii::Vector<double> difference_per_cell (rit_In_grid->tria->n_active_cells());
-	const dealii::QTrapez<1> q_trapez;
-	const dealii::QIterated<dim> q_iterated (q_trapez,20);
-	
-	dealii::VectorTools::integrate_difference (*(rit_In_grid->dual.mapping),
-												*(rit_In_grid->dual.dof),
-												*(dual.z),
-												*(BoundaryValues_dual),
-												difference_per_cell,
-												q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
-												dealii::VectorTools::L2_norm);
-	const double L2_error = difference_per_cell.l2_norm();
-	
-	dealii::VectorTools::integrate_difference (*(rit_In_grid->dual.mapping),
-												*(rit_In_grid->dual.dof),
-												*(dual.z),
-												*(BoundaryValues_dual),
-												difference_per_cell,
-												dealii::QGauss<dim>(6),
-												dealii::VectorTools::H1_seminorm);
-	const double H1_error = difference_per_cell.l2_norm();
-	
-	
-	const unsigned int n_active_cells=rit_In_grid->tria->n_active_cells();
-	const unsigned int n_dofs=rit_In_grid->dual.dof->n_dofs();
-	
-	std::cout 	<< "Cycle " << cycle << ':'
-				<< std::endl
-				<< " Number of active cells: "
-				<< n_active_cells
-				<< std::endl
-				<< " Number of degrees of freedom: "
-				<< n_dofs
-				<< std::endl;
-				
-	dual.convergence_table.add_value("cycle",cycle);
-	dual.convergence_table.add_value("cells",n_active_cells);
-	dual.convergence_table.add_value("dofs",n_dofs);
-	dual.convergence_table.add_value("tau_n",data.tau_n);
-	dual.convergence_table.add_value("L2",L2_error);
-	dual.convergence_table.add_value("H1",H1_error);	
-}
-
-
-template<int dim>
-void
-Heat_cGp_dG0__cGq_cG1_DWR<dim>::
 dual_do_data_output(const double n) {
 	const double solution_time = n;
 	
@@ -2983,9 +2935,6 @@ run() {
 		////////////////////////////////////////////////////////////////////////
 		
 		solve_dual_problem();
-
-		// For convergence results
-		dual_process_solution(cycle);
 		
 		////////////////////////////////////////////////////////////////////////
 		///////////////////////// end dual /////////////////////////////////////

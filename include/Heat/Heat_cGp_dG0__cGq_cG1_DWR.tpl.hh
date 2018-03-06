@@ -151,9 +151,8 @@ protected:
 	virtual void dual_assemble_rhs_mean_final();
 	virtual void dual_assemble_rhs_mean_global();
 	virtual void dual_assemble_rhs_point_final();
-	virtual void dual_solve();
 	
-	virtual void dual_process_solution(const unsigned int cycle);
+	virtual void dual_solve();
 	// end dual problem
 	
 	virtual void refine_grids_dwr();
@@ -206,7 +205,6 @@ protected:
 		DTM::DataOutput<dim> data_output;
 		unsigned int data_output_patches;
 		
-		// TODO:
 		// Convergence Table
 		dealii::ConvergenceTable convergence_table;
 	} primal;
@@ -232,21 +230,15 @@ protected:
 		Heat::types::error_functional Je_type;		 ///< target functional type for rhs of dual problem
 		dealii::Vector<double> Je;                   ///< dual problem rhs
 		dealii::Vector<double> Je_old;                   ///< only for convergence tests
-		
-		//TEST // TODO:
-		dealii::Vector<double> Je_old_interpolated;		///< Je_old interpolated to next grid
-		dealii::Vector<double> system_rhs;			 ///< dual problem system_rhs vector 
-													 ///  ((M-(tau_n/2)*A)*z_old_interpolated+(tau_n/2)*(Je_old+Je_new))
+		dealii::Vector<double> Je_old_interpolated; ///< Je_old interpolated to next grid
+		dealii::Vector<double> system_rhs; ///< dual problem system_rhs vector 
+										   ///  ((M-(tau_n/2)*A)*z_old_interpolated+(tau_n/2)*(Je_old+Je_new))
 		dealii::Point<dim> evaluation_point;
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
 		unsigned int data_output_patches;
 		std::vector< std::shared_ptr< dealii::Vector<double> > > solution_vectors;
-		
-		// TODO:
-		// Convergence Table
-		dealii::ConvergenceTable convergence_table;
 	} dual;
 	
 	std::shared_ptr< Heat::Grid_DWR<dim,1> > grid;
