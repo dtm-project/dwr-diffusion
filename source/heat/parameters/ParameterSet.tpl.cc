@@ -58,8 +58,8 @@ ParameterSet(
 		);
 		
 		fe.element_type = handler->get("element type");
-		fe.p = static_cast<unsigned int> (handler->get_integer("p"));
-		fe.q = static_cast<unsigned int> (handler->get_integer("q"));
+		fe.p = static_cast<unsigned int> (handler->get_integer("primal p"));
+		fe.q = static_cast<unsigned int> (handler->get_integer("dual q"));
 	}
 	handler->leave_subsection();
 	

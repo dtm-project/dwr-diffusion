@@ -43,6 +43,7 @@
 #include <DTM++/base/LogStream.hh>
 
 #include <heat/parameters/ParameterHandler.hh>
+#include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 
 // DEAL.II includes
@@ -147,6 +148,12 @@ int main(int argc, char *argv[]) {
 		DTM::pout << "dwr-heat: dimension dim = " << dimension << std::endl;
 		
 		// select simulator
+		auto problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
+		// run the simulator
+		problem->set_input_parameters(parameter_handler);
+// 		// set grid
+// 		problem->run();
+		
 // 		switch (dimension) {
 // 			case 2:
 // 			auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
@@ -157,11 +164,10 @@ int main(int argc, char *argv[]) {
 // 		// grid
 // 		//
 // 		auto grid = std::make_shared< Heat::Grid_DWR_0<DIM,1> > ();
+// 		problem->set_grid(grid);
 		
 // 		// choose error functional / goal functional type J()
-// 		auto error_functional_type = Heat::types::error_functional::L2_final;
-// 		problem->set_error_functional_type(error_functional_type);
-// 		problem->set_grid(grid);
+// 		auto error_functional_type = Heat::types::error_functional::L2_global;
 		
 // 		problem->run();
 		
