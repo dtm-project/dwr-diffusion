@@ -94,11 +94,13 @@ run() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	
-	init_grid();
-	init_storage();
+	init_functions();
 	
+	init_grid();
 	grid->set_boundary_indicators();
 	grid->distribute();
+	
+	init_storage();
 	
 	solve_primal_problem();
 }
@@ -114,6 +116,9 @@ init_grid() {
 	////////////////////////////////////////////////////////////////////////////
 	// initialize slabs of grid
 	//
+	
+	Assert(parameter_set->tau_n > 0, dealii::ExcInvalidState());	
+	
 	grid->initialize_slabs(
 		parameter_set->fe.p,
 		parameter_set->fe.q,
@@ -147,6 +152,15 @@ init_grid() {
 }
 
 
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+init_functions() {
+	// TODO: read those from parameter input file
+	function.u_0 = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+}
+
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
@@ -160,39 +174,51 @@ init_storage() {
 	///////////////////////////////////////////////////////////
 	// primal solution dof vectors u (on primal solution space)
 	//
-	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	primal.storage.u->resize(N+1);
+	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<2> > ();
+	primal.storage.u->resize(N);
+	
+	auto slab = grid->slabs.begin();
 	for (auto &element : *primal.storage.u) {
-	for (unsigned int j{0}; j < element.x.size(); ++j) {
-		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-	}}
+		for (unsigned int j{0}; j < element.x.size(); ++j) {
+			// create shared_ptr to Vector<double>
+			element.x[j] = std::make_shared< dealii::Vector<double> > ();
+			
+			// init. Vector<double> with n_dofs components
+			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+			
+			element.x[j]->reinit(
+				slab->primal.dof->n_dofs()
+			);
+		}
+		++slab;
+	}
 	
-	/////////////////////////////////////////////////////////
-	// primal solution dof vectors u (on dual solution space)
-	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	dual.storage.u->resize(N+1);
-	for (auto &element : *dual.storage.u) {
-	for (unsigned int j{0}; j < element.x.size(); ++j) {
-		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-	}}
-	
-	///////////////////////////////////////////////////////
-	// dual solution dof vectors z (on dual solution space)
-	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	dual.storage.z->resize(N+1);
-	for (auto &element : *dual.storage.z) {
-	for (unsigned int j{0}; j < element.x.size(); ++j) {
-		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-	}}
-	
-	/////////////////////////////////////////////////
-	// auxiliary vectors eta (on dual solution space)
-	dual.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	dual.storage.eta->resize(N);
-	for (auto &element : *dual.storage.eta) {
-	for (unsigned int j{0}; j < element.x.size(); ++j) {
-		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-	}}
+// 	/////////////////////////////////////////////////////////
+// 	// primal solution dof vectors u (on dual solution space)
+// 	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.u->resize(N+1);
+// 	for (auto &element : *dual.storage.u) {
+// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 	}}
+// 	
+// 	///////////////////////////////////////////////////////
+// 	// dual solution dof vectors z (on dual solution space)
+// 	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.z->resize(N+1);
+// 	for (auto &element : *dual.storage.z) {
+// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 	}}
+// 	
+// 	/////////////////////////////////////////////////
+// 	// auxiliary vectors eta (on dual solution space)
+// 	dual.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.eta->resize(N);
+// 	for (auto &element : *dual.storage.eta) {
+// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 	}}
 }
 
 
@@ -212,14 +238,210 @@ solve_primal_problem() {
 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
 	primal.iterator.slab_previous = grid->slabs.end();
 	primal.iterator.slab = grid->slabs.begin();
+	auto &slab = primal.iterator.slab;
 	
 	// init iterator.u to first space-time slab Omega x I_0 storage container
 	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
 	primal.iterator.u = primal.storage.u->begin();
+	auto &u = primal.iterator.u;
 	
 	// init data output
 	primal_init_data_output();
+	
+	// forward TMS loop:
+	
+	////////////////////////////////////////////////////////////////////////////
+	// SOLVING /////////////////////////////////////////////////////////////////
+	//
+	
+	double tm(parameter_set->t0);
+	double t0(tm);
+	
+	////////////////////////////////////////////////////////////////////////////
+	// setup initial values ////////////////////////////////////////////////////
+	// interpolate/project initial pressure
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+// 	Assert(u1.use_count(), dealii::ExcNotInitialized());
+	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+	
+	function.u_0->set_time(t0);
+	
+	dealii::VectorTools::interpolate(
+		*slab->primal.mapping,
+		*slab->primal.dof,
+		*function.u_0,
+		*u->x[0]
+	);
+	
+	// TODO: debug output of I(u_0)
+	primal_do_data_output();
 }
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_do_data_output() {
+	
+	// TODO
+	primal.data_output.write_data(
+		"primal",
+		primal.iterator.u->x[0],
+		0.0 /*solution_time*/
+	);
+}
+
+
+
+// 	for (unsigned int n{0}; n <= ((data.T-data.t0)/data.tau_n); ++n) {
+// 		if (n == 0) {
+// 			// Compute initial condition u_0 and store it in primal.slab.u_old,
+// 			// interpolate it to dual FE-room and store it in dual.u and last
+// 			// but not least store this in the first element of list dual.storage.u.
+// 			
+// 			// Output of time_step 1 at time-point t_0
+// 			data.primal_time = (n*data.tau_n); 
+// 			++data.primal_timestep_number;
+// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
+// 					<< data.primal_time << std::endl;
+// 			// Set iterators
+// 			primal.iterator.slab = Inth_primal;
+// 			primal.iterator.slab_previous = Inth_primal_prev; //needed for primal_interpolate_to_next_grid
+// 			
+// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			
+// 			// Set time to t0 and compute u_0:
+// 			__sync_synchronize();
+// 			primal_set_time(data.t0);
+// 			__sync_synchronize();
+// 			
+// 			primal_compute_initial_condition();
+// 
+// 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
+// 			// in the first element of list dual.storage.u
+// 			dual.storage.u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
+// 			*(dual.storage.u->front().x) = *(dual.u);
+// 			// Store initial condition (primal.slab.u_old) in the first element of list In-uprimal
+// 			primal.storage.u->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
+// 			*(primal.storage.u->front().x) = *(primal.slab.u_old);
+// 			
+// 		}
+// 		else if (n == 1) {
+// 			// Compute u_1 on same grid as u_0.
+// 
+// 			// Output of time_step 2 at time-point t_1
+// 			data.primal_time = (n*data.tau_n); 
+// 			++data.primal_timestep_number;
+// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
+// 					<< data.primal_time << std::endl;
+// 
+// 			++In_uth; //increase iterator of list dual.storage.u
+// 			++In_uthprimal; //increase iterator of list primal.storage.u
+// 			// Set iterators
+// 			primal.iterator.slab = Inth_primal;
+// 			primal.iterator.slab_previous = Inth_primal_prev; //for this timestep primal.iterator.slab=primal.iterator.slab_previous holds
+// 			
+// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			
+// 			primal_reinit();
+// 			primal_assemble_system();
+// 			
+// 			__sync_synchronize();
+// 			volatile const double ttt{n*data.tau_n};
+// 			primal_set_time(ttt);
+// 			__sync_synchronize();
+// 			
+// // 				std::cout << "new time = " << (n*data.tau_n)-(data.tau_n/2.) << std::endl;
+// // 				function.f->set_time((n*data.tau_n)-(data.tau_n/2.));//TEST MPR statt rechtsseitige Boxregel
+// 			primal_assemble_f();
+// 			
+// 			primal_interpolate_to_next_grid();
+// 			
+// 			primal_assemble_rhs();
+// 			
+// 			primal_solve();
+// 			
+// 			
+// // 				primal.M.print(std::cout);
+// // 				std::cout << "" << std::endl;
+// 			//Save current solution for next time step in primal.slab.u_old 
+// 			// (needed within primal_assemble_rhs() of next timestep)
+// 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
+// 			primal.slab.u_old->reinit(primal.iterator.slab->primal.dof->n_dofs());
+// 			*(primal.slab.u_old) = *(primal.slab.u);
+// 			// Save current  solution in list primal.storage.u
+// 			In_uthprimal->x->reinit(primal.iterator.slab->primal.dof->n_dofs());
+// 			*(In_uthprimal->x) = *(primal.slab.u);
+// 			
+// 			// interpolate current solution to dual fe-room
+// 			interpolate_primal_to_dual();
+// 
+// 			// Save current interpolated solution in list dual.storage.u
+// 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
+// 			*(In_uth->x) = *(dual.u);
+// 
+// 		}
+// 		else {
+// 			// Compute u_2,...,u_N
+// 
+// 			// Output of time_steps 3,...,N+1 at time-points t_2,...,t_N
+// 			data.primal_time = (n*data.tau_n); 
+// 			++data.primal_timestep_number;
+// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
+// 					<< data.primal_time << std::endl;
+// 			++In_uth; //increase iterator of list dual.storage.u
+// 			++In_uthprimal; //increase iterator of list primal.storage.u
+// 			++Inth_primal; //increase iterator of list In (grids)
+// 			// Set iterators
+// 			// For t_n, n > 1 primal.iterator.slab_previous should always be the iterator
+// 			// that points on the previous element of the list, to which
+// 			// the iterator primal.iterator.slab points ;-)
+// 			primal.iterator.slab = Inth_primal;
+// 			primal.iterator.slab_previous = Inth_primal_prev; 
+// 			
+// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			
+// 			primal_reinit();
+// 			primal_assemble_system();
+// 			
+// 			__sync_synchronize();
+// 			volatile const double ttt{n*data.tau_n};
+// 			primal_set_time(ttt);
+// 			__sync_synchronize();
+// 			
+// // 				std::cout << "new time = " << (n*data.tau_n)-(data.tau_n/2.) << std::endl;
+// // 				function.f->set_time((n*data.tau_n)-(data.tau_n/2.));//TEST MPR statt rechtsseitige Boxregel
+// 			primal_assemble_f();
+// 			primal_interpolate_to_next_grid();
+// 			primal_assemble_rhs();
+// 			primal_solve();
+// 			
+// 			//Save current solution for next time step in primal.slab.u_old 
+// 			// (needed within primal_assemble_rhs() of next timestep)
+// 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
+// 			primal.slab.u_old->reinit(primal.iterator.slab->primal.dof->n_dofs());
+// 			*(primal.slab.u_old) = *(primal.slab.u);
+// 			// Save current  solution in list primal.storage.u
+// 			In_uthprimal->x->reinit(primal.iterator.slab->primal.dof->n_dofs());
+// 			*(In_uthprimal->x) = *(primal.slab.u);
+// 
+// 			// interpolate current solution to dual fe-room
+// 			interpolate_primal_to_dual();
+// 
+// 			// Save current interpolated solution (dual.u) in list dual.storage.u
+// 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
+// 			*(In_uth->x) = *(dual.u);
+// 
+// 			++Inth_primal_prev; // increase iterator of list "In-1" 
+// 		}
+// 
+// 	} // end primal-loop n
 
 
 template<int dim>
@@ -671,16 +893,6 @@ primal_init_data_output() {
 // 		*(primal.iterator.slab->dual.constraints),
 // 		*(dual.u)
 // 	);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_do_data_output(const double n) {
-// 	const double solution_time = n;
-// 	
-// 	primal.data_output.write_data("primal", primal.slab.u, solution_time);
 // }
 
 
@@ -1505,161 +1717,12 @@ primal_init_data_output() {
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // solve_primal_problem() {
-// 	auto Inth_primal(grid->slabs.begin());
-// 	auto endIn_primal(grid->slabs.end());
-// 	auto Inth_primal_prev(grid->slabs.begin());
-// 	auto endIn_primal_prev(grid->slabs.end());
+
 // 	auto In_uth(dual.storage.u->begin());
 // 	auto endIn_uth(dual.storage.u->end());
-// 	auto In_uthprimal(primal.storage.u->begin());
-// 	auto endIn_uthprimal(primal.storage.u->end());
+
 // 
-// 	for (unsigned int n{0}; n <= ((data.T-data.t0)/data.tau_n); ++n) {
-// 		if (n == 0) {
-// 			// Compute initial condition u_0 and store it in primal.slab.u_old,
-// 			// interpolate it to dual FE-room and store it in dual.u and last
-// 			// but not least store this in the first element of list dual.storage.u.
-// 			
-// 			// Output of time_step 1 at time-point t_0
-// 			data.primal_time = (n*data.tau_n); 
-// 			++data.primal_timestep_number;
-// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
-// 					<< data.primal_time << std::endl;
-// 			// Set iterators
-// 			primal.iterator.slab = Inth_primal;
-// 			primal.iterator.slab_previous = Inth_primal_prev; //needed for primal_interpolate_to_next_grid
-// 			
-// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			// Set time to t0 and compute u_0:
-// 			__sync_synchronize();
-// 			primal_set_time(data.t0);
-// 			__sync_synchronize();
-// 			
-// 			primal_compute_initial_condition();
-// 
-// 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
-// 			// in the first element of list dual.storage.u
-// 			dual.storage.u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
-// 			*(dual.storage.u->front().x) = *(dual.u);
-// 			// Store initial condition (primal.slab.u_old) in the first element of list In-uprimal
-// 			primal.storage.u->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
-// 			*(primal.storage.u->front().x) = *(primal.slab.u_old);
-// 			
-// 		}
-// 		else if (n == 1) {
-// 			// Compute u_1 on same grid as u_0.
-// 
-// 			// Output of time_step 2 at time-point t_1
-// 			data.primal_time = (n*data.tau_n); 
-// 			++data.primal_timestep_number;
-// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
-// 					<< data.primal_time << std::endl;
-// 
-// 			++In_uth; //increase iterator of list dual.storage.u
-// 			++In_uthprimal; //increase iterator of list primal.storage.u
-// 			// Set iterators
-// 			primal.iterator.slab = Inth_primal;
-// 			primal.iterator.slab_previous = Inth_primal_prev; //for this timestep primal.iterator.slab=primal.iterator.slab_previous holds
-// 			
-// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			primal_reinit();
-// 			primal_assemble_system();
-// 			
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			primal_set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// // 				std::cout << "new time = " << (n*data.tau_n)-(data.tau_n/2.) << std::endl;
-// // 				function.f->set_time((n*data.tau_n)-(data.tau_n/2.));//TEST MPR statt rechtsseitige Boxregel
-// 			primal_assemble_f();
-// 			
-// 			primal_interpolate_to_next_grid();
-// 			
-// 			primal_assemble_rhs();
-// 			
-// 			primal_solve();
-// 			
-// 			
-// // 				primal.M.print(std::cout);
-// // 				std::cout << "" << std::endl;
-// 			//Save current solution for next time step in primal.slab.u_old 
-// 			// (needed within primal_assemble_rhs() of next timestep)
-// 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-// 			primal.slab.u_old->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(primal.slab.u_old) = *(primal.slab.u);
-// 			// Save current  solution in list primal.storage.u
-// 			In_uthprimal->x->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(In_uthprimal->x) = *(primal.slab.u);
-// 			
-// 			// interpolate current solution to dual fe-room
-// 			interpolate_primal_to_dual();
-// 
-// 			// Save current interpolated solution in list dual.storage.u
-// 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
-// 			*(In_uth->x) = *(dual.u);
-// 
-// 		}
-// 		else {
-// 			// Compute u_2,...,u_N
-// 
-// 			// Output of time_steps 3,...,N+1 at time-points t_2,...,t_N
-// 			data.primal_time = (n*data.tau_n); 
-// 			++data.primal_timestep_number;
-// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
-// 					<< data.primal_time << std::endl;
-// 			++In_uth; //increase iterator of list dual.storage.u
-// 			++In_uthprimal; //increase iterator of list primal.storage.u
-// 			++Inth_primal; //increase iterator of list In (grids)
-// 			// Set iterators
-// 			// For t_n, n > 1 primal.iterator.slab_previous should always be the iterator
-// 			// that points on the previous element of the list, to which
-// 			// the iterator primal.iterator.slab points ;-)
-// 			primal.iterator.slab = Inth_primal;
-// 			primal.iterator.slab_previous = Inth_primal_prev; 
-// 			
-// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			primal_reinit();
-// 			primal_assemble_system();
-// 			
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			primal_set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// // 				std::cout << "new time = " << (n*data.tau_n)-(data.tau_n/2.) << std::endl;
-// // 				function.f->set_time((n*data.tau_n)-(data.tau_n/2.));//TEST MPR statt rechtsseitige Boxregel
-// 			primal_assemble_f();
-// 			primal_interpolate_to_next_grid();
-// 			primal_assemble_rhs();
-// 			primal_solve();
-// 			
-// 			//Save current solution for next time step in primal.slab.u_old 
-// 			// (needed within primal_assemble_rhs() of next timestep)
-// 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-// 			primal.slab.u_old->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(primal.slab.u_old) = *(primal.slab.u);
-// 			// Save current  solution in list primal.storage.u
-// 			In_uthprimal->x->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(In_uthprimal->x) = *(primal.slab.u);
-// 
-// 			// interpolate current solution to dual fe-room
-// 			interpolate_primal_to_dual();
-// 
-// 			// Save current interpolated solution (dual.u) in list dual.storage.u
-// 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
-// 			*(In_uth->x) = *(dual.u);
-// 
-// 			++Inth_primal_prev; // increase iterator of list "In-1" 
-// 		}
-// 
-// 	} // end primal-loop n
+
 // }
 
 

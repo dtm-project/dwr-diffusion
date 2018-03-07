@@ -84,12 +84,22 @@ protected:
 	
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	
+	/// function: keep shared_ptr to Function<dim> for several quantities
+	struct {
+// 		std::shared_ptr< dealii::Function<dim> > epsilon;
+// 		std::shared_ptr< dealii::Function<dim> > f;
+// 		std::shared_ptr< dealii::Function<dim> > u_D; // Dirichlet boundary val. fun.
+		
+		/// initial value function
+		std::shared_ptr< dealii::Function<dim> > u_0;
+	} function;
+	
 	/// primal: data structures for forward time marching
 	struct {
 		// storage container
 		struct {
 			/// primal solutions list
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
 		} storage;
 		
 		struct {
@@ -98,7 +108,7 @@ protected:
 			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab;
 			
 			// iterator for storage vectors on I_n
-			typename DTM::types::storage_data_vectors<1>::iterator u;
+			typename DTM::types::storage_data_vectors<2>::iterator u;
 		} iterator;
 		
 		// Data Output
@@ -125,6 +135,8 @@ protected:
 	
 	
 	virtual void init_grid();
+	virtual void init_functions();
+	
 	virtual void init_storage();
 	
 	// primal problem:
@@ -132,6 +144,7 @@ protected:
 	
 	virtual void primal_init_data_output();
 	
+	virtual void primal_do_data_output();
 	
 	
 	
@@ -262,11 +275,7 @@ protected:
 	
 
 	
-// 	struct {
-// 		std::shared_ptr< dealii::Function<dim> > epsilon;
-// 		std::shared_ptr< dealii::Function<dim> > f;
-// 		std::shared_ptr< dealii::Function<dim> > u_D;
-// 	} function;
+
 	
 // 	struct {
 // 		std::shared_ptr< Heat::DWR::ErrorEstimator<dim> > DWR;
