@@ -98,8 +98,10 @@ protected:
 	struct {
 		// storage container
 		struct {
-			/// primal solutions list
-			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
+			/// primal solutions list (time dG(r)-Q_{G(r+1)} method)
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > um; // dof on t_m
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;  // time dof
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > un; // dof on t_n
 		} storage;
 		
 		struct {
@@ -107,8 +109,10 @@ protected:
 			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab_previous;
 			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab;
 			
-			// iterator for storage vectors on I_n
-			typename DTM::types::storage_data_vectors<2>::iterator u;
+			// iterator for storage vectors on I_n (time dG method)
+			typename DTM::types::storage_data_vectors<1>::iterator um;
+			typename DTM::types::storage_data_vectors<1>::iterator u;
+			typename DTM::types::storage_data_vectors<1>::iterator un;
 		} iterator;
 		
 		// Data Output
@@ -119,11 +123,11 @@ protected:
 	struct {
 		// storage container
 		struct {
-			/// primal solutions interpolated into dual FE room list
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
+			/// primal solutions interpolated into dual FE room list (time cG(s)-Q_{GL(s+1)} method)
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
 			
 			/// dual solutions list
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > z;
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
 			
 			/// error_indicators list
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
@@ -133,18 +137,27 @@ protected:
 		DTM::DataOutput<dim> data_output;
 	} dual;
 	
+	////////////////////////////////////////////////////////////////////////////
+	// protected member functions:
+	//
 	
-	virtual void init_grid();
 	virtual void init_functions();
 	
-	virtual void init_storage();
+	virtual void init_grid();
+	
+	virtual void reinit_storage();
 	
 	// primal problem:
+	
 	virtual void solve_primal_problem();
 	
-	virtual void primal_init_data_output();
+	virtual void primal_reinit_data_output(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+	);
 	
-	virtual void primal_do_data_output();
+	virtual void primal_do_data_output(
+// 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+	);
 	
 	
 	

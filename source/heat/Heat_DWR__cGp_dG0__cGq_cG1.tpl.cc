@@ -83,6 +83,7 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 set_grid(std::shared_ptr< Grid_DWR<dim,1> > _grid) {
+	Assert(_grid.use_count(), dealii::ExcNotInitialized());
 	grid = _grid;
 }
 
@@ -97,17 +98,30 @@ run() {
 	init_functions();
 	
 	init_grid();
+	
+	// DWR loop:
 	grid->set_boundary_indicators();
 	grid->distribute();
 	
-	init_storage();
+	reinit_storage();
 	
+	// primal problem:
 	solve_primal_problem();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // internal functions
 //
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+init_functions() {
+	// TODO: read those from parameter input file
+	function.u_0 = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+}
+
 
 template<int dim>
 void
@@ -117,7 +131,12 @@ init_grid() {
 	// initialize slabs of grid
 	//
 	
-	Assert(parameter_set->tau_n > 0, dealii::ExcInvalidState());	
+	Assert((parameter_set->fe.p), dealii::ExcInvalidState());
+	Assert((parameter_set->fe.p < parameter_set->fe.q), dealii::ExcInvalidState());
+	
+	Assert((parameter_set->t0 >= 0), dealii::ExcInvalidState());
+	Assert((parameter_set->t0 < parameter_set->T), dealii::ExcInvalidState());
+	Assert((parameter_set->tau_n > 0), dealii::ExcInvalidState());
 	
 	grid->initialize_slabs(
 		parameter_set->fe.p,
@@ -136,72 +155,144 @@ init_grid() {
 	DTM::pout
 		<< "grid: number of slabs = " << grid->slabs.size()
 		<< std::endl;
-	
-	// TEST: check time values t_m and t_n of all slabs (debug output)
-	{
-		unsigned int n{1};
-		for (auto &slab : grid->slabs) {
-			DTM::pout
-				<< "I_" << n << " = (" << slab.t_m << " , " << slab.t_n << " ), "
-				<< "tau_" << n << " = " << slab.tau_n()
-				<< std::endl;
-			
-			++n;
-		}
-	}
 }
-
 
 
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-init_functions() {
-	// TODO: read those from parameter input file
-	function.u_0 = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
-}
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-init_storage() {
+reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
 	// init storage containers for vector data
+	//
 	
+	////////////////////////////////////////////////////////////////////////////
 	// get number of time steps
+	//
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	
-	///////////////////////////////////////////////////////////
-	// primal solution dof vectors u (on primal solution space)
+	////////////////////////////////////////////////////////////////////////////
+	// primal space: time dG(0) method ( here: dG(0)-Q_{Gauss(1)} )
 	//
-	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<2> > ();
-	primal.storage.u->resize(N);
 	
-	auto slab = grid->slabs.begin();
-	for (auto &element : *primal.storage.u) {
-		for (unsigned int j{0}; j < element.x.size(); ++j) {
+	////////////////////////////////////////////////////////////////////////////
+	// primal dof vectors um (on primal solution space)
+	//
+	primal.storage.um = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	primal.storage.um->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *primal.storage.um) {
 			// create shared_ptr to Vector<double>
-			element.x[j] = std::make_shared< dealii::Vector<double> > ();
+			element.x[0] = std::make_shared< dealii::Vector<double> > ();
 			
 			// init. Vector<double> with n_dofs components
 			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(
+				slab->primal.dof->n_dofs(),
+				dealii::ExcMessage("Error: slab->primal.dof->n_dofs() == 0")
+			);
 			
-			element.x[j]->reinit(
+			element.x[0]->reinit(
 				slab->primal.dof->n_dofs()
 			);
+			
+			++slab;
 		}
-		++slab;
 	}
 	
-// 	/////////////////////////////////////////////////////////
-// 	// primal solution dof vectors u (on dual solution space)
-// 	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-// 	dual.storage.u->resize(N+1);
-// 	for (auto &element : *dual.storage.u) {
-// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
-// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-// 	}}
+	////////////////////////////////////////////////////////////////////////////
+	// primal solution dof vectors u (on primal solution space)
+	//
+	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	primal.storage.u->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *primal.storage.u) {
+			for (unsigned int j{0}; j < element.x.size(); ++j) {
+				// create shared_ptr to Vector<double>
+				element.x[j] = std::make_shared< dealii::Vector<double> > ();
+				
+				// init. Vector<double> with n_dofs components
+				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+				Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+				Assert(
+					slab->primal.dof->n_dofs(),
+					dealii::ExcMessage("Error: slab->primal.dof->n_dofs() == 0")
+				);
+				
+				element.x[j]->reinit(
+					slab->primal.dof->n_dofs()
+				);
+			}
+			++slab;
+		}
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// primal dof vectors un (on primal solution space)
+	//
+	primal.storage.un = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	primal.storage.un->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *primal.storage.un) {
+			// create shared_ptr to Vector<double>
+			element.x[0] = std::make_shared< dealii::Vector<double> > ();
+			
+			// init. Vector<double> with n_dofs components
+			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(
+				slab->primal.dof->n_dofs(),
+				dealii::ExcMessage("Error: slab->primal.dof->n_dofs() == 0")
+			);
+			
+			element.x[0]->reinit(
+				slab->primal.dof->n_dofs()
+			);
+			
+			++slab;
+		}
+	}
+	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss-Lobatto(2)} )
+// 	//
 // 	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// primal solution dof vectors u (on dual solution space)
+// 	//
+// 	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<2> > ();
+// 	dual.storage.u->resize(N);
+// 	
+// 	{
+// 		auto slab = grid->slabs.begin();
+// 		for (auto &element : *dual.storage.u) {
+// 			for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 				// create shared_ptr to Vector<double>
+// 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 				
+// 				// init. Vector<double> with n_dofs components
+// 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+// 				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+// 				Assert(
+// 					slab->dual.dof->n_dofs(),
+// 					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+// 				);
+// 				
+// 				element.x[j]->reinit(
+// 					slab->dual.dof->n_dofs()
+// 				);
+// 			}
+// 			++slab;
+// 		}
+// 	}
+	
 // 	///////////////////////////////////////////////////////
 // 	// dual solution dof vectors z (on dual solution space)
 // 	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<1> > ();
@@ -210,7 +301,7 @@ init_storage() {
 // 	for (unsigned int j{0}; j < element.x.size(); ++j) {
 // 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
 // 	}}
-// 	
+	
 // 	/////////////////////////////////////////////////
 // 	// auxiliary vectors eta (on dual solution space)
 // 	dual.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
@@ -230,128 +321,139 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 solve_primal_problem() {
+	////////////////////////////////////////////////////////////////////////////
 	// do the forward time marching process of the primal problem
+	//
 	
-	// NOTE: we use I_0 as additional time interval for initial conditions
-	
-	// init slab to first space-time slab Omega x I_0
+	// init slab iterator to first space-time slab Omega x I_1
 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
 	primal.iterator.slab_previous = grid->slabs.end();
 	primal.iterator.slab = grid->slabs.begin();
+	
+	// shortcut references
+	auto &slab_previous = primal.iterator.slab_previous;
 	auto &slab = primal.iterator.slab;
 	
-	// init iterator.u to first space-time slab Omega x I_0 storage container
-	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
-	primal.iterator.u = primal.storage.u->begin();
-	auto &u = primal.iterator.u;
-	
-	// init data output
-	primal_init_data_output();
-	
-	// forward TMS loop:
-	
 	////////////////////////////////////////////////////////////////////////////
-	// SOLVING /////////////////////////////////////////////////////////////////
+	// init iterators to storage_data_vectors iterators
+	// on slab corresponding to Omega x I_1
 	//
 	
-	double tm(parameter_set->t0);
-	double t0(tm);
+	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
+	primal.iterator.um = primal.storage.um->begin();
+	
+	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
+	primal.iterator.u = primal.storage.u->begin();
+	
+	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
+	primal.iterator.un = primal.storage.un->begin();
+	
+	// shortcut references
+	auto &um = primal.iterator.um;
+	auto &u  = primal.iterator.u;
+	auto &un = primal.iterator.un;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// SOLVING forward TMS (primal problem) ////////////////////////////////////
+	//
+	
+	// init time variables on a formal I_0 = (-inf, t0] element
+	double tm{parameter_set->t0};
+	double t0{-1};
+	double tn{tm};
 	
 	////////////////////////////////////////////////////////////////////////////
 	// setup initial values ////////////////////////////////////////////////////
-	// interpolate/project initial pressure
+	// interpolate or project initial value(s)
 	
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+	function.u_0->set_time(tn);
+	
+	// primal grid
 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-// 	Assert(u1.use_count(), dealii::ExcNotInitialized());
-	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
-	
-	function.u_0->set_time(t0);
+	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
 	
 	dealii::VectorTools::interpolate(
 		*slab->primal.mapping,
 		*slab->primal.dof,
 		*function.u_0,
-		*u->x[0]
+		*um->x[0]
 	);
 	
 	// TODO: debug output of I(u_0)
+	primal_reinit_data_output(slab);
 	primal_do_data_output();
-}
-
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_do_data_output() {
 	
-	// TODO
-	primal.data_output.write_data(
-		"primal",
-		primal.iterator.u->x[0],
-		0.0 /*solution_time*/
-	);
+	
+	// do TMS loop: // TODO:
+	DTM::pout
+		<< std::endl
+		<< "*******************************" << std::endl
+		<< "primal: solving TMS problems..." << std::endl
+		<< std::endl;
+	
+	unsigned int n{1};
+	while (slab != grid->slabs.end()) {
+		tm = slab->t_m;
+		t0 = tm + slab->tau_n()/2.;
+		tn = slab->t_n;
+		
+		DTM::pout
+			<< "primal: solving problem on "
+			<< "I_" << n << " = (" << tm << ", " << tn << ") "
+			<< std::endl;
+		
+		// TODO:
+		(void)tm;
+		(void)t0;
+		(void)tn;
+		
+		// TODO:
+		(void)um;
+		(void)u;
+		(void)un;
+		
+		// TODO:
+		++n;
+		slab_previous = slab;
+		++slab;
+	}
 }
 
 
-
+// ////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////
 // 	for (unsigned int n{0}; n <= ((data.T-data.t0)/data.tau_n); ++n) {
 // 		if (n == 0) {
-// 			// Compute initial condition u_0 and store it in primal.slab.u_old,
-// 			// interpolate it to dual FE-room and store it in dual.u and last
-// 			// but not least store this in the first element of list dual.storage.u.
-// 			
-// 			// Output of time_step 1 at time-point t_0
-// 			data.primal_time = (n*data.tau_n); 
-// 			++data.primal_timestep_number;
-// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
-// 					<< data.primal_time << std::endl;
-// 			// Set iterators
-// 			primal.iterator.slab = Inth_primal;
-// 			primal.iterator.slab_previous = Inth_primal_prev; //needed for primal_interpolate_to_next_grid
-// 			
-// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			// Set time to t0 and compute u_0:
-// 			__sync_synchronize();
-// 			primal_set_time(data.t0);
-// 			__sync_synchronize();
-// 			
-// 			primal_compute_initial_condition();
-// 
-// 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
-// 			// in the first element of list dual.storage.u
-// 			dual.storage.u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
-// 			*(dual.storage.u->front().x) = *(dual.u);
-// 			// Store initial condition (primal.slab.u_old) in the first element of list In-uprimal
-// 			primal.storage.u->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
-// 			*(primal.storage.u->front().x) = *(primal.slab.u_old);
-// 			
+// // 			// Compute initial condition u_0 and store it in primal.slab.u_old,
+// // 			// interpolate it to dual FE-room and store it in dual.u and last
+// // 			// but not least store this in the first element of list dual.storage.u.
+// // 			primal_set_time(data.t0);
+// // 			
+// // 			primal_compute_initial_condition();
+// // 			
+// // 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
+// // 			// in the first element of list dual.storage.u
+// // 			dual.storage.u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
+// // 			*(dual.storage.u->front().x) = *(dual.u);
+// // 			// Store initial condition (primal.slab.u_old) in the first element of list In-uprimal
+// // 			primal.storage.u->front().x->reinit(grid->slabs.front().primal.dof->n_dofs());
+// // 			*(primal.storage.u->front().x) = *(primal.slab.u_old);
+// // 			
 // 		}
 // 		else if (n == 1) {
-// 			// Compute u_1 on same grid as u_0.
-// 
-// 			// Output of time_step 2 at time-point t_1
-// 			data.primal_time = (n*data.tau_n); 
-// 			++data.primal_timestep_number;
-// 			std::cout << "Time step " << data.primal_timestep_number << " at t = "
-// 					<< data.primal_time << std::endl;
-// 
-// 			++In_uth; //increase iterator of list dual.storage.u
-// 			++In_uthprimal; //increase iterator of list primal.storage.u
-// 			// Set iterators
-// 			primal.iterator.slab = Inth_primal;
-// 			primal.iterator.slab_previous = Inth_primal_prev; //for this timestep primal.iterator.slab=primal.iterator.slab_previous holds
-// 			
-// 			std::cout << "Zellen it = " << primal.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << primal.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// // 			// Compute u_1 on same grid as u_0.
+// // 			++In_uth; //increase iterator of list dual.storage.u
+// // 			++In_uthprimal; //increase iterator of list primal.storage.u
+// // 			// Set iterators
+// // 			primal.iterator.slab = Inth_primal;
+// // 			primal.iterator.slab_previous = Inth_primal_prev; //for this timestep primal.iterator.slab=primal.iterator.slab_previous holds
 // 			
 // 			primal_reinit();
 // 			primal_assemble_system();
 // 			
-// 			__sync_synchronize();
 // 			volatile const double ttt{n*data.tau_n};
 // 			primal_set_time(ttt);
 // 			__sync_synchronize();
@@ -442,21 +544,19 @@ primal_do_data_output() {
 // 		}
 // 
 // 	} // end primal-loop n
+// ////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////
 
 
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_init_data_output() {
-	////////////////////////////////////////////////////////////////////////////
-	// INIT DATA OUTPUT
-	//
-	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
-	Assert((primal.iterator.slab == grid->slabs.begin()), dealii::ExcNotInitialized());
-	Assert(primal.iterator.slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-	
+primal_reinit_data_output(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+) {
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	DTM::pout
-		<< "Heat DWR: primal solution data output: patches = "
+		<< "primal solution data output: patches = "
 		<< parameter_set->data_output.patches
 		<< std::endl;
 	
@@ -466,18 +566,35 @@ primal_init_data_output() {
 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
 	
+	Assert((slab != grid->slabs.end()), dealii::ExcInvalidState());
+	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
 	primal.data_output.set_DoF_data(
-		primal.iterator.slab->primal.dof
+		slab->primal.dof
 	);
 	
 	primal.data_output.set_data_field_names(data_field_names);
 	primal.data_output.set_data_component_interpretation_field(dci_field);
-	primal.data_output.set_data_output_patches(parameter_set->data_output.patches);
+	
+	// TODO:
+	primal.data_output.set_data_output_patches(
+		parameter_set->fe.p // auto mode = cG in space: take p patches per K
+// 		parameter_set->data_output.patches
+	);
 }
 
 
-
-
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_do_data_output() {
+	
+	// TODO
+	primal.data_output.write_data(
+		"primal",
+		primal.iterator.um->x[0],
+		0.0 /*solution_time*/
+	);
+}
 
 
 
