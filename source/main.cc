@@ -142,10 +142,18 @@ int main(int argc, char *argv[]) {
 		////////////////////////////////////////////////////////////////////////
 		// Begin application
 		//
+		DTM::pout
+			<< std::endl
+			<< "*********************************************************"
+			<< std::endl
+			<< "dwr-heat solver: primal cG(p)-dG(0) with dual cG(q)-cG(1)"
+			<< std::endl;
 		
 		// create simulator
 		//std::shared_ptr< DTM::Problem > problem;
-		DTM::pout << "dwr-heat: dimension dim = " << dimension << std::endl;
+		DTM::pout
+			<< "dwr-heat: dimension dim = " << dimension << std::endl
+			<< std::endl;
 		
 		// select, setup and run simulator
 		switch (dimension) {

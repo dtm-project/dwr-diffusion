@@ -555,9 +555,11 @@ primal_reinit_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 ) {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	// TODO:
 	DTM::pout
 		<< "primal solution data output: patches = "
-		<< parameter_set->data_output.patches
+		<< parameter_set->fe.p // auto mode = cG in space: take p patches per K
+// 		<< parameter_set->data_output.patches
 		<< std::endl;
 	
 	std::vector<std::string> data_field_names;

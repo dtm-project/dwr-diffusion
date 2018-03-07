@@ -203,10 +203,14 @@ void
 Grid_DWR<dim,spacedim>::
 distribute() {
 	// Distribute the degrees of freedom (dofs)
+	DTM::pout
+		<< "grid: distribute the degrees of freedom (dofs) on slabs"
+		<< std::endl;
 	
 	auto slab(slabs.begin());
 	auto ends(slabs.end());
 	
+	unsigned int n{1};
 	for (; slab != ends; ++slab) {
 		////////////////////////////////////////////////////////////////////////////
 		// distribute primal dofs, create constraints and sparsity pattern sp
@@ -216,7 +220,8 @@ distribute() {
 			slab->primal.dof->distribute_dofs(*(slab->primal.fe));
 			
 			DTM::pout
-				<< "grid: dof: primal mesh: n_dofs = " << slab->primal.dof->n_dofs()
+				<< "grid: primal mesh n_dofs on I_" << n
+				<< " = " << slab->primal.dof->n_dofs()
 				<< std::endl;
 			
 			// setup constraints (e.g. hanging nodes)
@@ -262,7 +267,8 @@ distribute() {
 			slab->dual.dof->distribute_dofs(*(slab->dual.fe));
 			
 			DTM::pout
-				<< "grid: dof: dual mesh: n_dofs = " << slab->dual.dof->n_dofs()
+				<< "grid: dual mesh   n_dofs on I_" << n
+				<< " = " << slab->dual.dof->n_dofs()
 				<< std::endl;
 			
 			// setup constraints (e.g. hanging nodes)
@@ -295,7 +301,11 @@ distribute() {
 			Assert(slab->dual.sp.use_count(), dealii::ExcNotInitialized());
 			slab->dual.sp->copy_from(dsp);
 		}
+		
+		++n;
 	} // end for-loop slab
+	
+	DTM::pout << std::endl;
 }
 
 } // namespaces
