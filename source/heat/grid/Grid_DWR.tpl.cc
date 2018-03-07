@@ -58,6 +58,9 @@ Grid_DWR<dim,spacedim>::
 	auto ends(slabs.end());
 	
 	for (; slab != ends; ++slab) {
+		Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+		Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+		
 		slab->primal.dof->clear();
 		slab->dual.dof->clear();
 	}

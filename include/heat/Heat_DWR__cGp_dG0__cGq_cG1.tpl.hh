@@ -82,8 +82,9 @@ protected:
 	
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	
+	virtual void init_grid();
 	
-// 	virtual void init(const unsigned int global_refinement);
+	
 // 	virtual void init_storage();
 	
 // 	// primal problem

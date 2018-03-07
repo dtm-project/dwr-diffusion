@@ -90,28 +90,68 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 run() {
+	// check
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	
+	init_grid();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// internal functions
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+init_grid() {
+	////////////////////////////////////////////////////////////////////////////
+	// initialize slabs of grid
+	//
+	grid->initialize_slabs(
+		parameter_set->fe.p,
+		parameter_set->fe.q,
+		parameter_set->t0,
+		parameter_set->T,
+		parameter_set->tau_n
+	);
+	
+	grid->generate();
+	
+	grid->refine_global(
+		parameter_set->global_refinement
+	);
+	
+	DTM::pout
+		<< "grid: number of slabs = " << grid->slabs.size()
+		<< std::endl;
+	
+	// TEST: check time values t_m and t_n of all slabs (debug output)
+	{
+		unsigned int n{1};
+		for (auto &slab : grid->slabs) {
+			DTM::pout
+				<< "I_" << n << " = (" << slab.t_m << " , " << slab.t_n << " ), "
+				<< "tau_" << n << " = " << slab.tau_n()
+				<< std::endl;
+			
+			++n;
+		}
+	}
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// old
 
 
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // init(const unsigned int global_refinement) {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// create grid
-// 	//
-// 	grid->initialize_slabs(
-// 		data.p_primal,
-// 		data.q_dual,
-// 		data.t0,
-// 		data.T,
-// 		data.tau_n
-// 	);
-// 	
-// 	grid->generate();
-// 	
-// 	grid->refine_global(global_refinement);
+
 // 	
 // 	////////////////////////////////////////////////////////////////////////////
 // 	// init error estimator
@@ -1763,38 +1803,10 @@ run() {
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // run() {
-// ////////////////////////////////////////////////////////////////////////////////
-// ////////// Creating Grids and Lists ///////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////
-// 	
+
 // 	// Initialize list of grids, set objects for ErrorEstimator class 
-// 	init(data.global_refinement); //TODO 160 //Für Konvergenztest in der Zeit
-// 													// einfach data.time_steps durch 
-// 													// bspsw 160 (max Anz an Zeitschritten) ersetzen
-// 	std::cout << "n von In = " << grid->slabs.size() << std::endl;
-// 	
-// 	//TEST iterator primal.iterator.slab_previous
-// // 	auto Inth_test(grid->slabs.begin());
-// // 	auto endIn_test(grid->slabs.end());
-// // 	for (unsigned int i{1}; i <= 5; ++i,++Inth_test) {
-// // 		Inth_test->tria->refine_global(i);
-// // 		std::cout << "Zellen = " << Inth_test->tria->n_active_cells() << std::endl;
-// // 	}
-// 	//TEST ENDE iterator primal.iterator.slab_previous
-// 	
-// // 	//TEST BEGIN
-// // 	grid->slabs.front().tria->refine_global(1);
-// // 	grid->slabs.push_back(grid->slabs.front());
-// // 	auto Inth(grid->slabs.begin());
-// // 	auto endIn(grid->slabs.end());
-// // 	for (unsigned int n{1}; n <= 25; ++n) {
-// // 	grid->slabs.push_back(grid->slabs.front());
-// // 	}
-// 
-// // 	std::cout << "n von In = " << grid->slabs.size() << std::endl;
-// // 	//TEST END
-// 
-// 
+// 	init(data.global_refinement);
+
 // 	// Prepare storage for solutions vectors of primal and dual problem
 // 	init_storage();
 // 	
