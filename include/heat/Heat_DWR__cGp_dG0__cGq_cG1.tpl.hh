@@ -92,9 +92,14 @@ protected:
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
 		} storage;
 		
+		struct {
+			/// iterator for slab struct elements for forward time marching
+			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab;
+			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab_previous;
+		} iterator;
+		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
-		unsigned int data_output_patches;
 	} primal;
 	
 	/// dual: data structures for backward time marching and error estimation
@@ -113,23 +118,22 @@ protected:
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
-		unsigned int data_output_patches;
 	} dual;
 	
 	
 	virtual void init_grid();
 	virtual void init_storage();
 	
+	// primal problem:
+	virtual void solve_primal_problem();
 	
-	
-	
-	
+	virtual void primal_init_data_output();
 	
 	
 	
 	
 // 	// primal problem
-// 	virtual void solve_primal_problem();
+
 // 	
 // 	virtual void primal_reinit();
 // 	
@@ -147,6 +151,9 @@ protected:
 // 	
 // 	virtual void primal_solve();
 // 	
+	
+	
+	
 // 	virtual void interpolate_primal_to_dual();
 	
 // 	// dual problem
@@ -182,7 +189,7 @@ protected:
 	
 // 	// Solution output
 // 	virtual void primal_and_dual_solution_output();
-// 	virtual void primal_init_data_output();
+
 // 	virtual void primal_do_data_output(const double n);
 // 	virtual void dual_init_data_output();
 // 	virtual void dual_do_data_output(const double n);
@@ -190,16 +197,8 @@ protected:
 	
 // 	/// primal: data structures for forward time marching
 // 	struct {
-// 		// storage container
-// 		struct {
-// 			std::shared_ptr< storage_data_vectors > u; ///< primal solutions list
-// 		} storage;
 // 		
-// 		struct {
-// 			/// iterator for slab struct elements for forward time marching
-// 			typename DTM::types::spacetime::DWR::slabs<dim>::iterator slab;
-// 			typename DTM::types::spacetime::DWR::slabs<dim>::iterator slab_previous;
-// 		} iterator;
+
 		
 // 		dealii::SparseMatrix<double> M; ///< primal problem mass matrix
 // 		dealii::SparseMatrix<double> A; ///< primal problem stiffness matrix

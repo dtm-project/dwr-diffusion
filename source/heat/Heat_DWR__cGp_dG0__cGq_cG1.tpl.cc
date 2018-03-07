@@ -96,6 +96,11 @@ run() {
 	
 	init_grid();
 	init_storage();
+	
+	grid->set_boundary_indicators();
+	grid->distribute();
+	
+	solve_primal_problem();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -192,6 +197,63 @@ init_storage() {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// primal problem
+//
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+solve_primal_problem() {
+	// do the forward time marching process of the primal problem
+	
+	// NOTE: we use I_0 as additional time interval for initial conditions
+	// init slab to first space-time slab Omega x I_0
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	primal.iterator.slab_previous = grid->slabs.end();
+	primal.iterator.slab = grid->slabs.begin();
+	
+	primal_init_data_output();
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_init_data_output() {
+	////////////////////////////////////////////////////////////////////////////
+	// INIT DATA OUTPUT
+	//
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	Assert((primal.iterator.slab == grid->slabs.begin()), dealii::ExcNotInitialized());
+	Assert(primal.iterator.slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+	
+	DTM::pout
+		<< "Heat DWR: primal solution data output: patches = "
+		<< parameter_set->data_output.patches
+		<< std::endl;
+	
+	std::vector<std::string> data_field_names;
+	data_field_names.push_back("u");
+	
+	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
+	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
+	
+	primal.data_output.set_DoF_data(
+		primal.iterator.slab->primal.dof
+	);
+	
+	primal.data_output.set_data_field_names(data_field_names);
+	primal.data_output.set_data_component_interpretation_field(dci_field);
+	primal.data_output.set_data_output_patches(parameter_set->data_output.patches);
+}
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 // old
 
 
@@ -215,37 +277,6 @@ init_storage() {
 // 		function.f // TODO
 // 	);
 // }
-
-
-
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_init_data_output() {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// INIT DATA OUTPUT
-// 	//
-// 	Assert(primal.iterator.slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	DTM::pout << "Heat DWR: primal solution data output: patches = " << primal.data_output_patches << std::endl;
-// 	
-// 	std::vector<std::string> data_field_names;
-// 	data_field_names.push_back("u");
-// 	
-// 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
-// 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-// 	
-// 	primal.data_output.set_DoF_data(
-// 		primal.iterator.slab->primal.dof
-// 	);
-// 	
-// 	primal.data_output.set_data_field_names(data_field_names);
-// 	primal.data_output.set_data_component_interpretation_field(dci_field);
-// 	primal.data_output.set_data_output_patches(primal.data_output_patches);
-// }
-
 
 // template<int dim>
 // void
