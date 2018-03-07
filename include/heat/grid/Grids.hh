@@ -1,13 +1,13 @@
 /**
- * @file error_functional.hh
- * @author Uwe Koecher (UK), Marius Paul Bruchhaeuser (MPB)
- * @date 2018-02-08, UK
- *
- * @brief enum class for different error funcitonals
+ * @file Grids.hh
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * @date 2018-03-06, UK
  * 
+ * @brief collect all Grid class header files
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */ 
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,22 +24,11 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
+#ifndef __Grids_hh
+#define __Grids_hh
 
-#ifndef __error_functional_hh
-#define __error_functional_hh
+#include <heat/grid/Grid_DWR.tpl.hh>
 
-namespace heat {
-namespace types {
-
-enum class error_functional : unsigned int {
-	forbidden 	= 0,
-	L2_final 	= 1,
-	L2_global	= 2,
-	mean_final	= 3,
-	mean_global	= 4,
-	point		= 5
-};
-
-}}
+#include <heat/grid/Grid_DWR_0.tpl.hh>
 
 #endif

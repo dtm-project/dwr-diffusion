@@ -1,13 +1,11 @@
 /**
- * @file error_functional.hh
- * @author Uwe Koecher (UK), Marius Paul Bruchhaeuser (MPB)
- * @date 2018-02-08, UK
- *
- * @brief enum class for different error funcitonals
- * 
+ * @file Grid_DWR.tpl.hh
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * @date 2018-03-06, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */ 
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,22 +22,28 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
+#ifndef __Grid_DWR_0_tpl_hh
+#define __Grid_DWR_0_tpl_hh
 
-#ifndef __error_functional_hh
-#define __error_functional_hh
+// PROJECT includes
+#include <heat/grid/Grid_DWR.tpl.hh>
+
+// DEAL.II includes
+
+// C++ includes
 
 namespace heat {
-namespace types {
 
-enum class error_functional : unsigned int {
-	forbidden 	= 0,
-	L2_final 	= 1,
-	L2_global	= 2,
-	mean_final	= 3,
-	mean_global	= 4,
-	point		= 5
+template<int dim, int spacedim>
+class Grid_DWR_0 : public heat::Grid_DWR<dim,spacedim> {
+public:
+	Grid_DWR_0() = default;
+	virtual ~Grid_DWR_0() = default;
+	
+	virtual void generate();
+	virtual void set_boundary_indicators();
 };
 
-}}
+} // namespace
 
 #endif
