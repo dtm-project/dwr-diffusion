@@ -94,8 +94,11 @@ protected:
 		
 		struct {
 			/// iterator for slab struct elements for forward time marching
-			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab;
 			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab_previous;
+			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab;
+			
+			// iterator for storage vectors on I_n
+			typename DTM::types::storage_data_vectors<1>::iterator u;
 		} iterator;
 		
 		// Data Output

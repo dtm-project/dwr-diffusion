@@ -207,11 +207,17 @@ solve_primal_problem() {
 	// do the forward time marching process of the primal problem
 	
 	// NOTE: we use I_0 as additional time interval for initial conditions
+	
 	// init slab to first space-time slab Omega x I_0
 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
 	primal.iterator.slab_previous = grid->slabs.end();
 	primal.iterator.slab = grid->slabs.begin();
 	
+	// init iterator.u to first space-time slab Omega x I_0 storage container
+	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
+	primal.iterator.u = primal.storage.u->begin();
+	
+	// init data output
 	primal_init_data_output();
 }
 
