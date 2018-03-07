@@ -44,7 +44,7 @@
 
 #include <heat/parameters/ParameterHandler.hh>
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
-
+#include <heat/grid/Grids.hh>
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
@@ -144,32 +144,29 @@ int main(int argc, char *argv[]) {
 		//
 		
 		// create simulator
-// 		std::shared_ptr< DTM::Problem > problem;
+		//std::shared_ptr< DTM::Problem > problem;
 		DTM::pout << "dwr-heat: dimension dim = " << dimension << std::endl;
 		
-		// select simulator
-		auto problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
-		// run the simulator
-		problem->set_input_parameters(parameter_handler);
-// 		// set grid
-// 		problem->run();
+		// select, setup and run simulator
+		switch (dimension) {
+		case 2: {
+			auto problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
+			
+			// TODO: put the following behind the switch block
+			problem->set_input_parameters(parameter_handler);
+			
+			auto grid = std::make_shared< heat::Grid_DWR_0<2,1> > ();
+			problem->set_grid(grid);
+			
+			problem->run();
+			
+			break;
+		}
 		
-// 		switch (dimension) {
-// 			case 2:
-// 			auto problem = std::make_shared< Heat::Heat_cGp_dG0__cGq_cG1_DWR<DIM> > ();
-// 			break;
-// 		}
-		
-// 		////////////////////////////////////////////////////////////////////////
-// 		// grid
-// 		//
-// 		auto grid = std::make_shared< Heat::Grid_DWR_0<DIM,1> > ();
-// 		problem->set_grid(grid);
-		
-// 		// choose error functional / goal functional type J()
-// 		auto error_functional_type = Heat::types::error_functional::L2_global;
-		
-// 		problem->run();
+		case 3: [[fallthrough]]
+		default:
+			dealii::ExcNotImplemented();
+		}
 		
 		DTM::pout << std::endl << "Goodbye." << std::endl;
 		

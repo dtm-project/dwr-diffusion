@@ -34,7 +34,7 @@
 // PROJECT includes
 #include <heat/parameters/ParameterSet.hh>
 
-// #include <head/grid/Grid_DWR.tpl.hh>
+#include <heat/grid/Grid_DWR.tpl.hh>
 // #include <Heat/ErrorEstimator/ErrorEstimators.hh>
 // #include <Heat/Storage/Data_vectors.tpl.hh>
 // #include <Heat/types/error_functional.hh>
@@ -67,18 +67,20 @@ public:
 	Heat_DWR__cGp_dG0__cGq_cG1() = default;
 	virtual ~Heat_DWR__cGp_dG0__cGq_cG1() = default;
 	
-// 	virtual void set_grid(
-// 		std::shared_ptr< heat::Grid_DWR<dim,1> > grid
-// 	);
-	
 	virtual void set_input_parameters(
 		std::shared_ptr< dealii::ParameterHandler > parameter_handler
 	);
 	
-// 	virtual void run();
+	virtual void set_grid(
+		std::shared_ptr< heat::Grid_DWR<dim,1> > grid
+	);
+	
+	virtual void run();
 
 protected:
 	std::shared_ptr< heat::dwr::ParameterSet > parameter_set;
+	
+	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	
 	
 // 	virtual void init(const unsigned int global_refinement);
@@ -214,7 +216,7 @@ protected:
 		unsigned int data_output_patches;
 	} dual;
 	
-// 	std::shared_ptr< Heat::Grid_DWR<dim,1> > grid;
+
 	
 // 	struct {
 // 		std::shared_ptr< dealii::Function<dim> > epsilon;

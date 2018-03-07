@@ -79,12 +79,19 @@ set_input_parameters(
 	);
 }
 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// set_grid(std::shared_ptr< Grid_DWR<dim,1> > _grid) {
-// 	grid = _grid;
-// }
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+set_grid(std::shared_ptr< Grid_DWR<dim,1> > _grid) {
+	grid = _grid;
+}
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+run() {
+	
+}
 
 
 // template<int dim>
