@@ -35,8 +35,9 @@
 #include <heat/parameters/ParameterSet.hh>
 
 #include <heat/grid/Grid_DWR.tpl.hh>
+
+
 // #include <Heat/ErrorEstimator/ErrorEstimators.hh>
-// #include <Heat/Storage/Data_vectors.tpl.hh>
 // #include <Heat/types/error_functional.hh>
 
 
@@ -45,6 +46,7 @@
 #include <DTM++/base/LogStream.hh>
 // #include <DTM++/base/Problem.hh>
 #include <DTM++/io/DataOutput.tpl.hh>
+#include <DTM++/types/storage_data_vectors.tpl.hh>
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
@@ -82,10 +84,49 @@ protected:
 	
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	
+	/// primal: data structures for forward time marching
+	struct {
+		// storage container
+		struct {
+			/// primal solutions list
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
+		} storage;
+		
+		// Data Output
+		DTM::DataOutput<dim> data_output;
+		unsigned int data_output_patches;
+	} primal;
+	
+	/// dual: data structures for backward time marching and error estimation
+	struct {
+		// storage container
+		struct {
+			/// primal solutions interpolated into dual FE room list
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
+			
+			/// dual solutions list
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > z;
+			
+			/// error_indicators list
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
+		} storage;
+		
+		// Data Output
+		DTM::DataOutput<dim> data_output;
+		unsigned int data_output_patches;
+	} dual;
+	
+	
 	virtual void init_grid();
+	virtual void init_storage();
 	
 	
-// 	virtual void init_storage();
+	
+	
+	
+	
+	
+	
 	
 // 	// primal problem
 // 	virtual void solve_primal_problem();
@@ -148,7 +189,7 @@ protected:
 // 	virtual void do_data_output(const double cycle);
 	
 // 	/// primal: data structures for forward time marching
-	struct {
+// 	struct {
 // 		// storage container
 // 		struct {
 // 			std::shared_ptr< storage_data_vectors > u; ///< primal solutions list
@@ -176,12 +217,12 @@ protected:
 // 		/// primal problem system_rhs vector ((tau_n*f_0) + (M*u_old_interpolated))
 // 		dealii::Vector<double> system_rhs;
 		
-		// Data Output
-		DTM::DataOutput<dim> data_output;
-		unsigned int data_output_patches;
-	} primal;
+// 		// Data Output
+// 		DTM::DataOutput<dim> data_output;
+// 		unsigned int data_output_patches;
+// 	} primal;
 	
-	struct {
+// 	struct {
 // 		// storage container
 // 		struct {
 // 			std::shared_ptr< storage_data_vectors > u; ///< primal solutions interpolated into dual FE room list
@@ -212,10 +253,10 @@ protected:
 // 		dealii::Vector<double> system_rhs; ///< dual problem system_rhs vector 
 // 										   ///  ((M-(tau_n/2)*A)*z_old_interpolated+(tau_n/2)*(Je_old+Je_new))
 		
-		// Data Output
-		DTM::DataOutput<dim> data_output;
-		unsigned int data_output_patches;
-	} dual;
+// 		// Data Output
+// 		DTM::DataOutput<dim> data_output;
+// 		unsigned int data_output_patches;
+// 	} dual;
 	
 
 	

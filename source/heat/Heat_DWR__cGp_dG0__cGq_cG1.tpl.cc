@@ -95,10 +95,12 @@ run() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	
 	init_grid();
+	init_storage();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // internal functions
+//
 
 template<int dim>
 void
@@ -140,7 +142,53 @@ init_grid() {
 }
 
 
-
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+init_storage() {
+	////////////////////////////////////////////////////////////////////////////
+	// init storage containers for vector data
+	
+	// get number of time steps
+	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+	
+	///////////////////////////////////////////////////////////
+	// primal solution dof vectors u (on primal solution space)
+	//
+	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	primal.storage.u->resize(N+1);
+	for (auto &element : *primal.storage.u) {
+	for (unsigned int j{0}; j < element.x.size(); ++j) {
+		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+	}}
+	
+	/////////////////////////////////////////////////////////
+	// primal solution dof vectors u (on dual solution space)
+	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	dual.storage.u->resize(N+1);
+	for (auto &element : *dual.storage.u) {
+	for (unsigned int j{0}; j < element.x.size(); ++j) {
+		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+	}}
+	
+	///////////////////////////////////////////////////////
+	// dual solution dof vectors z (on dual solution space)
+	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	dual.storage.z->resize(N+1);
+	for (auto &element : *dual.storage.z) {
+	for (unsigned int j{0}; j < element.x.size(); ++j) {
+		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+	}}
+	
+	/////////////////////////////////////////////////
+	// auxiliary vectors eta (on dual solution space)
+	dual.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	dual.storage.eta->resize(N);
+	for (auto &element : *dual.storage.eta) {
+	for (unsigned int j{0}; j < element.x.size(); ++j) {
+		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+	}}
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,49 +217,7 @@ init_grid() {
 // }
 
 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// init_storage() {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// init storage containers for vector data
-// 	
-// 	// get number of time steps
-// 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
-// 	
-// 	///////////////////////////////////////////////////////////
-// 	// primal solution dof vectors u (on primal solution space)
-// 	//
-// 	primal.storage.u = std::make_shared< storage_data_vectors > ();
-// 	primal.storage.u->resize(N+1);
-// 	for (auto &element : *primal.storage.u) {
-// 		element.x = std::make_shared< dealii::Vector<double> > ();
-// 	}
-// 	
-// 	/////////////////////////////////////////////////////////
-// 	// primal solution dof vectors u (on dual solution space)
-// 	dual.storage.u = std::make_shared< storage_data_vectors > ();
-// 	dual.storage.u->resize(N+1);
-// 	for (auto &element : *dual.storage.u) {
-// 		element.x = std::make_shared< dealii::Vector<double> > ();
-// 	}
-// 	
-// 	///////////////////////////////////////////////////////
-// 	// dual solution dof vectors z (on dual solution space)
-// 	dual.storage.z = std::make_shared< storage_data_vectors > ();
-// 	dual.storage.z->resize(N+1);
-// 	for (auto &element : *dual.storage.z) {
-// 		element.x = std::make_shared< dealii::Vector<double> > ();
-// 	}
-// 	
-// 	/////////////////////////////////////////////////
-// 	// auxiliary vectors eta (on dual solution space)
-// 	dual.storage.eta = std::make_shared< storage_data_vectors > ();
-// 	dual.storage.eta->resize(N);
-// 	for (auto &element : *dual.storage.eta) {
-// 		element.x = std::make_shared< dealii::Vector<double> > ();
-// 	}
-// }
+
 
 
 // template<int dim>
