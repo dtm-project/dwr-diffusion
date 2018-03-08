@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  * 
+ * @date 2018-03-08, primal problem, UK
  * @date 2018-03-06, new implementation, UK
  * @date 2018-03-05, UK
  * @date 2017-08-01, Heat/DWR, MPB, UK
@@ -86,12 +87,15 @@ protected:
 	
 	/// function: keep shared_ptr to Function<dim> for several quantities
 	struct {
-// 		std::shared_ptr< dealii::Function<dim> > epsilon;
-// 		std::shared_ptr< dealii::Function<dim> > f;
-// 		std::shared_ptr< dealii::Function<dim> > u_D; // Dirichlet boundary val. fun.
+		std::shared_ptr< dealii::Function<dim> > epsilon;
+		std::shared_ptr< dealii::Function<dim> > f;
+		std::shared_ptr< dealii::Function<dim> > u_D; // Dirichlet boundary val. fun.
 		
 		/// initial value function
 		std::shared_ptr< dealii::Function<dim> > u_0;
+		
+		/// mass density function
+		std::shared_ptr< dealii::Function<dim> > density;
 	} function;
 	
 	/// primal: data structures for forward time marching
@@ -114,6 +118,13 @@ protected:
 			typename DTM::types::storage_data_vectors<1>::iterator u;
 			typename DTM::types::storage_data_vectors<1>::iterator un;
 		} iterator;
+		
+		std::shared_ptr< dealii::SparseMatrix<double> > M;
+		std::shared_ptr< dealii::SparseMatrix<double> > A;
+		std::shared_ptr< dealii::Vector<double> > f0;
+		
+		std::shared_ptr< dealii::SparseMatrix<double> > K;
+		std::shared_ptr< dealii::Vector<double> > b;
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
@@ -149,6 +160,17 @@ protected:
 	
 	// primal problem:
 	
+	virtual void primal_assemble_system(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+	);
+	
+	virtual void primal_assemble_rhs(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const double t0
+	);
+	
+	virtual void primal_solve();
+	
 	virtual void solve_primal_problem();
 	
 	virtual void primal_reinit_data_output(
@@ -178,7 +200,6 @@ protected:
 // 	
 // 	virtual void primal_assemble_rhs();
 // 	
-// 	virtual void primal_solve();
 // 	
 	
 	

@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  * 
+ * @date 2018-03-08, primal problem, UK
  * @date 2018-03-06, new implementation, UK
  * @date 2017-08-01, Heat/DWR, MPB, UK
  *
@@ -31,30 +32,28 @@
 #include <DTM++/base/LogStream.hh>
 
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
-// #include <heat/types/boundary_id.hh> 
 
-// // DEAL.II includes
-// #include <deal.II/base/function.h>
-// #include <deal.II/base/quadrature.h>
-// #include <deal.II/base/work_stream.h>
-// 
-// #include <deal.II/fe/fe_q.h>
-// #include <deal.II/fe/fe_tools.h>
-// #include <deal.II/fe/fe_values.h>
-// #include <deal.II/fe/mapping_q.h>
-// 
+#include <heat/assembler/L2_MassAssembly.tpl.hh>
+
+#include <heat/assembler/L2_LaplaceAssembly.tpl.hh>
+
+#include <heat/assembler/L2_ForceConstrainedAssembly.tpl.hh>
+
+template <int dim>
+using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
+
+#include <heat/types/boundary_id.hh>
+
+// DEAL.II includes
+
 // #include <deal.II/grid/grid_refinement.h>
-// 
-// #include <deal.II/lac/full_matrix.h>
-// #include <deal.II/lac/solver_cg.h>	// only for solving with cg
-// #include <deal.II/lac/solver_control.h>
-// #include <deal.II/lac/precondition.h>
-// 
-// #include <deal.II/lac/sparse_direct.h>
-// 
-// #include <deal.II/numerics/data_out.h>
-// #include <deal.II/numerics/matrix_tools.h>
 
+// #include <deal.II/lac/solver_control.h>
+
+#include <deal.II/lac/sparse_direct.h>
+
+#include <deal.II/numerics/matrix_tools.h>
+#include <deal.II/numerics/vector_tools.h>
 
 // // C++ includes
 // #include <fstream>
@@ -119,7 +118,13 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	// TODO: read those from parameter input file
+	function.u_D = std::make_shared< dealii::ZeroFunction<dim> > (1);
+	
 	function.u_0 = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+	function.f = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+	
+	function.density = std::make_shared< dealii::ZeroFunction<dim> > (1);
 }
 
 
@@ -320,6 +325,146 @@ reinit_storage() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_assemble_system(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+) {
+	// ASSEMBLY MASS MATRIX ////////////////////////////////////////////////////
+	primal.M = std::make_shared< dealii::SparseMatrix<double> > ();
+	primal.M->reinit(*slab->primal.sp);
+	
+	*primal.M = 0;
+	{
+		heat::Assemble::L2::Mass::
+		Assembler<dim> assemble_mass(
+			primal.M,
+			slab->primal.dof,
+			slab->primal.fe,
+			slab->primal.mapping,
+			slab->primal.constraints
+		);
+		
+		Assert(function.density.use_count(), dealii::ExcNotInitialized());
+		assemble_mass.set_density(function.density);
+		
+		DTM::pout << "dwr-heat: assemble mass matrix";
+		assemble_mass.assemble();
+		DTM::pout << " (done)" << std::endl;
+	}
+	
+	// ASSEMBLY STIFFNESS MATRIX ///////////////////////////////////////////////
+	primal.A = std::make_shared< dealii::SparseMatrix<double> > ();
+	primal.A->reinit(*slab->primal.sp);
+	
+	*primal.A = 0;
+	{
+		heat::Assemble::L2::Laplace::
+		Assembler<dim> assemble_stiffness_cell_terms (
+			primal.A,
+			slab->primal.dof,
+			slab->primal.fe,
+			slab->primal.mapping,
+			slab->primal.constraints
+		);
+		
+		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
+		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
+		
+		DTM::pout << "dwr-heat: assemble cell stiffness matrix";
+		assemble_stiffness_cell_terms.assemble();
+		DTM::pout << " (done)" << std::endl;
+	}
+	
+	// construct system matrix K = M + tau A
+	primal.K = std::make_shared< dealii::SparseMatrix<double> > ();
+	primal.K->reinit(*slab->primal.sp);
+	
+	*primal.K = 0;
+	primal.K->add(slab->tau_n(), *primal.A);
+	primal.K->add(1.0, *primal.M);
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_assemble_rhs(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const double t0
+) {
+	primal.f0 = std::make_shared< dealii::Vector<double> > ();
+	primal.f0->reinit( slab->primal.dof->n_dofs() );
+	
+	auto assemble_f0 = std::make_shared< ForceAssembler<dim> > (
+		primal.f0,
+		slab->primal.dof,
+		slab->primal.fe,
+		slab->primal.mapping,
+		slab->primal.constraints
+	);
+	
+	Assert(function.f.use_count(), dealii::ExcNotInitialized());
+	assemble_f0->set_function(function.f);
+	
+	*primal.f0 = 0;
+	assemble_f0->assemble(
+		t0,
+		0,   // n_q_points: 0 -> p+1 in auto mode
+		true // auto mode
+	);
+	
+	// construct vector b = M um + tau_n f0
+	primal.b = std::make_shared< dealii::Vector<double> > ();
+	primal.b->reinit( slab->primal.dof->n_dofs() );
+	
+	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
+	primal.M->vmult(*primal.b, *primal.iterator.um->x[0]);
+	
+	primal.b->add(slab->tau_n(), *primal.f0);
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_solve() {
+	////////////////////////////////////////////////////////////////////////////
+	// apply Dirichlet boundary values
+	std::map<dealii::types::global_dof_index, double> boundary_values;
+	
+	Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
+	dealii::VectorTools::interpolate_boundary_values(
+		*primal.iterator.slab->primal.dof,
+		static_cast< dealii::types::boundary_id > (
+			heat::types::boundary_id::Dirichlet
+		),
+		*function.u_D,
+		boundary_values
+	);
+	
+	dealii::MatrixTools::apply_boundary_values(
+		boundary_values,
+		*primal.K,
+		*primal.iterator.u->x[0],
+		*primal.b
+	);
+	
+	////////////////////////////////////////////////////////////////////////////
+	// solve linear system directly
+	dealii::SparseDirectUMFPACK iA;
+	iA.initialize(*primal.K);
+	iA.vmult(*primal.iterator.u->x[0], *primal.b);
+	
+	////////////////////////////////////////////////////////////////////////////
+	// distribute hanging node constraints on solution
+	primal.iterator.slab->primal.constraints->distribute(
+		*primal.iterator.u->x[0]
+	);
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 solve_primal_problem() {
 	////////////////////////////////////////////////////////////////////////////
 	// do the forward time marching process of the primal problem
@@ -382,9 +527,9 @@ solve_primal_problem() {
 		*um->x[0]
 	);
 	
-	// TODO: debug output of I(u_0)
-	primal_reinit_data_output(slab);
-	primal_do_data_output();
+// 	// TODO: debug output of I(u_0)
+// 	primal_reinit_data_output(slab);
+// 	primal_do_data_output();
 	
 	
 	// do TMS loop: // TODO:
@@ -405,20 +550,44 @@ solve_primal_problem() {
 			<< "I_" << n << " = (" << tm << ", " << tn << ") "
 			<< std::endl;
 		
+		if (slab_previous != grid->slabs.end()) {
+			// interpolate u(t_n) |_{I_{n-1}} to u(t_m) |_{I_n}
+			dealii::VectorTools::interpolate_to_different_mesh(
+				// solution on I_{n-1}:
+				*slab_previous->primal.dof,
+				*un->x[0],
+				// solution on I_n:
+				*slab->primal.dof,
+				*slab->primal.constraints,
+				*um->x[0]
+			);
+			
+			++un;
+		}
+		
+		// assemble
+		primal_assemble_system(slab);
+		primal_assemble_rhs(slab,t0);
+		
+		
+			
 		// TODO:
 		(void)tm;
 		(void)t0;
 		(void)tn;
 		
 		// TODO:
-		(void)um;
-		(void)u;
-		(void)un;
+// 		compute un = u0 for dG(0)
 		
 		// TODO:
 		++n;
+		
 		slab_previous = slab;
 		++slab;
+		
+		++um;
+		++u;
+		// NOTE: un will be incremented in the beginning of the TMS process
 	}
 }
 
@@ -573,10 +742,19 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_do_data_output() {
 	
+// 	// TODO
+// 	primal.data_output.write_data(
+// 		"primal",
+// 		primal.iterator.um->x[0],
+// 		0.0 /*solution_time*/
+// 	);
+	
 	// TODO
+	
+	Assert(primal.f0.use_count(), dealii::ExcNotInitialized());
 	primal.data_output.write_data(
-		"primal",
-		primal.iterator.um->x[0],
+		"force",
+		primal.f0,
 		0.0 /*solution_time*/
 	);
 }
@@ -925,62 +1103,10 @@ primal_do_data_output() {
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_interpolate_to_next_grid() {
-// 	dealii::VectorTools::interpolate_to_different_mesh(
-// 		*(primal.iterator.slab_previous->primal.dof),
-// 		*(primal.slab.u_old),
-// 		*(primal.iterator.slab->primal.dof),
-// 		*(primal.iterator.slab->primal.constraints),
-// 		*(primal.slab.u_old_interpolated)
-// 	);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // primal_assemble_rhs() {
 // 	primal.system_rhs = 0;
 // 	primal.M.vmult(primal.system_rhs, *(primal.slab.u_old_interpolated));
 // 	primal.system_rhs.add(data.tau_n, primal.f);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_solve() {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// apply Dirichlet boundary values
-// 	std::map<dealii::types::global_dof_index, double> boundary_values;
-// 	
-// 	__sync_synchronize();
-// 	
-// 	dealii::VectorTools::interpolate_boundary_values(
-// 		*(primal.iterator.slab->primal.dof),
-// 		static_cast< dealii::types::boundary_id > (
-// 			Heat::types::boundary_id::Dirichlet
-// 		),
-// 		*(function.BoundaryValues),
-// 		boundary_values
-// 	);
-// 	
-// 	dealii::MatrixTools::apply_boundary_values(
-// 		boundary_values,
-// 		primal.system_matrix,
-// 		*(primal.slab.u),
-// 		primal.system_rhs
-// 	);
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// solve linear system directly
-// 	dealii::SparseDirectUMFPACK iA;
-// 	iA.initialize(primal.system_matrix);
-// 	iA.vmult(*(primal.slab.u), primal.system_rhs);
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// distribute hanging node constraints on solution
-// 	primal.iterator.slab->primal.constraints->distribute(*primal.slab.u);
 // }
 
 

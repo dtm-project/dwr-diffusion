@@ -25,7 +25,7 @@ end
 
 subsection Mesh Specification    
     # Global refinement of the initial mesh
-    set global refinement = 0
+    set global refinement = 3
     
     # Polynomial degrees
     set primal p = 1
