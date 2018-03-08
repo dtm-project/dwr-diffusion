@@ -105,7 +105,7 @@ run() {
 	reinit_storage();
 	
 	// primal problem:
-	solve_primal_problem();
+	primal_do_forward_TMS();
 }
 
 
@@ -467,6 +467,151 @@ primal_solve() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_do_forward_TMS() {
+	////////////////////////////////////////////////////////////////////////////
+	// prepare TMS loop
+	//
+	
+	////////////////////////////////////////////////////////////////////////////
+	// grid: init slab iterator to first space-time slab: Omega x I_1
+	//
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	primal.iterator.slab = grid->slabs.begin();
+	
+	// shortcut references
+	auto &slab = primal.iterator.slab;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// storage: init iterators to storage_data_vectors
+	//          corresponding to first space-time slab: Omega x I_1
+	//
+	
+	Assert(primal.storage.um.use_count(), dealii::ExcNotInitialized());
+	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
+	primal.iterator.um = primal.storage.um->begin();
+	
+	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
+	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
+	primal.iterator.u = primal.storage.u->begin();
+	
+	Assert(primal.storage.un.use_count(), dealii::ExcNotInitialized());
+	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
+	primal.iterator.un = primal.storage.un->begin();
+	
+	// shortcut references
+	auto &um = primal.iterator.um;
+	auto &u  = primal.iterator.u;
+	auto &un = primal.iterator.un;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// interpolate (or project) initial value(s)
+	//
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+	function.u_0->set_time(slab->t_m);
+	
+	// primal grid
+	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
+	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
+	
+	dealii::VectorTools::interpolate(
+		*slab->primal.mapping,
+		*slab->primal.dof,
+		*function.u_0,
+		*um->x[0]
+	);
+	
+	// output "solution" at initial time t0
+	primal_init_data_output(slab);
+	primal_do_data_output(slab,slab->t_m);
+	
+	////////////////////////////////////////////////////////////////////////////
+	// do TMS loop
+	//
+	
+	DTM::pout
+		<< std::endl
+		<< "*******************************" << std::endl
+		<< "primal: solving TMS problems..." << std::endl
+		<< std::endl;
+	
+	unsigned int n{1};
+	while (slab != grid->slabs.end()) {
+		// local time variables: \f$ t0 \in I_n = (t_m, t_n) \f$
+		const double tm = slab->t_m;
+		const double t0 = tm + slab->tau_n()/2.;
+		const double tn = slab->t_n;
+		
+		DTM::pout
+			<< "primal: solving problem on "
+			<< "I_" << n << " = (" << tm << ", " << tn << ") "
+			<< std::endl;
+		
+		if (slab != grid->slabs.begin()) {
+			// interpolate u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}  for  n > 1
+			dealii::VectorTools::interpolate_to_different_mesh(
+				// solution on I_{n-1}:
+				*std::prev(slab)->primal.dof,
+				*std::prev(un)->x[0],
+				// solution on I_n:
+				*slab->primal.dof,
+				*slab->primal.constraints,
+				*um->x[0]
+			);
+		}
+		
+		// assemble
+		primal_assemble_system(slab);
+		primal_assemble_rhs(slab,t0);
+		
+		// apply boundary values and solve for u0
+		primal_solve();
+		
+		////////////////////////////////////////////////////////////////////////
+		// finalize I_n problem: construct solution u(t_n)
+		//
+		
+		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
+		*un->x[0] = 0;
+		un->x[0]->add(zeta0, *u->x[0]);
+		
+		////////////////////////////////////////////////////////////////////////
+		// do postprocessing on the solution
+		//
+		
+		// output solution at t_n
+		primal_do_data_output(slab,tn);
+		
+		////////////////////////////////////////////////////////////////////////
+		// prepare next I_n slab problem:
+		//
+		
+		++n;
+		
+		++slab;
+		
+		++um;
+		++u;
+		++un;
+		
+		// allow garbage collect
+		primal.M = nullptr;
+		primal.A = nullptr;
+		
+		primal.b = nullptr;
+		primal.f0 = nullptr;
+	}
+}
+
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_init_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 ) {
@@ -527,149 +672,6 @@ primal_do_data_output(
 }
 
 
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-solve_primal_problem() {
-	////////////////////////////////////////////////////////////////////////////
-	// do the forward time marching process of the primal problem
-	//
-	
-	// init slab iterator to first space-time slab Omega x I_1
-	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
-	primal.iterator.slab_previous = grid->slabs.end();
-	primal.iterator.slab = grid->slabs.begin();
-	
-	// shortcut references
-	auto &slab_previous = primal.iterator.slab_previous;
-	auto &slab = primal.iterator.slab;
-	
-	////////////////////////////////////////////////////////////////////////////
-	// init iterators to storage_data_vectors iterators
-	// on slab corresponding to Omega x I_1
-	//
-	
-	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
-	primal.iterator.um = primal.storage.um->begin();
-	
-	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
-	primal.iterator.u = primal.storage.u->begin();
-	
-	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
-	primal.iterator.un = primal.storage.un->begin();
-	
-	// shortcut references
-	auto &um = primal.iterator.um;
-	auto &u  = primal.iterator.u;
-	auto &un = primal.iterator.un;
-	
-	////////////////////////////////////////////////////////////////////////////
-	// SOLVING forward TMS (primal problem) ////////////////////////////////////
-	//
-	
-	// init time variables on a formal I_0 = (-inf, t0] element
-	double tm{parameter_set->t0};
-	double t0{-1};
-	double tn{tm};
-	
-	////////////////////////////////////////////////////////////////////////////
-	// setup initial values ////////////////////////////////////////////////////
-	// interpolate or project initial value(s)
-	
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
-	function.u_0->set_time(tn);
-	
-	// primal grid
-	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
-	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
-	
-	dealii::VectorTools::interpolate(
-		*slab->primal.mapping,
-		*slab->primal.dof,
-		*function.u_0,
-		*um->x[0]
-	);
-	
-	// output "solution" at t0
-	primal_init_data_output(slab);
-	primal_do_data_output(slab,tn);
-	
-	// do TMS loop
-	DTM::pout
-		<< std::endl
-		<< "*******************************" << std::endl
-		<< "primal: solving TMS problems..." << std::endl
-		<< std::endl;
-	
-	unsigned int n{1};
-	while (slab != grid->slabs.end()) {
-		tm = slab->t_m;
-		t0 = tm + slab->tau_n()/2.;
-		tn = slab->t_n;
-		
-		DTM::pout
-			<< "primal: solving problem on "
-			<< "I_" << n << " = (" << tm << ", " << tn << ") "
-			<< std::endl;
-		
-		if (slab_previous != grid->slabs.end()) {
-			// interpolate u(t_n) |_{I_{n-1}} to u(t_m) |_{I_n}
-			dealii::VectorTools::interpolate_to_different_mesh(
-				// solution on I_{n-1}:
-				*slab_previous->primal.dof,
-				*un->x[0],
-				// solution on I_n:
-				*slab->primal.dof,
-				*slab->primal.constraints,
-				*um->x[0]
-			);
-			
-			++un;
-		}
-		
-		// assemble
-		primal_assemble_system(slab);
-		primal_assemble_rhs(slab,t0);
-		
-		// apply boundary values and solve for u0
-		primal_solve();
-		
-		////////////////////////////////////////////////////////////////////////
-		// finalize I_n problem: construct solution u(t_n)
-		//
-		
-		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
-		*un->x[0] = 0;
-		un->x[0]->add(zeta0, *u->x[0]);
-		
-		////////////////////////////////////////////////////////////////////////
-		// do postprocessing on the solution
-		//
-		
-		// output solution at t_n
-		primal_do_data_output(slab,tn);
-		
-		////////////////////////////////////////////////////////////////////////
-		// prepare next I_n slab problem:
-		//
-		
-		++n;
-		
-		slab_previous = slab;
-		++slab;
-		
-		++um;
-		++u;
-		
-		primal.M = nullptr;
-		primal.A = nullptr;
-		
-		primal.b = nullptr;
-		primal.f0 = nullptr;
-	}
-}
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -110,7 +110,6 @@ protected:
 		
 		struct {
 			/// iterator for slab struct elements for forward time marching
-			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab_previous;
 			typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab;
 			
 			// iterator for storage vectors on I_n (time dG method)
@@ -158,7 +157,9 @@ protected:
 	
 	virtual void reinit_storage();
 	
+	////////////////////////////////////////////////////////////////////////////
 	// primal problem:
+	//
 	
 	virtual void primal_assemble_system(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
@@ -171,6 +172,9 @@ protected:
 	
 	virtual void primal_solve();
 	
+	/// do the forward time marching process of the primal problem
+	virtual void primal_do_forward_TMS();
+	
 	virtual void primal_init_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 	);
@@ -181,7 +185,6 @@ protected:
 	);
 	
 	
-	virtual void solve_primal_problem();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// old functions:
