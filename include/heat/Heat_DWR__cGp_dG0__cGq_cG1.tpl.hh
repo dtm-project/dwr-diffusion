@@ -169,7 +169,8 @@ protected:
 	);
 	
 	virtual void primal_solve(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u
 	);
 	
 	/// do the forward time marching process of the primal problem

@@ -440,7 +440,8 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_solve(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u
 ) {
 	////////////////////////////////////////////////////////////////////////////
 	// apply Dirichlet boundary values
@@ -462,7 +463,7 @@ primal_solve(
 	dealii::MatrixTools::apply_boundary_values(
 		boundary_values,
 		*primal.K,
-		*primal.iterator.u->x[0],
+		*u->x[0],
 		*primal.b
 	);
 	
@@ -596,7 +597,7 @@ primal_do_forward_TMS() {
 		primal_assemble_rhs(slab,um,t0);
 		
 		// apply boundary values and solve for u0
-		primal_solve(slab);
+		primal_solve(slab,u);
 		
 		////////////////////////////////////////////////////////////////////////
 		// do postprocessing on the solution
