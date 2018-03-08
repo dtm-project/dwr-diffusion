@@ -569,17 +569,18 @@ solve_primal_problem() {
 		primal_assemble_system(slab);
 		primal_assemble_rhs(slab,t0);
 		
+		// apply boundary values and solve for u0
+		primal_solve();
 		
-			
-		// TODO:
-		(void)tm;
-		(void)t0;
-		(void)tn;
+		// construct solution u(t_n)
+		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
+		*un->x[0] = 0;
+		un->x[0]->add(zeta0, *u->x[0]);
 		
-		// TODO:
-// 		compute un = u0 for dG(0)
+		// do postprocessing on the solution
+		do_data_output();
 		
-		// TODO:
+		// prepare next I_n slab problem:
 		++n;
 		
 		slab_previous = slab;
@@ -587,7 +588,12 @@ solve_primal_problem() {
 		
 		++um;
 		++u;
-		// NOTE: un will be incremented in the beginning of the TMS process
+		
+		primal.M = nullptr;
+		primal.A = nullptr;
+		
+		primal.b = nullptr;
+		primal.f0 = nullptr;
 	}
 }
 
