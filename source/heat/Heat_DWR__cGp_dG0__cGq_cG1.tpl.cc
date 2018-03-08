@@ -527,9 +527,6 @@ primal_do_data_output(
 }
 
 
-
-
-
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
@@ -697,30 +694,6 @@ solve_primal_problem() {
 // // 			primal.iterator.slab = Inth_primal;
 // // 			primal.iterator.slab_previous = Inth_primal_prev; //for this timestep primal.iterator.slab=primal.iterator.slab_previous holds
 // 			
-// 			primal_reinit();
-// 			primal_assemble_system();
-// 			
-// 			volatile const double ttt{n*data.tau_n};
-// 			primal_set_time(ttt);
-// 			
-// 			primal_assemble_f();
-// 			
-// 			//primal_interpolate_to_next_grid();
-// 			
-// 			primal_assemble_rhs();
-// 			
-// 			primal_solve();
-// 			
-// 			//Save current solution for next time step in primal.slab.u_old 
-// 			// (needed within primal_assemble_rhs() of next timestep)
-// 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-// 			primal.slab.u_old->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(primal.slab.u_old) = *(primal.slab.u);
-// 			
-// 			// Save current  solution in list primal.storage.u
-// 			In_uthprimal->x->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(In_uthprimal->x) = *(primal.slab.u);
-// 			
 // // 			//NOTE: do this in dual problem!
 // // 			// interpolate current solution to dual fe-room
 // // 			interpolate_primal_to_dual();
@@ -730,42 +703,8 @@ solve_primal_problem() {
 // 		}
 // 		else {
 // 			// Compute u_2,...,u_N
-// 
-// // 			// Output of time_steps 3,...,N+1 at time-points t_2,...,t_N
-// // 			data.primal_time = (n*data.tau_n); 
-// // 			++data.primal_timestep_number;
-// // 			
 // // 			++In_uth; //increase iterator of list dual.storage.u
-// // 			++In_uthprimal; //increase iterator of list primal.storage.u
-// // 			++Inth_primal; //increase iterator of list In (grids)
-// 			
-// // 			// Set iterators
-// // 			// For t_n, n > 1 primal.iterator.slab_previous should always be the iterator
-// // 			// that points on the previous element of the list, to which
-// // 			// the iterator primal.iterator.slab points ;-)
-// 			primal.iterator.slab = Inth_primal;
-// 			primal.iterator.slab_previous = Inth_primal_prev; 
-// 			
-// 			primal_reinit();
-// 			primal_assemble_system();
-// 			
-// 			volatile const double ttt{n*data.tau_n};
-// 			primal_set_time(ttt);
-// 			
-// 			primal_assemble_f();
-// 			primal_interpolate_to_next_grid();
-// 			primal_assemble_rhs();
-// 			primal_solve();
-// 			
-// 			//Save current solution for next time step in primal.slab.u_old 
-// 			// (needed within primal_assemble_rhs() of next timestep)
-// 			primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-// 			primal.slab.u_old->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(primal.slab.u_old) = *(primal.slab.u);
-// 			// Save current  solution in list primal.storage.u
-// 			In_uthprimal->x->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 			*(In_uthprimal->x) = *(primal.slab.u);
-// 
+// // 
 // // 			// NOTE: only in dual problem
 // // 			
 // // 			// interpolate current solution to dual fe-room
@@ -774,17 +713,11 @@ solve_primal_problem() {
 // // 			// Save current interpolated solution (dual.u) in list dual.storage.u
 // // 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
 // // 			*(In_uth->x) = *(dual.u);
-// // 
-// // 			++Inth_primal_prev; // increase iterator of list "In-1" 
 // 		}
 // 
 // 	} // end primal-loop n
 // ////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////
-
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -847,32 +780,6 @@ solve_primal_problem() {
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_reinit() {
-// 	// now create vectors and matricies for primal problem
-// 	Assert(primal.iterator.slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.sp.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	primal.M.reinit(*(primal.iterator.slab->primal.sp));
-// 	primal.A.reinit(*(primal.iterator.slab->primal.sp));
-// 	primal.system_matrix.reinit(*(primal.iterator.slab->primal.sp));
-// 	
-// 	primal.slab.u = std::make_shared< dealii::Vector<double> > ();
-// 	primal.slab.u->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 	
-// 	primal.slab.u_old_interpolated = std::make_shared< dealii::Vector<double> > ();
-// 	primal.slab.u_old_interpolated->reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 	dual.u = std::make_shared< dealii::Vector<double> > ();
-// 	dual.u->reinit(primal.iterator.slab->dual.dof->n_dofs());
-// 	
-// 	primal.f.reinit(primal.iterator.slab->primal.dof->n_dofs());
-// 	primal.system_rhs.reinit(primal.iterator.slab->primal.dof->n_dofs());
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // dual_reinit() {
 // 	// now create vectors and matricies for dual problem
 // 	Assert(dual.iterator.slab->dual.dof.use_count(), dealii::ExcNotInitialized());
@@ -899,22 +806,7 @@ solve_primal_problem() {
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // primal_compute_initial_condition() {
-// 	Assert(
-// 		grid->slabs.front().primal.dof.use_count(),
-// 		dealii::ExcNotInitialized()
-// 	);
-// 	
-// 	primal.slab.u_old = std::make_shared< dealii::Vector<double> > ();
-// 	primal.slab.u_old->reinit(grid->slabs.front().primal.dof->n_dofs());
-// 	
-// 	dealii::VectorTools::interpolate(
-// 		*(grid->slabs.front().primal.dof),
-// 		*(function.BoundaryValues),
-// 		*(primal.slab.u_old)
-// 	);
-// 	grid->slabs.front().primal.constraints->distribute(*(primal.slab.u_old));
-// 	
-// 	
+// 
 // 	dual.u = std::make_shared< dealii::Vector<double> > ();
 // 	dual.u->reinit(grid->slabs.front().dual.dof->n_dofs());
 // 	
@@ -926,213 +818,6 @@ solve_primal_problem() {
 // 		*(dual.u)
 // 	);
 // 	grid->slabs.front().dual.constraints->distribute(*(dual.u));
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_assemble_system() {
-// 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.fe.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.constraints.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	// ASSEMBLY ////////////////////////////////////////////////////////////////
-// 	
-// 	// Initialise the system matrix with 0.
-// 	primal.M = 0;
-// 	primal.A = 0;
-// 	primal.system_matrix = 0;
-// 	
-// 	
-// // 	// TODO: warum p+2?
-// // 	
-// 	// Setup a Gaussian quadrature formula
-// 	// NOTE: We take p+1 quadrature points
-// 	dealii::QGauss<dim> quad ( primal.iterator.slab->primal.fe->tensor_degree()+2 ); //alter GaussLobatto
-// 	
-// 	// Setup a FE_Values object.
-// 	// This is needed to get the needed information from the FiniteElement
-// 	dealii::FEValues<dim> fe_values(
-// 		*(primal.iterator.slab->primal.mapping),
-// 		*(primal.iterator.slab->primal.fe),
-// 		quad,
-// 		dealii::update_values | 
-// 		dealii::update_gradients | // update shape function gradient values
-// 		dealii::update_hessians | 
-// 		dealii::update_quadrature_points |
-// 		dealii::update_JxW_values
-// 	);
-// 	
-// 	// Setup a (small) full matrix, to store the assembly on each mesh cell
-// 	// efficiently.
-// 	// Afterwards they will be distributed into the global (sparse) matrix A.
-// 	dealii::FullMatrix<double> local_M(
-// 		primal.iterator.slab->primal.fe->dofs_per_cell, primal.iterator.slab->primal.fe->dofs_per_cell
-// 	);
-// 	dealii::FullMatrix<double> local_A(
-// 		primal.iterator.slab->primal.fe->dofs_per_cell, primal.iterator.slab->primal.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Setup a small vector, to store the global dof indices.
-// 	// NOTE: We are using a C++ standart template vector, not a deal.II
-// 	// "Vector".
-// 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
-// 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-// 		primal.iterator.slab->primal.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Now we do the real work, looping over all cells to compute the cell
-// 	// assemblys. For this we need an iterator (kind of a pointer), which allows
-// 	// us, to iterate over each cell easily.
-// 	// We initialise it with the first active cell of our triangulation.
-// 	auto cell = primal.iterator.slab->primal.dof->begin_active();
-// 	auto endc = primal.iterator.slab->primal.dof->end();
-// 	
-// 	for ( ; cell != endc; ++cell) {
-// 		// First we have to compute the values of the gradients and
-// 		// the JxW values.
-// 		// The reinit of the fe_values object on the current cell will do this.
-// 		fe_values.reinit(cell);
-// 		
-// 		// Initialise the full matrix for the cell assembly with 0.
-// 		local_M = 0;
-// 		local_A = 0;
-// 		
-// 		// Now loop over all shape function combinations and quadrature points
-// 		// to get the assembly.
-// 		for (unsigned int i(0); i < primal.iterator.slab->primal.fe->dofs_per_cell; ++i)
-// 		for (unsigned int j(0); j < primal.iterator.slab->primal.fe->dofs_per_cell; ++j)
-// 		for (unsigned int q(0); q < quad.size(); ++q) {
-// 			local_M(i,j) += (
-// 				fe_values.shape_value(i,q) *
-// 				fe_values.shape_value(j,q) *
-// 				fe_values.JxW(q)
-// 			);
-// 			
-// 			local_A(i,j) += (
-// 				fe_values.shape_grad(i,q) *
-// 				function.epsilon->value(fe_values.quadrature_point(q), 0) *
-// 				fe_values.shape_grad(j,q) *
-// 				fe_values.JxW(q)
-// 			);
-// 		}
-// 		
-// 		// Store the global indices into the vector local_dof_indices.
-// 		// The cell object will give us the information.
-// 		Assert(
-// 			(local_dof_indices.size() == primal.iterator.slab->primal.fe->dofs_per_cell),
-// 			dealii::ExcNotInitialized()
-// 		);
-// 		cell->get_dof_indices(local_dof_indices);
-// 		
-// 		// Copy the local assembly to the global matrix.
-// 		// We use the constraint object, to set all constraints with that step.
-// 		Assert(
-// 			primal.iterator.slab->primal.constraints.use_count(),
-// 			dealii::ExcNotInitialized()
-// 		);
-// 		
-// 		primal.iterator.slab->primal.constraints->distribute_local_to_global(
-// 			local_M, local_dof_indices, primal.M
-// 		);
-// 		
-// 		primal.iterator.slab->primal.constraints->distribute_local_to_global(
-// 			local_A, local_dof_indices, primal.A
-// 		);
-// 	}
-// 	
-// 	// Put the computed matrices into the system matrix (for later solving Ax=b)
-// 	// Here A = system_matrix =  M + tau_n*A
-// 	primal.system_matrix.copy_from(primal.M);
-// 	primal.system_matrix.add(data.tau_n,primal.A); //dG(0)
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_assemble_f(// TODO double time) {
-// 	__sync_synchronize();
-// 	
-// 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.fe.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.iterator.slab->primal.constraints.use_count(), dealii::ExcNotInitialized());
-// 	Assert(function.f.use_count(), dealii::ExcNotInitialized());
-// 	primal.f = 0;
-// 	
-// 	dealii::QGauss<dim> quad ( primal.iterator.slab->primal.fe->tensor_degree()+2 ); //GaussLobatto
-// 	
-// 	// Setup a FE_Values object.
-// 	// This is needed to get the needed information from the FiniteElement
-// 	dealii::FEValues<dim> fe_values(
-// 		*(primal.iterator.slab->primal.mapping),
-// 		*(primal.iterator.slab->primal.fe),
-// 		quad,
-// 		dealii::update_values |
-// 		dealii::update_gradients |
-// 		dealii::update_quadrature_points |
-// 		dealii::update_JxW_values
-// 	);
-// 	
-// 	dealii::Vector<double> local_f(
-// 		primal.iterator.slab->primal.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Setup a small vector, to store the global dof indices.
-// 	// NOTE: We are using a C++ standart template vector, not a deal.II
-// 	// "Vector".
-// 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
-// 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-// 		primal.iterator.slab->primal.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Now we do the real work, looping over all cells to compute the cell
-// 	// assemblies. For this we need an iterator (kind of a pointer), which allows
-// 	// us, to iterate over each cell easily.
-// 	auto cell = primal.iterator.slab->primal.dof->begin_active();
-// 	auto endc = primal.iterator.slab->primal.dof->end();
-// 	
-// 	for ( ; cell != endc; ++cell) {
-// 		// The reinit of the fe_values object on the current cell.
-// 		fe_values.reinit(cell);
-// 		
-// 		// Initialise the vector for the cell assemblies with 0.
-// 		local_f = 0;
-// 
-// 		// Now loop over all shape function combinations and quadrature points
-// 		// to get the assembly.
-// 		for (unsigned int i(0); i < primal.iterator.slab->primal.fe->dofs_per_cell; ++i)
-// 		for (unsigned int q(0); q < quad.size(); ++q) {
-// 			local_f(i) +=(
-// 				(fe_values.shape_value(i,q) *
-// 				function.f->value(fe_values.quadrature_point(q), 0)
-// 				)*
-// 				fe_values.JxW(q));
-// 		}
-// 		
-// 		// Store the global indices into the vector local_dof_indices.
-// 		// The cell object will give us the information.
-// 		cell->get_dof_indices(local_dof_indices);
-// 		
-// 		// Copy the local assembly to the global matrix.
-// 		// We use the constraint object, to set all constraints with that step.
-// 		primal.iterator.slab->primal.constraints->distribute_local_to_global(
-// 			local_f, local_dof_indices, primal.f
-// 		);
-// 	}
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_assemble_rhs() {
-// 	primal.system_rhs = 0;
-// 	primal.M.vmult(primal.system_rhs, *(primal.slab.u_old_interpolated));
-// 	primal.system_rhs.add(data.tau_n, primal.f);
 // }
 
 
@@ -1224,123 +909,6 @@ solve_primal_problem() {
 // 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
 // 	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
 // }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_assemble_system() {
-// 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.fe.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	// ASSEMBLY ////////////////////////////////////////////////////////////////
-// 	
-// 	// Initialise the system matrix with 0.
-// 	dual.M = 0;
-// 	dual.A = 0;
-// 	dual.system_matrix = 0;
-// 	
-// 	// Setup a Gaussian quadrature formula
-// 	// NOTE: We take p+1 quadrature points
-// 	dealii::QGauss<dim> quad ( dual.iterator.slab->dual.fe->tensor_degree()+2);
-// 	
-// 	// Setup a FE_Values object.
-// 	// This is needed to get the needed information from the FiniteElement
-// 	dealii::FEValues<dim> fe_values(
-// 		*(dual.iterator.slab->dual.mapping),
-// 		*(dual.iterator.slab->dual.fe),
-// 		quad,
-// 		dealii::update_values | 
-// 		dealii::update_gradients | // update shape function gradient values
-// 		dealii::update_hessians | 
-// 		dealii::update_quadrature_points |
-// 		dealii::update_JxW_values
-// 	);
-// 	
-// 	// Setup a (small) full matrix, to store the assembly on each mesh cell
-// 	// efficiently.
-// 	// Afterwards they will be distributed into the global (sparse) matrix M, A.
-// 	dealii::FullMatrix<double> local_M(
-// 		dual.iterator.slab->dual.fe->dofs_per_cell, dual.iterator.slab->dual.fe->dofs_per_cell
-// 	);
-// 	dealii::FullMatrix<double> local_A(
-// 		dual.iterator.slab->dual.fe->dofs_per_cell, dual.iterator.slab->dual.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Setup a small vector, to store the global dof indices.
-// 	// NOTE: We are using a C++ standart template vector, not a deal.II
-// 	// "Vector".
-// 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
-// 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-// 		dual.iterator.slab->dual.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Now we do the real work, looping over all cells to compute the cell
-// 	// assemblys. For this we need an iterator (kind of a pointer), which allows
-// 	// us, to iterate over each cell easily.
-// 	// We initialise it with the first active cell of our triangulation.
-// 	auto cell = dual.iterator.slab->dual.dof->begin_active();
-// 	auto endc = dual.iterator.slab->dual.dof->end();
-// 	
-// 	for ( ; cell != endc; ++cell) {
-// 		// First we have to compute the values of the gradients and
-// 		// the JxW values.
-// 		// The reinit of the fe_values object on the current cell will do this.
-// 		fe_values.reinit(cell);
-// 		
-// 		// Initialise the full matrix for the cell assembly with 0.
-// 		local_M = 0;
-// 		local_A = 0;
-// 
-// 		// Now loop over all shape function combinations and quadrature points
-// 		// to get the assembly.
-// 		for (unsigned int q(0); q < quad.size(); ++q)
-// 		for (unsigned int i(0); i < dual.iterator.slab->dual.fe->dofs_per_cell; ++i)
-// 		for (unsigned int j(0); j < dual.iterator.slab->dual.fe->dofs_per_cell; ++j){
-// 			// diffusion convection reaction
-// 			// loop to get the diagonal entries of the Hessian matrix (for Laplace(u_h))
-// 			// Define a variable to calculate Laplace(u_h)
-// 			double laplace_op_of_u_h = 0;
-// 			for (unsigned int k = 0; k < dim; ++k) {
-// 				laplace_op_of_u_h += fe_values.shape_hessian(j,q)[k][k];
-// 			}
-// 			local_M(i,j) += (
-// 				(fe_values.shape_value(i,q)*
-// 				fe_values.shape_value(j,q))*
-// 				fe_values.JxW(q));
-// 			local_A(i,j) +=(
-// 				(fe_values.shape_grad(i,q) *
-// 				(function.epsilon->value(fe_values.quadrature_point(q), 0)*
-// 				fe_values.shape_grad(j,q)))*
-// 				fe_values.JxW(q));
-// 
-// 		}
-// 		
-// 		// Store the global indices into the vector local_dof_indices.
-// 		// The cell object will give us the information.
-// 		Assert(
-// 			(local_dof_indices.size() == dual.iterator.slab->dual.fe->dofs_per_cell),
-// 			dealii::ExcNotInitialized()
-// 		);
-// 		cell->get_dof_indices(local_dof_indices);
-// 		
-// 		// Copy the local assembly to the global matrix.
-// 		// We use the constraint object, to set all constraints with that step.
-// 		Assert(dual.iterator.slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
-// 		
-// 		dual.iterator.slab->dual.constraints->distribute_local_to_global(
-// 			local_M, local_dof_indices, dual.M
-// 		);
-// 		dual.iterator.slab->dual.constraints->distribute_local_to_global(
-// 			local_A, local_dof_indices, dual.A
-// 		);
-// 	}
-// 	dual.system_matrix.copy_from(dual.M);
-// 	dual.system_matrix.add((data.tau_n/2.),dual.A);
-// }
-
 
 // template<int dim>
 // void
@@ -1605,28 +1173,6 @@ solve_primal_problem() {
 // 	// distribute hanging node constraints on solution
 // 	dual.iterator.slab->dual.constraints->distribute(*(dual.z));
 // }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_do_data_output(const double n) {
-// 	const double solution_time = n;
-// 	
-// 	dual.data_output.write_data("dual", dual.z, solution_time);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// do_data_output(const double cycle) {
-// 	const double solution_time = cycle;
-// 	
-// 	primal.data_output.write_data("primal", primal.slab.u, solution_time);
-// 	dual.data_output.write_data("dual", dual.solution_vectors, solution_time);
-// }
-
 
 // template<int dim>
 // void
@@ -1943,46 +1489,6 @@ solve_primal_problem() {
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_and_dual_solution_output() {
-// 	auto Inth_u_output(primal.storage.u->begin());
-// 	auto Inth_z_output(dual.storage.z->begin());
-// 	auto In_grid_output(grid->slabs.begin());
-// 	for (unsigned int n{0}; n <= (data.T-data.t0)/data.tau_n; ++n,++Inth_u_output,++Inth_z_output) {
-// 		if (n == 0) {
-// 			primal.iterator.slab = In_grid_output;
-// 			primal_init_data_output();
-// 			dual_init_data_output();
-// 			primal.data_output.write_data("primal", (Inth_u_output->x), n);
-// 			dual.data_output.write_data("dual", (Inth_z_output->x), n);
-// 		}
-// 		else {
-// 			primal.iterator.slab = In_grid_output;
-// 			primal_init_data_output();
-// 			dual_init_data_output();
-// 			primal.data_output.write_data("primal", Inth_u_output->x, n);
-// 			dual.data_output.write_data("dual", Inth_z_output->x, n);
-// 			++In_grid_output;
-// 		}
-// 	}
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// solve_primal_problem() {
-
-// 	auto In_uth(dual.storage.u->begin());
-// 	auto endIn_uth(dual.storage.u->end());
-
-// 
-
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // solve_dual_problem() {
 // 	auto Inth_dual(grid->slabs.rbegin());
 // 	auto endIn_dual(grid->slabs.rend());
@@ -2163,12 +1669,6 @@ solve_primal_problem() {
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // run() {
-
-// 	// Initialize list of grids, set objects for ErrorEstimator class 
-// 	init(data.global_refinement);
-
-// 	// Prepare storage for solutions vectors of primal and dual problem
-// 	init_storage();
 // 	
 // ////////////////////////////////////////////////////////////////////////////////
 // /////////////// DWR-loop ///////////////////////////////////////////////////////
@@ -2228,69 +1728,13 @@ solve_primal_problem() {
 // 		
 // 		// Refine Grids
 // 		refine_grids_dwr();
-// 		
-// 		// 	//TEST
-// 		// 	for (unsigned int n{1}; n <= 75; ++n) {
-// 		// 	grid->slabs.push_back(grid->slabs.front()); // use insert instead of push_back
-// 		// 	}
-// 		// 	std::cout << "Anzahl Gitter = " << grid->slabs.size() << std::endl;
-// 		// 	dual.storage.u->clear();
-// 		// 	dual.storage.z->clear();
-// 		// 	primal.storage.u->clear();
-// 		// 	dual.storage.eta->clear();
-// 		// 	// Refine time_mesh global:
-// 		// // 		//TEST gehört zu Zeitkonvergenz
-// 		// 		data.tau_n = (data.tau_n/4.);
-// 		// // 		//ENDE TEST gehört zu Zeitkonvergenz
 // 	
 // 	} // end DWR-loop
 // 	
 // 	////////////////////////////////////////////////////////////////////////////
 // 	//////////////// end DWR-loop "cycle" //////////////////////////////////////
 // 	////////////////////////////////////////////////////////////////////////////
-// 	
-// 	// Shell output of a table
-// 	primal.convergence_table.set_precision("L2atT",5);
-// 	primal.convergence_table.set_precision("J(e)",5);
-// 	primal.convergence_table.set_precision("Eta",5);
-// 	primal.convergence_table.set_precision("I_eff",5);
-// 	primal.convergence_table.set_scientific("L2atT",true);
-// 	primal.convergence_table.set_scientific("J(e)",true);
-// 	primal.convergence_table.set_scientific("Eta",true);
-// 	std::cout << std::endl;
-// 	primal.convergence_table.write_text(std::cout);
-// 	
-// 	primal.convergence_table.evaluate_convergence_rates("J(e)",dealii::ConvergenceTable::reduction_rate);
-// 	primal.convergence_table.evaluate_convergence_rates("J(e)",dealii::ConvergenceTable::reduction_rate_log2);
-// 
-// 	primal.convergence_table.evaluate_convergence_rates("Eta",dealii::ConvergenceTable::reduction_rate);
-// 	primal.convergence_table.evaluate_convergence_rates("Eta",dealii::ConvergenceTable::reduction_rate_log2);	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	//LATEX 
-// 	primal.convergence_table.set_tex_caption("cells","\\# cells");
-// 	primal.convergence_table.set_tex_caption("dofs","\\# dofs");
-// 	primal.convergence_table.set_tex_caption("L2atT","$L^2$ at $T$");
-// 	primal.convergence_table.set_tex_caption("J(e)","J(e)");
-// 	primal.convergence_table.set_tex_caption("Eta","\\eta");
-// 	primal.convergence_table.set_tex_caption("I_eff","I_{eff}");
-// 	primal.convergence_table.set_tex_format("cycle","r");
-// 	primal.convergence_table.set_tex_format("cells","r");
-// 	primal.convergence_table.set_tex_format("dofs","r");
-// 	////////////////////////////////////////////////////////////////////////////
-// 	//LATEX END
-// 	std::cout << std::endl;
-// 	primal.convergence_table.write_text(std::cout);
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// LATEX
-// 	std::string conv_filename = "convergence";
-// 	conv_filename += "-globalref";
-// 	conv_filename += ".tex";
-// 	std::ofstream table_file(conv_filename.c_str());
-// 	primal.convergence_table.write_tex(table_file);
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// LATEX END
-// 
-// } // end function run()
+
 
 } // namespace
 

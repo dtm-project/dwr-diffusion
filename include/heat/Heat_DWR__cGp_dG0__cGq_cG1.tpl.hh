@@ -183,31 +183,11 @@ protected:
 	
 	virtual void solve_primal_problem();
 	
-	
-	
-	
+	////////////////////////////////////////////////////////////////////////////
+	// old functions:
 	
 // 	// primal problem
 
-// 	
-// 	virtual void primal_reinit();
-// 	
-// 	virtual void primal_compute_initial_condition();
-// 	
-// 	virtual void primal_assemble_system();
-// 	
-// 	virtual void primal_set_time(volatile double t_1);
-// 	
-// 	virtual void primal_assemble_f();
-// 	
-// 	virtual void primal_interpolate_to_next_grid();
-// 	
-// 	virtual void primal_assemble_rhs();
-// 	
-// 	
-	
-	
-	
 // 	virtual void interpolate_primal_to_dual();
 	
 // 	// dual problem
@@ -249,32 +229,6 @@ protected:
 // 	virtual void dual_do_data_output(const double n);
 // 	virtual void do_data_output(const double cycle);
 	
-// 	/// primal: data structures for forward time marching
-// 	struct {
-// 		
-
-		
-// 		dealii::SparseMatrix<double> M; ///< primal problem mass matrix
-// 		dealii::SparseMatrix<double> A; ///< primal problem stiffness matrix
-// 		dealii::SparseMatrix<double> system_matrix; ///< primal problem system matrix (M+tau_n*A)
-		
-// 		struct {
-// 			std::shared_ptr< dealii::Vector<double> > u; 	///< primal problem solution
-// 			std::shared_ptr< dealii::Vector<double> > u_old; ///< primal solution from one time step ago
-// 			std::shared_ptr< dealii::Vector<double> > u_old_interpolated; ///< u_old interpolated to next grid
-// 		} slab;
-		
-// 		dealii::Vector<double> f; ///< primal problem f
-// 		dealii::Vector<double> f_old; ///< NEW
-		
-// 		/// primal problem system_rhs vector ((tau_n*f_0) + (M*u_old_interpolated))
-// 		dealii::Vector<double> system_rhs;
-		
-// 		// Data Output
-// 		DTM::DataOutput<dim> data_output;
-// 		unsigned int data_output_patches;
-// 	} primal;
-	
 // 	struct {
 // 		// storage container
 // 		struct {
@@ -311,16 +265,10 @@ protected:
 // 		unsigned int data_output_patches;
 // 	} dual;
 	
-
-	
-
-	
 // 	struct {
 // 		std::shared_ptr< Heat::DWR::ErrorEstimator<dim> > DWR;
 // 	} error_estimator;
 	
-// 	struct {
-// 	} data;
 };
 
 } // namespace
