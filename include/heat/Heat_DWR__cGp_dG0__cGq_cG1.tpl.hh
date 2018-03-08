@@ -164,6 +164,7 @@ protected:
 	
 	virtual void primal_assemble_rhs(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &um,
 		const double t0
 	);
 	

@@ -395,6 +395,7 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_assemble_rhs(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &um,
 	const double t0
 ) {
 	primal.f0 = std::make_shared< dealii::Vector<double> > ();
@@ -427,7 +428,7 @@ primal_assemble_rhs(
 	primal.b->reinit( slab->primal.dof->n_dofs() );
 	
 	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
-	primal.M->vmult(*primal.b, *primal.iterator.um->x[0]);
+	primal.M->vmult(*primal.b, *um->x[0]);
 	
 	primal.b->add(slab->tau_n(), *primal.f0);
 	
@@ -592,7 +593,7 @@ primal_do_forward_TMS() {
 		
 		// assemble
 		primal_assemble_system(slab);
-		primal_assemble_rhs(slab,t0);
+		primal_assemble_rhs(slab,um,t0);
 		
 		// apply boundary values and solve for u0
 		primal_solve(slab);
