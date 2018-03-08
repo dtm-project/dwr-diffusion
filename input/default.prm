@@ -28,13 +28,13 @@ subsection Mesh Specification
     set global refinement = 3
     
     # Polynomial degrees
-    set primal p = 1
-    set dual q   = 2
+    set primal p = 2
+    set dual q   = 3
 end
 
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 0.5
-    set time step size = 0.2
+    set time step size = 0.02
 end
 

@@ -44,11 +44,11 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 
 #include <heat/types/boundary_id.hh>
 
+#include <heat/Force/Forces.hh>
+
 // DEAL.II includes
 
 // #include <deal.II/grid/grid_refinement.h>
-
-// #include <deal.II/lac/solver_control.h>
 
 #include <deal.II/lac/sparse_direct.h>
 
@@ -119,12 +119,14 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	// TODO: read those from parameter input file
 	function.u_D = std::make_shared< dealii::ZeroFunction<dim> > (1);
+	function.u_0 = std::make_shared< dealii::ZeroFunction<dim> > (1);
 	
-	function.u_0 = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
-	function.f = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
-	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+// 	function.f = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+	function.f = std::make_shared< heat::force::Test0<dim> > ();
 	
-	function.density = std::make_shared< dealii::ZeroFunction<dim> > (1);
+	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
+	
+	function.density = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
 }
 
 
