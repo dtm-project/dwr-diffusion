@@ -69,7 +69,7 @@ message(STATUS "Autopilot invoked")
 
 # DEFINE TARGET_RUN: a custom make target to run the application.
 if(NOT DEFINED TARGET_RUN)
-	SET(TARGET_RUN ${TARGET})
+	SET(TARGET_RUN ${TARGET} ./input/default.prm)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "(CYGWIN|Windows)")
