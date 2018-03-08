@@ -465,6 +465,72 @@ primal_solve() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_init_data_output(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+) {
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	// TODO:
+	DTM::pout
+		<< "primal solution data output: patches = "
+		<< parameter_set->fe.p // auto mode = cG in space: take p patches per K
+// 		<< parameter_set->data_output.patches
+		<< std::endl;
+	
+	std::vector<std::string> data_field_names;
+	data_field_names.push_back("u");
+	
+	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
+	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
+	
+	Assert((slab != grid->slabs.end()), dealii::ExcInvalidState());
+	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+	primal.data_output.set_DoF_data(
+		slab->primal.dof
+	);
+	
+	primal.data_output.set_data_field_names(data_field_names);
+	primal.data_output.set_data_component_interpretation_field(dci_field);
+	
+	// TODO:
+	primal.data_output.set_data_output_patches(
+		parameter_set->fe.p // auto mode = cG in space: take p patches per K
+// 		parameter_set->data_output.patches
+	);
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_do_data_output(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const double &t_n) {
+	
+	primal.data_output.set_DoF_data(
+		slab->primal.dof
+	);
+	
+	// TODO: construct solution at t_n
+	// NOTE: dG(0) is constant in time, thus we can simply output u->x[0]
+	
+	//const double zeta0 = 1.0;
+	//u_trigger.add(zeta0, *u->x[0])
+	
+	// TODO
+	primal.data_output.write_data(
+		"primal",
+		primal.iterator.um->x[0],
+		t_n
+	);
+}
+
+
+
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 solve_primal_problem() {
 	////////////////////////////////////////////////////////////////////////////
 	// do the forward time marching process of the primal problem
@@ -527,12 +593,11 @@ solve_primal_problem() {
 		*um->x[0]
 	);
 	
-// 	// TODO: debug output of I(u_0)
-// 	primal_reinit_data_output(slab);
-// 	primal_do_data_output();
+	// output "solution" at t0
+	primal_init_data_output(slab);
+	primal_do_data_output(slab,tn);
 	
-	
-	// do TMS loop: // TODO:
+	// do TMS loop
 	DTM::pout
 		<< std::endl
 		<< "*******************************" << std::endl
@@ -572,15 +637,25 @@ solve_primal_problem() {
 		// apply boundary values and solve for u0
 		primal_solve();
 		
-		// construct solution u(t_n)
+		////////////////////////////////////////////////////////////////////////
+		// finalize I_n problem: construct solution u(t_n)
+		//
+		
 		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
 		*un->x[0] = 0;
 		un->x[0]->add(zeta0, *u->x[0]);
 		
+		////////////////////////////////////////////////////////////////////////
 		// do postprocessing on the solution
-		do_data_output();
+		//
 		
+		// output solution at t_n
+		primal_do_data_output(slab,tn);
+		
+		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
+		//
+		
 		++n;
 		
 		slab_previous = slab;
@@ -706,64 +781,7 @@ solve_primal_problem() {
 // ////////////////////////////////////////////////////////////////////////////////
 
 
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_reinit_data_output(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
-) {
-	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
-	// TODO:
-	DTM::pout
-		<< "primal solution data output: patches = "
-		<< parameter_set->fe.p // auto mode = cG in space: take p patches per K
-// 		<< parameter_set->data_output.patches
-		<< std::endl;
-	
-	std::vector<std::string> data_field_names;
-	data_field_names.push_back("u");
-	
-	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
-	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-	
-	Assert((slab != grid->slabs.end()), dealii::ExcInvalidState());
-	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-	primal.data_output.set_DoF_data(
-		slab->primal.dof
-	);
-	
-	primal.data_output.set_data_field_names(data_field_names);
-	primal.data_output.set_data_component_interpretation_field(dci_field);
-	
-	// TODO:
-	primal.data_output.set_data_output_patches(
-		parameter_set->fe.p // auto mode = cG in space: take p patches per K
-// 		parameter_set->data_output.patches
-	);
-}
 
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_do_data_output() {
-	
-// 	// TODO
-// 	primal.data_output.write_data(
-// 		"primal",
-// 		primal.iterator.um->x[0],
-// 		0.0 /*solution_time*/
-// 	);
-	
-	// TODO
-	
-	Assert(primal.f0.use_count(), dealii::ExcNotInitialized());
-	primal.data_output.write_data(
-		"force",
-		primal.f0,
-		0.0 /*solution_time*/
-	);
-}
 
 
 

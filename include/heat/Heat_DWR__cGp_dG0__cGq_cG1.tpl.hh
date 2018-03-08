@@ -171,15 +171,19 @@ protected:
 	
 	virtual void primal_solve();
 	
-	virtual void solve_primal_problem();
-	
-	virtual void primal_reinit_data_output(
+	virtual void primal_init_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 	);
 	
 	virtual void primal_do_data_output(
-// 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const double &tn
 	);
+	
+	
+	virtual void solve_primal_problem();
+	
+	
 	
 	
 	
