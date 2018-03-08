@@ -348,7 +348,7 @@ primal_assemble_system(
 		Assert(function.density.use_count(), dealii::ExcNotInitialized());
 		assemble_mass.set_density(function.density);
 		
-		DTM::pout << "dwr-heat: assemble mass matrix";
+		DTM::pout << "dwr-heat: assemble mass matrix...";
 		assemble_mass.assemble();
 		DTM::pout << " (done)" << std::endl;
 	}
@@ -371,18 +371,22 @@ primal_assemble_system(
 		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
 		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
 		
-		DTM::pout << "dwr-heat: assemble cell stiffness matrix";
+		DTM::pout << "dwr-heat: assemble cell stiffness matrix...";
 		assemble_stiffness_cell_terms.assemble();
 		DTM::pout << " (done)" << std::endl;
 	}
 	
 	// construct system matrix K = M + tau A
+	DTM::pout << "dwr-heat: construct system matrix K = M + tau A...";
+	
 	primal.K = std::make_shared< dealii::SparseMatrix<double> > ();
 	primal.K->reinit(*slab->primal.sp);
 	
 	*primal.K = 0;
 	primal.K->add(slab->tau_n(), *primal.A);
 	primal.K->add(1.0, *primal.M);
+	
+	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -407,14 +411,18 @@ primal_assemble_rhs(
 	Assert(function.f.use_count(), dealii::ExcNotInitialized());
 	assemble_f0->set_function(function.f);
 	
+	DTM::pout << "dwr-heat: assemble force f0...";
 	*primal.f0 = 0;
 	assemble_f0->assemble(
 		t0,
 		0,   // n_q_points: 0 -> p+1 in auto mode
 		true // auto mode
 	);
+	DTM::pout << " (done)" << std::endl;
 	
 	// construct vector b = M um + tau_n f0
+	DTM::pout << "dwr-heat: construct linear system rhs vector...";
+	
 	primal.b = std::make_shared< dealii::Vector<double> > ();
 	primal.b->reinit( slab->primal.dof->n_dofs() );
 	
@@ -422,20 +430,27 @@ primal_assemble_rhs(
 	primal.M->vmult(*primal.b, *primal.iterator.um->x[0]);
 	
 	primal.b->add(slab->tau_n(), *primal.f0);
+	
+	DTM::pout << " (done)" << std::endl;
 }
 
 
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_solve() {
+primal_solve(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
+) {
 	////////////////////////////////////////////////////////////////////////////
 	// apply Dirichlet boundary values
+	//
+	
+	DTM::pout << "dwr-heat: dealii::MatrixTools::apply_boundary_values...";
 	std::map<dealii::types::global_dof_index, double> boundary_values;
 	
 	Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
 	dealii::VectorTools::interpolate_boundary_values(
-		*primal.iterator.slab->primal.dof,
+		*slab->primal.dof,
 		static_cast< dealii::types::boundary_id > (
 			heat::types::boundary_id::Dirichlet
 		),
@@ -450,17 +465,29 @@ primal_solve() {
 		*primal.b
 	);
 	
+	DTM::pout << " (done)" << std::endl;
+	
 	////////////////////////////////////////////////////////////////////////////
 	// solve linear system directly
+	//
+	
+	DTM::pout << "dwr-heat: setup direct lss and solve...";
+	
 	dealii::SparseDirectUMFPACK iA;
 	iA.initialize(*primal.K);
 	iA.vmult(*primal.iterator.u->x[0], *primal.b);
 	
+	DTM::pout << " (done)" << std::endl;
+	
 	////////////////////////////////////////////////////////////////////////////
 	// distribute hanging node constraints on solution
-	primal.iterator.slab->primal.constraints->distribute(
+	//
+	
+	DTM::pout << "dwr-heat: primal.constraints->distribute...";
+	slab->primal.constraints->distribute(
 		*primal.iterator.u->x[0]
 	);
+	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -478,10 +505,7 @@ primal_do_forward_TMS() {
 	
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
-	primal.iterator.slab = grid->slabs.begin();
-	
-	// shortcut references
-	auto &slab = primal.iterator.slab;
+	auto slab = grid->slabs.begin();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// storage: init iterators to storage_data_vectors
@@ -535,8 +559,9 @@ primal_do_forward_TMS() {
 	
 	DTM::pout
 		<< std::endl
-		<< "*******************************" << std::endl
-		<< "primal: solving TMS problems..." << std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< "primal: solving forward TMS problem..." << std::endl
 		<< std::endl;
 	
 	unsigned int n{1};
@@ -552,7 +577,8 @@ primal_do_forward_TMS() {
 			<< std::endl;
 		
 		if (slab != grid->slabs.begin()) {
-			// interpolate u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}  for  n > 1
+			// for n > 1 interpolate between two (different) spatial meshes
+			// the solution u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}
 			dealii::VectorTools::interpolate_to_different_mesh(
 				// solution on I_{n-1}:
 				*std::prev(slab)->primal.dof,
@@ -569,19 +595,16 @@ primal_do_forward_TMS() {
 		primal_assemble_rhs(slab,t0);
 		
 		// apply boundary values and solve for u0
-		primal_solve();
-		
-		////////////////////////////////////////////////////////////////////////
-		// finalize I_n problem: construct solution u(t_n)
-		//
-		
-		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
-		*un->x[0] = 0;
-		un->x[0]->add(zeta0, *u->x[0]);
+		primal_solve(slab);
 		
 		////////////////////////////////////////////////////////////////////////
 		// do postprocessing on the solution
 		//
+		
+		// evaluate solution u(t_n)
+		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
+		*un->x[0] = 0;
+		un->x[0]->add(zeta0, *u->x[0]);
 		
 		// output solution at t_n
 		primal_do_data_output(slab,tn);
@@ -591,20 +614,20 @@ primal_do_forward_TMS() {
 		//
 		
 		++n;
-		
 		++slab;
 		
 		++um;
 		++u;
 		++un;
 		
-		// allow garbage collect
-		primal.M = nullptr;
-		primal.A = nullptr;
-		
-		primal.b = nullptr;
-		primal.f0 = nullptr;
+		DTM::pout << std::endl;
 	}
+	
+	DTM::pout
+		<< "primal: forward TMS problem done" << std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< std::endl;
 }
 
 
