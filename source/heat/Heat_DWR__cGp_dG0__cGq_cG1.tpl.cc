@@ -478,7 +478,7 @@ primal_solve(
 	
 	dealii::SparseDirectUMFPACK iA;
 	iA.initialize(*primal.K);
-	iA.vmult(*primal.iterator.u->x[0], *primal.b);
+	iA.vmult(*u->x[0], *primal.b);
 	
 	DTM::pout << " (done)" << std::endl;
 	
@@ -488,7 +488,7 @@ primal_solve(
 	
 	DTM::pout << "dwr-heat: primal.constraints->distribute...";
 	slab->primal.constraints->distribute(
-		*primal.iterator.u->x[0]
+		*u->x[0]
 	);
 	DTM::pout << " (done)" << std::endl;
 }
@@ -517,20 +517,15 @@ primal_do_forward_TMS() {
 	
 	Assert(primal.storage.um.use_count(), dealii::ExcNotInitialized());
 	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
-	primal.iterator.um = primal.storage.um->begin();
+	auto um = primal.storage.um->begin();
 	
 	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
 	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
-	primal.iterator.u = primal.storage.u->begin();
+	auto u = primal.storage.u->begin();
 	
 	Assert(primal.storage.un.use_count(), dealii::ExcNotInitialized());
 	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
-	primal.iterator.un = primal.storage.un->begin();
-	
-	// shortcut references
-	auto &um = primal.iterator.um;
-	auto &u  = primal.iterator.u;
-	auto &un = primal.iterator.un;
+	auto un = primal.storage.un->begin();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// interpolate (or project) initial value(s)

@@ -108,13 +108,6 @@ protected:
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > un; // dof on t_n
 		} storage;
 		
-		struct {
-			// iterator for storage vectors on I_n (time dG method)
-			typename DTM::types::storage_data_vectors<1>::iterator um;
-			typename DTM::types::storage_data_vectors<1>::iterator u;
-			typename DTM::types::storage_data_vectors<1>::iterator un;
-		} iterator;
-		
 		std::shared_ptr< dealii::SparseMatrix<double> > M;
 		std::shared_ptr< dealii::SparseMatrix<double> > A;
 		std::shared_ptr< dealii::Vector<double> > f0;
