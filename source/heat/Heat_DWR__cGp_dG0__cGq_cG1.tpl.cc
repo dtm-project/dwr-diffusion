@@ -46,6 +46,8 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 
 #include <heat/Force/Forces.hh>
 
+#include <heat/ExactSolution/ExactSolutions.hh>
+
 // DEAL.II includes
 
 // #include <deal.II/grid/grid_refinement.h>
@@ -133,6 +135,9 @@ init_functions() {
 	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
 	
 	function.density = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
+	
+	// exact solution (if any)
+	function.u = std::make_shared< heat::ExactSolution::Test0<dim> > ();
 }
 
 

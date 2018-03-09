@@ -96,6 +96,9 @@ protected:
 		
 		/// mass density function
 		std::shared_ptr< dealii::Function<dim> > density;
+		
+		/// exact solution (if any)
+		std::shared_ptr< dealii::Function<dim> > u;
 	} function;
 	
 	/// primal: data structures for forward time marching
@@ -124,16 +127,11 @@ protected:
 	struct {
 		// storage container
 		struct {
-			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;  // time dof
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
 			
-// 			/// primal solutions interpolated into dual FE room list (time cG(s)-Q_{GL(s+1)} method)
-// 			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
 // 			/// error_indicators list
 // 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
-		
-// 		std::shared_ptr< DTM::types::storage_data_vectors<1> > zm; // on t_m < t_n
-// 		std::shared_ptr< DTM::types::storage_data_vectors<1> > zn; // on t_n > t_m
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
