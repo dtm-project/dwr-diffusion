@@ -191,6 +191,7 @@ primal_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
 	// get number of time steps
 	//
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -735,6 +736,7 @@ dual_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
 	// get number of time steps
 	//
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -785,9 +787,9 @@ dual_do_backward_TMS() {
 	// grid: init slab iterator to last space-time slab: Omega x I_N
 	//
 	
-// 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-// 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
-// 	auto slab = grid->slabs.rbegin();
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = grid->slabs.rbegin();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// storage: init iterators to storage_data_vectors
