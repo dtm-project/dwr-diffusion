@@ -180,9 +180,6 @@ protected:
 		// storage container
 		struct {
 			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
-			
-// 			/// error_indicators list
-// 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
 		
 		// Data Output
