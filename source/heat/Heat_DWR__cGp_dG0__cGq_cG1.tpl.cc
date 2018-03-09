@@ -656,7 +656,7 @@ dual_reinit_storage() {
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	
 	////////////////////////////////////////////////////////////////////////////
-	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss(1)} with add. support point )
+	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss-Lobatto(2)} )
 	//
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -696,21 +696,22 @@ dual_reinit_storage() {
 	{
 		auto slab = grid->slabs.begin();
 		for (auto &element : *dual.storage.z) {
-			// create shared_ptr to Vector<double>
-			element.x[0] = std::make_shared< dealii::Vector<double> > ();
-			
-			// init. Vector<double> with n_dofs components
-			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(
-				slab->dual.dof->n_dofs(),
-				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
-			);
-			
-			element.x[0]->reinit(
-				slab->dual.dof->n_dofs()
-			);
-			
+			for (unsigned int j{0}; j < element.x.size(); ++j) {
+				// create shared_ptr to Vector<double>
+				element.x[j] = std::make_shared< dealii::Vector<double> > ();
+				
+				// init. Vector<double> with n_dofs components
+				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+				Assert(
+					slab->dual.dof->n_dofs(),
+					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+				);
+				
+				element.x[j]->reinit(
+					slab->dual.dof->n_dofs()
+				);
+			}
 			++slab;
 		}
 	}
@@ -813,18 +814,17 @@ dual_do_backward_TMS() {
 	//          corresponding to last space-time slab: Omega x I_N
 	//
 	
-// 	Assert(primal.storage.un.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
+	Assert(dual.storage.zn.use_count(), dealii::ExcNotInitialized());
+	Assert(dual.storage.zn->size(), dealii::ExcNotInitialized());
 	auto zn = dual.storage.zn->rbegin();
 	
-// 	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
-	auto z = dual.storage.z->begin();
+	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
+	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
+	auto z = dual.storage.z->rbegin();
 	
-// 	Assert(primal.storage.um.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
-	auto zm = dual.storage.zm->begin();
-	
+	Assert(dual.storage.zm.use_count(), dealii::ExcNotInitialized());
+	Assert(dual.storage.zm->size(), dealii::ExcNotInitialized());
+	auto zm = dual.storage.zm->rbegin();
 	
 	
 // 	////////////////////////////////////////////////////////////////////////////
@@ -1101,7 +1101,7 @@ dual_do_backward_TMS() {
 // 		}
 // 	} //end for-loop n dual
 // }
-
+// 
 
 
 

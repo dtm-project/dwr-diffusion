@@ -123,10 +123,9 @@ protected:
 	struct {
 		// storage container
 		struct {
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > zn; // on t_n
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > zn; // on t_n > t_m
 			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;  // time dof
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > zm; // on t_m
-			
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > zm; // on t_m < t_n
 			
 // 			/// primal solutions interpolated into dual FE room list (time cG(s)-Q_{GL(s+1)} method)
 // 			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
