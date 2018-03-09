@@ -98,7 +98,7 @@ protected:
 		std::shared_ptr< dealii::Function<dim> > density;
 		
 		/// exact solution (if any)
-		std::shared_ptr< dealii::Function<dim> > u;
+		std::shared_ptr< dealii::Function<dim> > u_E;
 	} function;
 	
 	/// primal: data structures for forward time marching
@@ -167,6 +167,18 @@ protected:
 	/// do the forward time marching process of the primal problem
 	virtual void primal_do_forward_TMS();
 	
+	
+	// post-processing functions for L2(L2) error
+	double primal_L2_L2_error_u;
+	virtual void primal_init_error_computations();
+	virtual void primal_do_error_L2(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u
+	);
+	virtual void primal_finish_error_computations();
+	
+	
+	// post-processing functions for data output
 	virtual void primal_init_data_output();
 	
 	virtual void primal_do_data_output(

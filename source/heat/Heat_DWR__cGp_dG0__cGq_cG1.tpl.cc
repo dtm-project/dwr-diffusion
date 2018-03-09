@@ -137,7 +137,7 @@ init_functions() {
 	function.density = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
 	
 	// exact solution (if any)
-	function.u = std::make_shared< heat::ExactSolution::Test0<dim> > ();
+	function.u_E = std::make_shared< heat::ExactSolution::Test0<dim> > ();
 }
 
 
@@ -447,6 +447,9 @@ primal_do_forward_TMS() {
 	// output "initial value solution" at initial time t0
 	primal_do_data_output(slab,primal.um,slab->t_m);
 	
+	// init error computations (for global L2(L2) goal functional)
+	primal_init_error_computations();
+	
 	////////////////////////////////////////////////////////////////////////////
 	// do TMS loop
 	//
@@ -498,6 +501,9 @@ primal_do_forward_TMS() {
 		// do postprocessing on the solution
 		//
 		
+		// do error computations ( for global L2(L2) goal )
+		primal_do_error_L2(slab,u);
+		
 // 		// evaluate solution u(t_n)
 		primal.un = std::make_shared< dealii::Vector<double> >();
 		primal.un->reinit( slab->primal.dof->n_dofs() );
@@ -524,8 +530,117 @@ primal_do_forward_TMS() {
 		<< "*******************************************************************"
 		<< "*************" << std::endl
 		<< std::endl;
+		
+	// finish error computation ( for global L2(L2) goal functional )
+	primal_finish_error_computations();
+	DTM::pout
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< "primal: || u - u_kh ||_L2(L2) = " << primal_L2_L2_error_u
+		<< std::endl
+		<< std::endl;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// primal: L2(L2) error computation
+//
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_init_error_computations() {
+	primal_L2_L2_error_u = 0;
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_do_error_L2(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u) {
+	////////////////////////////////////////////////////////////////////////////
+	// compute L^2 in time error
+	//
+	
+	// prepare L2(Omega) norm
+	double norm_sqr{-1};
+	
+	dealii::QGauss<dim> quad_cell(
+		slab->primal.fe->tensor_degree()+1
+	);
+	
+	dealii::Vector<double> difference_per_cell(
+		slab->primal.dof->n_dofs()
+	);
+	
+	// prepare L2 in time norm
+	double zeta0;
+	double _t;
+	
+	// create quadrature for time integration of L2 in time integral on slab
+	// m - number of Gauss points to be evaluated for \int_{I_n} ||err||^2_L2 dt
+	[[maybe_unused]]unsigned int m(1);
+	dealii::QGauss<1> quad_int_In(m);
+// 	dealii::QGaussLobatto<1> quad_int_In(m);
+// 	dealii::QGaussChebyshev<1> quad_int_In(m);
+// 	dealii::QSimpson<1> qiter;
+// // 	dealii::QMidpoint<1> qiter;
+// // 	dealii::QTrapez<1> qiter;
+// 	dealii::QIterated<1> quad_int_In(qiter, 4);
+	
+	std::vector< dealii::Point<1> > tq(quad_int_In.get_points());
+	std::vector< double > w(quad_int_In.get_weights());
+	
+	// L_2 norm
+	for (unsigned int q(0); q < quad_int_In.size(); ++q) {
+		_t = tq[q][0];
+		
+		function.u_E->set_time(_t * slab->tau_n() + slab->t_m);
+		
+		zeta0 = 1.;
+		
+		////////////////////////////////////////////////////////////////////////
+		dealii::Vector<double> u_trigger;
+		u_trigger.reinit(
+			slab->primal.dof->n_dofs()
+		);
+		
+		// evalute space-time solution
+		u_trigger.equ(zeta0, *u->x[0]);
+		
+		////////////////////////////////////////////////////////////////////////
+		// u:
+		difference_per_cell = 0;
+		
+		dealii::VectorTools::integrate_difference(
+			*slab->primal.dof,
+			u_trigger,
+			*function.u_E,
+			difference_per_cell,
+			quad_cell,
+			dealii::VectorTools::L2_norm
+		);
+		
+		norm_sqr = difference_per_cell.norm_sqr();
+		
+		primal_L2_L2_error_u += w[q] * norm_sqr * slab->tau_n();
+	}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_finish_error_computations() {
+	primal_L2_L2_error_u = std::sqrt(primal_L2_L2_error_u);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// primal data output
+//
 
 template<int dim>
 void
