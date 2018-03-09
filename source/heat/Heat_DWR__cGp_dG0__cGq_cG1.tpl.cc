@@ -547,7 +547,7 @@ primal_do_forward_TMS() {
 		*um->x[0]
 	);
 	
-	// output "solution" at initial time t0
+	// output "initial value solution" at initial time t0
 	primal_do_data_output(slab,um,slab->t_m);
 	
 	////////////////////////////////////////////////////////////////////////////
