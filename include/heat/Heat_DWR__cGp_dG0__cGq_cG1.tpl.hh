@@ -182,6 +182,14 @@ protected:
 			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
 		} storage;
 		
+		std::shared_ptr< dealii::SparseMatrix<double> > M;
+		std::shared_ptr< dealii::SparseMatrix<double> > A;
+		std::shared_ptr< dealii::Vector<double> > Je0;
+		std::shared_ptr< dealii::Vector<double> > Je1;
+		
+		std::shared_ptr< dealii::SparseMatrix<double> > K;
+		std::shared_ptr< dealii::Vector<double> > b;
+		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
 	} dual;

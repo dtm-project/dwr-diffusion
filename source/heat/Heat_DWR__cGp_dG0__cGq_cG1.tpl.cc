@@ -796,47 +796,45 @@ dual_do_backward_TMS() {
 	//          corresponding to last space-time slab: Omega x I_N
 	//
 	
-// 	Assert(dual.storage.zn.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.storage.zn->size(), dealii::ExcNotInitialized());
-// 	auto zn = dual.storage.zn->rbegin();
-// 	
-// 	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
-// 	auto z = dual.storage.z->rbegin();
-// 	
-// 	Assert(dual.storage.zm.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.storage.zm->size(), dealii::ExcNotInitialized());
-// 	auto zm = dual.storage.zm->rbegin();
+	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
+	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
+	auto z = dual.storage.z->rbegin();
 	
-	// compute final condition z_kh(T): for global L2(L2): z(T) = 0
-
+	////////////////////////////////////////////////////////////////////////////
+	// final condition z_kh(T)
+	//
 	
-// 	// output "initial value solution" at initial time t0
-// 	primal_do_data_output(slab,um,slab->t_m);
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// do TMS loop
-// 	//
-// 	
-// 	DTM::pout
-// 		<< std::endl
-// 		<< "*******************************************************************"
-// 		<< "*************" << std::endl
-// 		<< "primal: solving forward TMS problem..." << std::endl
-// 		<< std::endl;
-// 	
-// 	unsigned int n{1};
-// 	while (slab != grid->slabs.end()) {
-// 		// local time variables: \f$ t0 \in I_n = (t_m, t_n) \f$
-// 		const double tm = slab->t_m;
-// 		const double t0 = tm + slab->tau_n()/2.;
-// 		const double tn = slab->t_n;
-// 		
-// 		DTM::pout
-// 			<< "primal: solving problem on "
-// 			<< "I_" << n << " = (" << tm << ", " << tn << ") "
-// 			<< std::endl;
-// 		
+	// NOTE: for goal functional || u - u_kh ||_L2(L2) -> z(T) = 0
+	*z->x[1] = 0;
+	
+	// output "final value solution" at final time T
+	
+	////////////////////////////////////////////////////////////////////////////
+	// do TMS loop
+	//
+	
+	DTM::pout
+		<< std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< "dual: solving backward TMS problem..." << std::endl
+		<< std::endl;
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	unsigned int n{static_cast<unsigned int>(grid->slabs.size())};
+	
+	while (slab != grid->slabs.rend()) {
+		// local time variables: \f$ t0, t1 \in I_n = (t_m, t_n) \f$
+		const double tm = slab->t_m;
+		const double t0 = slab->t_m;
+		const double t1 = slab->t_n;
+		const double tn = slab->t_n;
+		
+		DTM::pout
+			<< "dual: solving problem on "
+			<< "I_" << n << " = (" << tm << ", " << tn << ") "
+			<< std::endl;
+		
 // 		if (slab != grid->slabs.begin()) {
 // 			// for n > 1 interpolate between two (different) spatial meshes
 // 			// the solution u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}
@@ -850,11 +848,11 @@ dual_do_backward_TMS() {
 // 				*um->x[0]
 // 			);
 // 		}
-// 		
-// 		// assemble slab problem
-// 		primal_assemble_system(slab);
-// 		primal_assemble_rhs(slab,um,t0);
-// 		
+		
+		// assemble slab problem
+// 		dual_assemble_system(slab);
+// 		dual_assemble_rhs(slab,z,t0,t1);
+		
 // 		// solve slab problem (i.e. apply boundary values and solve for u0)
 // 		primal_solve_slab_problem(slab,u);
 // 		
@@ -869,20 +867,20 @@ dual_do_backward_TMS() {
 // 		
 // 		// output solution at t_n
 // 		primal_do_data_output(slab,un,tn);
-// 		
-// 		////////////////////////////////////////////////////////////////////////
-// 		// prepare next I_n slab problem:
-// 		//
-// 		
-// 		++n;
-// 		++slab;
-// 		
+		
+		////////////////////////////////////////////////////////////////////////
+		// prepare next I_n slab problem:
+		//
+		
+		--n;
+		++slab;
+		
 // 		++um;
 // 		++u;
 // 		++un;
-// 		
-// 		DTM::pout << std::endl;
-// 	}
+		
+		DTM::pout << std::endl;
+	}
 // 	
 	
 	// 	////////////////////////////////////////////////////////////////////////////
@@ -923,13 +921,17 @@ dual_do_backward_TMS() {
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // solve_dual_problem() {
 // 		if (n == ((data.T-data.t0)/data.tau_n)) {
-			// Compute "initial condition" z_N
+// 			// Initialize rhs_vectors dual.Je_old and dual.Je
 
 // 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			// Set time to t_N and compute z_N (at timepoint t_N = 0.5)
-// 			dual_set_time(data.T);
-// 			
-// 			dual_compute_initial_condition();
+// 			dual.Je.reinit(dual.iterator.slab->dual.dof->n_dofs());
+
+// 			// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
+// 			// and store it in dual.Je_old.
+// 			dual_assemble_Je_L2global();
+// 			dual.Je_old = dual.Je;
+// 			break;
+
 // 
 // 			// Store initial condition z_N (dual.z_old) in the last element of list dual.storage.z
 // 			dual.storage.z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
@@ -1244,29 +1246,6 @@ dual_do_backward_TMS() {
 ////////////////////////////////////////////////////////////////////////////////
 // dual problem
 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_compute_initial_condition() {
-// 	
-// 	switch (dual.Je_type) {
-
-// 		case Heat::types::error_functional::L2_global:
-
-// 			// Compute ones the global space time L2 Error:
-// 			compute_global_STL2_error();
-
-// 			// Initialize rhs_vectors dual.Je_old and dual.Je
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
-// 			// and store it in dual.Je_old.
-// 			dual_assemble_Je_L2global();
-// 			dual.Je_old = dual.Je;
-// 			break;
-// 			
-// }
-
 
 
 // template<int dim>
@@ -1370,10 +1349,6 @@ dual_do_backward_TMS() {
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // dual_assemble_Je_L2global() {
-// 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.fe.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.mapping.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
 // 	
 // 	dual.Je = 0;
 // 	
