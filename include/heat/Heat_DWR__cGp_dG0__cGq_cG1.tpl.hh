@@ -176,13 +176,12 @@ protected:
 	/// do the forward time marching process of the primal problem
 	virtual void primal_do_forward_TMS();
 	
-	virtual void primal_init_data_output(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
-	);
+	virtual void primal_init_data_output();
 	
 	virtual void primal_do_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const double &tn
+		const typename DTM::types::storage_data_vectors<1>::iterator &u_trigger,
+		const double &t_trigger
 	);
 	
 	

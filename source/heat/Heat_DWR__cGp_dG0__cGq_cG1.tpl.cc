@@ -105,6 +105,7 @@ run() {
 	reinit_storage();
 	
 	// primal problem:
+	primal_init_data_output();
 	primal_do_forward_TMS();
 }
 
@@ -552,8 +553,7 @@ primal_do_forward_TMS() {
 	);
 	
 	// output "solution" at initial time t0
-	primal_init_data_output(slab);
-	primal_do_data_output(slab,slab->t_m);
+	primal_do_data_output(slab,um,slab->t_m);
 	
 	////////////////////////////////////////////////////////////////////////////
 	// do TMS loop
@@ -609,7 +609,7 @@ primal_do_forward_TMS() {
 		un->x[0]->add(zeta0, *u->x[0]);
 		
 		// output solution at t_n
-		primal_do_data_output(slab,tn);
+		primal_do_data_output(slab,un,tn);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -637,9 +637,7 @@ primal_do_forward_TMS() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_init_data_output(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
-) {
+primal_init_data_output() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	// TODO:
 	DTM::pout
@@ -653,12 +651,6 @@ primal_init_data_output(
 	
 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-	
-	Assert((slab != grid->slabs.end()), dealii::ExcInvalidState());
-	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-	primal.data_output.set_DoF_data(
-		slab->primal.dof
-	);
 	
 	primal.data_output.set_data_field_names(data_field_names);
 	primal.data_output.set_data_component_interpretation_field(dci_field);
@@ -676,7 +668,8 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_do_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const double &t_n) {
+	const typename DTM::types::storage_data_vectors<1>::iterator &u_trigger,
+	const double &t_trigger) {
 	
 	primal.data_output.set_DoF_data(
 		slab->primal.dof
@@ -691,8 +684,8 @@ primal_do_data_output(
 	// TODO
 	primal.data_output.write_data(
 		"primal",
-		primal.iterator.um->x[0],
-		t_n
+		u_trigger->x[0],
+		t_trigger
 	);
 }
 
