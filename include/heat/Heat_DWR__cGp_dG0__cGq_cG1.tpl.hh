@@ -103,10 +103,11 @@ protected:
 		// storage container
 		struct {
 			/// primal solutions list (time dG(r)-Q_{G(r+1)} method)
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > um; // dof on t_m
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;  // time dof
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > un; // dof on t_n
 		} storage;
+		
+		std::shared_ptr< dealii::Vector<double> > um; // dof on t_m
+		std::shared_ptr< dealii::Vector<double> > un; // dof on t_n
 		
 		std::shared_ptr< dealii::SparseMatrix<double> > M;
 		std::shared_ptr< dealii::SparseMatrix<double> > A;
@@ -123,15 +124,16 @@ protected:
 	struct {
 		// storage container
 		struct {
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > zn; // on t_n > t_m
 			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;  // time dof
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > zm; // on t_m < t_n
 			
 // 			/// primal solutions interpolated into dual FE room list (time cG(s)-Q_{GL(s+1)} method)
 // 			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
 // 			/// error_indicators list
 // 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
+		
+// 		std::shared_ptr< DTM::types::storage_data_vectors<1> > zm; // on t_m < t_n
+// 		std::shared_ptr< DTM::types::storage_data_vectors<1> > zn; // on t_n > t_m
 		
 		// Data Output
 		DTM::DataOutput<dim> data_output;
@@ -156,7 +158,6 @@ protected:
 	
 	virtual void primal_assemble_rhs(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<1>::iterator &um,
 		const double t0
 	);
 	
@@ -172,7 +173,7 @@ protected:
 	
 	virtual void primal_do_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<1>::iterator &u_trigger,
+		std::shared_ptr< dealii::Vector<double> > u_trigger,
 		const double &t_trigger
 	);
 	

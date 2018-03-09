@@ -193,34 +193,6 @@ primal_reinit_storage() {
 	//
 	
 	////////////////////////////////////////////////////////////////////////////
-	// primal dof vectors um (on primal solution space)
-	//
-	primal.storage.um = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	primal.storage.um->resize(N);
-	
-	{
-		auto slab = grid->slabs.begin();
-		for (auto &element : *primal.storage.um) {
-			// create shared_ptr to Vector<double>
-			element.x[0] = std::make_shared< dealii::Vector<double> > ();
-			
-			// init. Vector<double> with n_dofs components
-			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(
-				slab->primal.dof->n_dofs(),
-				dealii::ExcMessage("Error: slab->primal.dof->n_dofs() == 0")
-			);
-			
-			element.x[0]->reinit(
-				slab->primal.dof->n_dofs()
-			);
-			
-			++slab;
-		}
-	}
-	
-	////////////////////////////////////////////////////////////////////////////
 	// primal solution dof vectors u (on primal solution space)
 	//
 	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
@@ -245,34 +217,6 @@ primal_reinit_storage() {
 					slab->primal.dof->n_dofs()
 				);
 			}
-			++slab;
-		}
-	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// primal dof vectors un (on primal solution space)
-	//
-	primal.storage.un = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	primal.storage.un->resize(N);
-	
-	{
-		auto slab = grid->slabs.begin();
-		for (auto &element : *primal.storage.un) {
-			// create shared_ptr to Vector<double>
-			element.x[0] = std::make_shared< dealii::Vector<double> > ();
-			
-			// init. Vector<double> with n_dofs components
-			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-			Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(
-				slab->primal.dof->n_dofs(),
-				dealii::ExcMessage("Error: slab->primal.dof->n_dofs() == 0")
-			);
-			
-			element.x[0]->reinit(
-				slab->primal.dof->n_dofs()
-			);
-			
 			++slab;
 		}
 	}
@@ -350,7 +294,6 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_assemble_rhs(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const typename DTM::types::storage_data_vectors<1>::iterator &um,
 	const double t0
 ) {
 	primal.f0 = std::make_shared< dealii::Vector<double> > ();
@@ -383,7 +326,8 @@ primal_assemble_rhs(
 	primal.b->reinit( slab->primal.dof->n_dofs() );
 	
 	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
-	primal.M->vmult(*primal.b, *um->x[0]);
+	Assert(primal.um.use_count(), dealii::ExcNotInitialized());
+	primal.M->vmult(*primal.b, *primal.um);
 	
 	primal.b->add(slab->tau_n(), *primal.f0);
 	
@@ -469,21 +413,16 @@ primal_do_forward_TMS() {
 	//          corresponding to first space-time slab: Omega x I_1
 	//
 	
-	Assert(primal.storage.um.use_count(), dealii::ExcNotInitialized());
-	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
-	auto um = primal.storage.um->begin();
-	
 	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
 	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
 	auto u = primal.storage.u->begin();
 	
-	Assert(primal.storage.un.use_count(), dealii::ExcNotInitialized());
-	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
-	auto un = primal.storage.un->begin();
-	
 	////////////////////////////////////////////////////////////////////////////
 	// interpolate (or project) initial value(s)
 	//
+	
+	primal.um = std::make_shared< dealii::Vector<double> >();
+	primal.um->reinit( slab->primal.dof->n_dofs() );
 	
 	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
 	function.u_0->set_time(slab->t_m);
@@ -491,18 +430,17 @@ primal_do_forward_TMS() {
 	Assert((slab != grid->slabs.end()), dealii::ExcInternalError());
 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-	Assert((um != primal.storage.um->end()), dealii::ExcNotInitialized());
-	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
+	Assert(primal.um.use_count(), dealii::ExcNotInitialized());
 	
 	dealii::VectorTools::interpolate(
 		*slab->primal.mapping,
 		*slab->primal.dof,
 		*function.u_0,
-		*um->x[0]
+		*primal.um
 	);
 	
 	// output "initial value solution" at initial time t0
-	primal_do_data_output(slab,um,slab->t_m);
+	primal_do_data_output(slab,primal.um,slab->t_m);
 	
 	////////////////////////////////////////////////////////////////////////////
 	// do TMS loop
@@ -528,22 +466,25 @@ primal_do_forward_TMS() {
 			<< std::endl;
 		
 		if (slab != grid->slabs.begin()) {
+			primal.um = std::make_shared< dealii::Vector<double> >();
+			primal.um->reinit( slab->primal.dof->n_dofs() );
+			
 			// for n > 1 interpolate between two (different) spatial meshes
 			// the solution u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}
 			dealii::VectorTools::interpolate_to_different_mesh(
 				// solution on I_{n-1}:
 				*std::prev(slab)->primal.dof,
-				*std::prev(un)->x[0],
+				*primal.un,
 				// solution on I_n:
 				*slab->primal.dof,
 				*slab->primal.constraints,
-				*um->x[0]
+				*primal.um
 			);
 		}
 		
 		// assemble slab problem
 		primal_assemble_system(slab);
-		primal_assemble_rhs(slab,um,t0);
+		primal_assemble_rhs(slab,t0);
 		
 		// solve slab problem (i.e. apply boundary values and solve for u0)
 		primal_solve_slab_problem(slab,u);
@@ -552,13 +493,15 @@ primal_do_forward_TMS() {
 		// do postprocessing on the solution
 		//
 		
-		// evaluate solution u(t_n)
+// 		// evaluate solution u(t_n)
+		primal.un = std::make_shared< dealii::Vector<double> >();
+		primal.un->reinit( slab->primal.dof->n_dofs() );
 		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
-		*un->x[0] = 0;
-		un->x[0]->add(zeta0, *u->x[0]);
+		*primal.un = 0;
+		primal.un->add(zeta0, *u->x[0]);
 		
 		// output solution at t_n
-		primal_do_data_output(slab,un,tn);
+		primal_do_data_output(slab,primal.un,tn);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -566,10 +509,7 @@ primal_do_forward_TMS() {
 		
 		++n;
 		++slab;
-		
-		++um;
 		++u;
-		++un;
 		
 		DTM::pout << std::endl;
 	}
@@ -616,7 +556,7 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_do_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const typename DTM::types::storage_data_vectors<1>::iterator &u_trigger,
+	std::shared_ptr< dealii::Vector<double> > u_trigger,
 	const double &t_trigger) {
 	
 	primal.data_output.set_DoF_data(
@@ -632,7 +572,7 @@ primal_do_data_output(
 	// TODO
 	primal.data_output.write_data(
 		"primal",
-		u_trigger->x[0],
+		u_trigger,
 		t_trigger
 	);
 }
@@ -653,96 +593,96 @@ dual_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
 	// get number of time steps
 	//
-	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+// 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	
 	////////////////////////////////////////////////////////////////////////////
 	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss-Lobatto(2)} )
 	//
 	
-	////////////////////////////////////////////////////////////////////////////
-	// dual dof vectors zn (on dual solution space)
-	//
-	dual.storage.zn = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	dual.storage.zn->resize(N);
-	
-	{
-		auto slab = grid->slabs.begin();
-		for (auto &element : *dual.storage.zn) {
-			// create shared_ptr to Vector<double>
-			element.x[0] = std::make_shared< dealii::Vector<double> > ();
-			
-			// init. Vector<double> with n_dofs components
-			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(
-				slab->dual.dof->n_dofs(),
-				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
-			);
-			
-			element.x[0]->reinit(
-				slab->dual.dof->n_dofs()
-			);
-			
-			++slab;
-		}
-	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// dual dof vectors z (on dual solution space)
-	//
-	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<2> > ();
-	dual.storage.z->resize(N);
-	
-	{
-		auto slab = grid->slabs.begin();
-		for (auto &element : *dual.storage.z) {
-			for (unsigned int j{0}; j < element.x.size(); ++j) {
-				// create shared_ptr to Vector<double>
-				element.x[j] = std::make_shared< dealii::Vector<double> > ();
-				
-				// init. Vector<double> with n_dofs components
-				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-				Assert(
-					slab->dual.dof->n_dofs(),
-					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
-				);
-				
-				element.x[j]->reinit(
-					slab->dual.dof->n_dofs()
-				);
-			}
-			++slab;
-		}
-	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// dual dof vectors zm (on dual solution space)
-	//
-	dual.storage.zm = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-	dual.storage.zm->resize(N);
-	
-	{
-		auto slab = grid->slabs.begin();
-		for (auto &element : *dual.storage.zm) {
-			// create shared_ptr to Vector<double>
-			element.x[0] = std::make_shared< dealii::Vector<double> > ();
-			
-			// init. Vector<double> with n_dofs components
-			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-			Assert(
-				slab->dual.dof->n_dofs(),
-				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
-			);
-			
-			element.x[0]->reinit(
-				slab->dual.dof->n_dofs()
-			);
-			
-			++slab;
-		}
-	}
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// dual dof vectors zn (on dual solution space)
+// 	//
+// 	dual.storage.zn = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.zn->resize(N);
+// 	
+// 	{
+// 		auto slab = grid->slabs.begin();
+// 		for (auto &element : *dual.storage.zn) {
+// 			// create shared_ptr to Vector<double>
+// 			element.x[0] = std::make_shared< dealii::Vector<double> > ();
+// 			
+// 			// init. Vector<double> with n_dofs components
+// 			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+// 			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+// 			Assert(
+// 				slab->dual.dof->n_dofs(),
+// 				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+// 			);
+// 			
+// 			element.x[0]->reinit(
+// 				slab->dual.dof->n_dofs()
+// 			);
+// 			
+// 			++slab;
+// 		}
+// 	}
+// 	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// dual dof vectors z (on dual solution space)
+// 	//
+// 	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<2> > ();
+// 	dual.storage.z->resize(N);
+// 	
+// 	{
+// 		auto slab = grid->slabs.begin();
+// 		for (auto &element : *dual.storage.z) {
+// 			for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 				// create shared_ptr to Vector<double>
+// 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 				
+// 				// init. Vector<double> with n_dofs components
+// 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+// 				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+// 				Assert(
+// 					slab->dual.dof->n_dofs(),
+// 					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+// 				);
+// 				
+// 				element.x[j]->reinit(
+// 					slab->dual.dof->n_dofs()
+// 				);
+// 			}
+// 			++slab;
+// 		}
+// 	}
+// 	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// dual dof vectors zm (on dual solution space)
+// 	//
+// 	dual.storage.zm = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.zm->resize(N);
+// 	
+// 	{
+// 		auto slab = grid->slabs.begin();
+// 		for (auto &element : *dual.storage.zm) {
+// 			// create shared_ptr to Vector<double>
+// 			element.x[0] = std::make_shared< dealii::Vector<double> > ();
+// 			
+// 			// init. Vector<double> with n_dofs components
+// 			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+// 			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+// 			Assert(
+// 				slab->dual.dof->n_dofs(),
+// 				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+// 			);
+// 			
+// 			element.x[0]->reinit(
+// 				slab->dual.dof->n_dofs()
+// 			);
+// 			
+// 			++slab;
+// 		}
+// 	}
 	
 // 	////////////////////////////////////////////////////////////////////////////
 // 	// primal solution dof vectors u (on dual solution space)
@@ -805,26 +745,26 @@ dual_do_backward_TMS() {
 	// grid: init slab iterator to last space-time slab: Omega x I_N
 	//
 	
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
-	auto slab = grid->slabs.rbegin();
+// 	Assert(grid.use_count(), dealii::ExcNotInitialized());
+// 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+// 	auto slab = grid->slabs.rbegin();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// storage: init iterators to storage_data_vectors
 	//          corresponding to last space-time slab: Omega x I_N
 	//
 	
-	Assert(dual.storage.zn.use_count(), dealii::ExcNotInitialized());
-	Assert(dual.storage.zn->size(), dealii::ExcNotInitialized());
-	auto zn = dual.storage.zn->rbegin();
-	
-	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
-	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
-	auto z = dual.storage.z->rbegin();
-	
-	Assert(dual.storage.zm.use_count(), dealii::ExcNotInitialized());
-	Assert(dual.storage.zm->size(), dealii::ExcNotInitialized());
-	auto zm = dual.storage.zm->rbegin();
+// 	Assert(dual.storage.zn.use_count(), dealii::ExcNotInitialized());
+// 	Assert(dual.storage.zn->size(), dealii::ExcNotInitialized());
+// 	auto zn = dual.storage.zn->rbegin();
+// 	
+// 	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
+// 	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
+// 	auto z = dual.storage.z->rbegin();
+// 	
+// 	Assert(dual.storage.zm.use_count(), dealii::ExcNotInitialized());
+// 	Assert(dual.storage.zm->size(), dealii::ExcNotInitialized());
+// 	auto zm = dual.storage.zm->rbegin();
 	
 	// compute final condition z_kh(T): for global L2(L2): z(T) = 0
 
