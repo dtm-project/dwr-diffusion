@@ -440,7 +440,7 @@ primal_assemble_rhs(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_solve(
+primal_solve_slab_problem(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<1>::iterator &u
 ) {
@@ -592,7 +592,7 @@ primal_do_forward_TMS() {
 		primal_assemble_rhs(slab,um,t0);
 		
 		// apply boundary values and solve for u0
-		primal_solve(slab,u);
+		primal_solve_slab_problem(slab,u);
 		
 		////////////////////////////////////////////////////////////////////////
 		// do postprocessing on the solution

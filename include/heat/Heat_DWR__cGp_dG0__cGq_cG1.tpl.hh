@@ -161,7 +161,7 @@ protected:
 		const double t0
 	);
 	
-	virtual void primal_solve(
+	virtual void primal_solve_slab_problem(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u
 	);
