@@ -912,57 +912,24 @@ dual_do_backward_TMS() {
 }
 
 
-
-
-
 // // TODO NOTE TEST remove the following:
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // solve_dual_problem() {
-// 		if (n == ((data.T-data.t0)/data.tau_n)) {
-// 			// Initialize rhs_vectors dual.Je_old and dual.Je
 
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je.reinit(dual.iterator.slab->dual.dof->n_dofs());
-
-// 			// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
-// 			// and store it in dual.Je_old.
-// 			dual_assemble_Je_L2global();
-// 			dual.Je_old = dual.Je;
-// 			break;
-
-// 
-// 			// Store initial condition z_N (dual.z_old) in the last element of list dual.storage.z
-// 			dual.storage.z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
-// 			*(dual.storage.z->back().x) = *(dual.z_old);
-// 			
-// 		}
+// // NOTE (UK): the following comment is misleading: t_N = 0.5??
+// 	// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
+// 	// and store it in dual.Je_old.
+// 	dual_assemble_Je_L2global();
 // 	
 // 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
 // 		else if (n == ((data.T-data.t0)/data.tau_n)-1) {
 // 			// Compute z_N-1 at time point t_N-1
 // 			
-// 			// Output of time_step N+1 at time-point t_0
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			++In_uth_test;
-// 			rit_In_uback = In_uth_test;
-// 
-// 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
-// 			++Inth_dual; // "increase" iterator of list In (grids).
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
 // 			dual_reinit();
-// 			dual_assemble_system();
+// 			
+// dual_assemble_system();
 // 			__sync_synchronize();
 // 			volatile const double ttt{n*data.tau_n};
 // 			dual_set_time(ttt);
@@ -1072,180 +1039,6 @@ dual_do_backward_TMS() {
 // 		}
 // 	} //end for-loop n dual
 // }
-// 
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-// 	for (unsigned int n{0}; n <= ((data.T-data.t0)/data.tau_n); ++n) {
-// 		if (n == 0) {
-// // 			//NOTE: done:
-// // 			primal_compute_initial_condition();
-// // 			
-// // 			//NOTE (UK): do this in dual problem:
-// // 			// Store initial condition u_0, interpolated in dual FE room (dual.u) 
-// // 			// in the first element of list dual.storage.u
-// // 			dual.storage.u->front().x->reinit(grid->slabs.front().dual.dof->n_dofs());
-// // 			*(dual.storage.u->front().x) = *(dual.u);
-// // 			
-// 		}
-// 		else if (n == 1) {
-// // 			// Compute u_1 on same grid as u_0.
-// // 			++In_uth; //increase iterator of list dual.storage.u
-// // 			++In_uthprimal; //increase iterator of list primal.storage.u
-// // 			// Set iterators
-// // 			primal.iterator.slab = Inth_primal;
-// // 			primal.iterator.slab_previous = Inth_primal_prev; //for this timestep primal.iterator.slab=primal.iterator.slab_previous holds
-// 			
-// // 			//NOTE: do this in dual problem!
-// // 			// interpolate current solution to dual fe-room
-// // 			interpolate_primal_to_dual();
-// // 			// Save current interpolated solution in list dual.storage.u
-// // 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
-// // 			*(In_uth->x) = *(dual.u);
-// 		}
-// 		else {
-// 			// Compute u_2,...,u_N
-// // 			++In_uth; //increase iterator of list dual.storage.u
-// // 
-// // 			// NOTE: only in dual problem
-// // 			
-// // 			// interpolate current solution to dual fe-room
-// // 			interpolate_primal_to_dual();
-// // 
-// // 			// Save current interpolated solution (dual.u) in list dual.storage.u
-// // 			In_uth->x->reinit(primal.iterator.slab->dual.dof->n_dofs());
-// // 			*(In_uth->x) = *(dual.u);
-// 		}
-// 
-// 	} // end primal-loop n
-// ////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////////
-// old
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// init(const unsigned int global_refinement) {
-
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// init error estimator
-// 	//
-// 	error_estimator.DWR = std::make_shared<Heat::DWR::ErrorEstimator<dim> > ();
-// 	
-// 	error_estimator.DWR->set_objects(
-// 		grid,
-// 		function.epsilon,
-// 		function.BoundaryValues,
-// 		function.BoundaryValues_dual, // TODO
-// 		function.f,
-// 		function.f // TODO
-// 	);
-// }
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_init_data_output() {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// INIT DATA OUTPUT
-// 	//
-// 	Assert(dual.iterator.slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	DTM::pout << "Heat DWR: dual solution   data output: patches = " << dual.data_output_patches << std::endl;
-// 	
-// 	std::vector<std::string> data_field_names;
-// // 	data_field_names.push_back("u");
-// 	data_field_names.push_back("z");
-// 	
-// 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
-// // 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-// 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-// 	
-// // 	dual.data_output.set_DoF_data(
-// // 		dual.iterator.slab->dual.dof
-// // 	);
-// 	dual.data_output.set_DoF_data(
-// 		primal.iterator.slab->dual.dof
-// 	);
-// 	
-// 	dual.data_output.set_data_field_names(data_field_names);
-// 	dual.data_output.set_data_component_interpretation_field(dci_field);
-// 	dual.data_output.set_data_output_patches(dual.data_output_patches);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_reinit() {
-// 	// now create vectors and matricies for dual problem
-// 	Assert(dual.iterator.slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.iterator.slab->dual.sp.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	dual.M.reinit(*(dual.iterator.slab->dual.sp));
-// 	dual.A.reinit(*(dual.iterator.slab->dual.sp));
-// 	dual.system_matrix.reinit(*(dual.iterator.slab->dual.sp));
-// 	
-// 	dual.z = std::make_shared< dealii::Vector<double> > ();
-// 	dual.z->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 	dual.z_old_interpolated = std::make_shared< dealii::Vector<double> > ();
-// 	dual.z_old_interpolated->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 	
-// 	dual.Je.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 	dual.system_rhs.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 	
-// 	//TEST // TODO
-// 	dual.Je_old_interpolated.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// primal_compute_initial_condition() {
-// 
-// 	dual.u = std::make_shared< dealii::Vector<double> > ();
-// 	dual.u->reinit(grid->slabs.front().dual.dof->n_dofs());
-// 	
-// 	dealii::FETools::interpolate(
-// 		*(grid->slabs.front().primal.dof),
-// 		*(primal.slab.u_old),
-// 		*(grid->slabs.front().dual.dof),
-// 		*(grid->slabs.front().dual.constraints),
-// 		*(dual.u)
-// 	);
-// 	grid->slabs.front().dual.constraints->distribute(*(dual.u));
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// interpolate_primal_to_dual() {
-// 	dealii::FETools::interpolate(
-// 		*(primal.iterator.slab->primal.dof),
-// 		*(primal.slab.u),
-// 		*(primal.iterator.slab->dual.dof),
-// 		*(primal.iterator.slab->dual.constraints),
-// 		*(dual.u)
-// 	);
-// }
-
-
-////////////////////////////////////////////////////////////////////////////////
-// dual problem
-
 
 
 // template<int dim>
@@ -1253,9 +1046,6 @@ dual_do_backward_TMS() {
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // dual_assemble_rhs_at_t_Nminus1() {
 // 	switch (dual.Je_type) {
-// 		case Heat::types::error_functional::forbidden:
-// 			AssertThrow(false, dealii::ExcMessage("You need to initialise dual.Je_type."));
-// 			break;
 // 		
 // 		case Heat::types::error_functional::L2_final:
 // 			dual_assemble_Je_L2final();
@@ -1271,31 +1061,6 @@ dual_do_backward_TMS() {
 // 			dual_assemble_rhs_L2global();
 // 			break;
 // 			
-// 		case Heat::types::error_functional::mean_final:
-// 			dual_assemble_Je_mean_final();
-// 			// Compute special RHS on last Interval I_N 
-// 			dual.system_rhs = 0;
-// 			(dual.system_rhs).add(1.,dual.Je);
-// 			// End of computation of RHS
-// 			break;
-// 			
-// 		case Heat::types::error_functional::mean_global:
-// 			dual_assemble_Je_mean_global();
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_mean_global();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::point:
-// 			dual_assemble_Je_point_final();
-// 			// Compute special RHS on last Interval I_N 
-// 			dual.system_rhs = 0;
-// 			(dual.system_rhs).add(1.,dual.Je);
-// 			// End of computation of RHS
-// 			break;
-// 			
-// 		default:
-// 			AssertThrow(false, dealii::ExcMessage("Your dual.Je_type is unknown, please check your inputs."));
-// 	} // end switch(dual.Je-type)
 // }
 
 
@@ -1304,10 +1069,7 @@ dual_do_backward_TMS() {
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // dual_assemble_rhs() {
 // 	switch (dual.Je_type) {
-// 		case Heat::types::error_functional::forbidden:
-// 			AssertThrow(false, dealii::ExcMessage("You need to initialise dual.Je_type."));
-// 			break;
-// 		
+
 // 		case Heat::types::error_functional::L2_final:
 // 			dual_interpolate_to_next_grid();
 // 			dual_assemble_rhs_L2final();
@@ -1318,27 +1080,9 @@ dual_do_backward_TMS() {
 // 			dual_interpolate_to_next_grid();
 // 			dual_assemble_rhs_L2global();
 // 			break;
-// 			
-// 		case Heat::types::error_functional::mean_final:
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_mean_final();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::mean_global:
-// 			dual_assemble_Je_mean_global();
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_mean_global();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::point:
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_point_final();
-// 			break;
-// 			
-// 		default:
-// 			AssertThrow(false, dealii::ExcMessage("Your dual.Je_type is unknown, please check your inputs."));
 // 	}
 // }
+
 
 
 // ////////////////////////////////////////////////////////////////////////////////
@@ -1350,53 +1094,7 @@ dual_do_backward_TMS() {
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // dual_assemble_Je_L2global() {
 // 	
-// 	dual.Je = 0;
-// 	
-//  	dealii::QGauss<dim> quad (dual.iterator.slab->dual.fe->tensor_degree()+2);
-// 	
-// 	// Setup a FE_Values object.
-// 	dealii::FEValues<dim> fe_values(
-// 		*(dual.iterator.slab->dual.mapping),
-// 		*(dual.iterator.slab->dual.fe),
-// 		quad,
-// 		dealii::update_values |
-// 		dealii::update_gradients |
-// 		dealii::update_quadrature_points |
-// 		dealii::update_JxW_values);
-// 	
-// 	dealii::Vector<double> local_dual_Je (
-// 		dual.iterator.slab->dual.fe->dofs_per_cell
-// 	);
-// 	
-// 	// stationärer Fall
-// 	std::vector<double> exact_solution_values(quad.size());
-// 	std::vector<double> u_h_values(quad.size());
-// 	
-// 	// Setup a small vector, to store the global dof indices.
-// 	// NOTE: We are using a C++ standart template vector, not a deal.II
-// 	// "Vector".
-// 	// The FiniteElement object "fe" will tell us, how much dofs has each cell.
-// 	std::vector< dealii::types::global_dof_index > local_dof_indices(
-// 		dual.iterator.slab->dual.fe->dofs_per_cell
-// 	);
-// 	
-// 	// Now we do the real work, looping over all cells to compute the cell
-// 	// assemblys. For this we need an iterator (kind of a pointer), which allows
-// 	// us, to iterate over each cell easily.
-// 	// We initialise it with the first active cell of our triangulation.
-// 	auto cell = dual.iterator.slab->dual.dof->begin_active();
-// 	auto endc = dual.iterator.slab->dual.dof->end();
-// 	
 // 	for ( ; cell != endc; ++cell) {
-// 		// First we have to compute the values of the gradients and
-// 		// the JxW values.
-// 		// The reinit of the fe_values object on the current cell will do this.
-// 		fe_values.reinit(cell);
-// 		
-// 		// Initialise the full matrix for the cell assembly with 0.
-// 		local_dual_Je = 0;
-// 		
-// 	// stationärer Fall	
 // 		// Set up the exact solution vector
 // 		function.BoundaryValues_dual->value_list(fe_values.get_quadrature_points(),
 // 								   exact_solution_values);
@@ -1414,50 +1112,6 @@ dual_do_backward_TMS() {
 // 				fe_values.shape_value(i,q))* 
 // 				fe_values.JxW(q));
 // 		}
-// 		
-// 		// Store the global indices into the vector local_dof_indices.
-// 		// The cell object will give us the information.
-// 		Assert(
-// 			(local_dof_indices.size() == dual.iterator.slab->dual.fe->dofs_per_cell),
-// 			dealii::ExcNotInitialized()
-// 		);
-// 		cell->get_dof_indices(local_dof_indices);
-// 		
-// 		// Copy the local assembly to the global matrix.
-// 		// We use the constraint object, to set all constraints with that step.
-// 		Assert(dual.iterator.slab->dual.constraints.use_count(), dealii::ExcNotInitialized());
-// 		
-// 		dual.iterator.slab->dual.constraints->distribute_local_to_global(
-// 			local_dual_Je, local_dof_indices, dual.Je
-// 		);
-// 		
-// 	}
-// 	
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_interpolate_to_next_grid() {
-// 	dealii::VectorTools::interpolate_to_different_mesh(
-// 		*(dual.iterator.slab_previous->dual.dof),
-// 		*(dual.z_old),
-// 		*(dual.iterator.slab->dual.dof),
-// 		*(dual.iterator.slab->dual.constraints),
-// 		*(dual.z_old_interpolated)
-// 	);
-// 	
-// 	// Only needed if within dual_assemble_Je has to be sth computed because of 
-// 	// the used error functional, for exmpl L^2error at final timepoint dual.Je 
-// 	// is always 0.
-// 	dealii::VectorTools::interpolate_to_different_mesh(
-// 		*(dual.iterator.slab_previous->dual.dof),
-// 		dual.Je_old,
-// 		*(dual.iterator.slab->dual.dof),
-// 		*(dual.iterator.slab->dual.constraints),
-// 		dual.Je_old_interpolated
-// 	);
 // }
 
 
@@ -1508,6 +1162,102 @@ dual_do_backward_TMS() {
 // 	dual.iterator.slab->dual.constraints->distribute(*(dual.z));
 // }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// old
+
+
+// template<int dim>
+// void
+// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+// interpolate_primal_to_dual() {
+// 	dealii::FETools::interpolate(
+// 		*(primal.iterator.slab->primal.dof),
+// 		*(primal.slab.u),
+// 		*(primal.iterator.slab->dual.dof),
+// 		*(primal.iterator.slab->dual.constraints),
+// 		*(dual.u)
+// 	);
+// }
+
+
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// init error estimator
+// 	//
+// 	error_estimator.DWR = std::make_shared<Heat::DWR::ErrorEstimator<dim> > ();
+// 	
+// 	error_estimator.DWR->set_objects(
+// 		grid,
+// 		function.epsilon,
+// 		function.BoundaryValues,
+// 		function.BoundaryValues_dual, // TODO
+// 		function.f,
+// 		function.f // TODO
+// 	);
+
+
+
+// template<int dim>
+// void
+// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+// dual_init_data_output() {
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// INIT DATA OUTPUT
+// 	//
+// 	Assert(dual.iterator.slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+// 	
+// 	DTM::pout << "Heat DWR: dual solution   data output: patches = " << dual.data_output_patches << std::endl;
+// 	
+// 	std::vector<std::string> data_field_names;
+// // 	data_field_names.push_back("u");
+// 	data_field_names.push_back("z");
+// 	
+// 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
+// // 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
+// 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
+// 	
+// // 	dual.data_output.set_DoF_data(
+// // 		dual.iterator.slab->dual.dof
+// // 	);
+// 	dual.data_output.set_DoF_data(
+// 		primal.iterator.slab->dual.dof
+// 	);
+// 	
+// 	dual.data_output.set_data_field_names(data_field_names);
+// 	dual.data_output.set_data_component_interpretation_field(dci_field);
+// 	dual.data_output.set_data_output_patches(dual.data_output_patches);
+// }
+
+
+// template<int dim>
+// void
+// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+// dual_interpolate_to_next_grid() {
+// 	dealii::VectorTools::interpolate_to_different_mesh(
+// 		*(dual.iterator.slab_previous->dual.dof),
+// 		*(dual.z_old),
+// 		*(dual.iterator.slab->dual.dof),
+// 		*(dual.iterator.slab->dual.constraints),
+// 		*(dual.z_old_interpolated)
+// 	);
+// 	
+// 	// Only needed if within dual_assemble_Je has to be sth computed because of 
+// 	// the used error functional, for exmpl L^2error at final timepoint dual.Je 
+// 	// is always 0.
+// 	dealii::VectorTools::interpolate_to_different_mesh(
+// 		*(dual.iterator.slab_previous->dual.dof),
+// 		dual.Je_old,
+// 		*(dual.iterator.slab->dual.dof),
+// 		*(dual.iterator.slab->dual.constraints),
+// 		dual.Je_old_interpolated
+// 	);
+// }
+
+
+
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
@@ -1541,6 +1291,9 @@ dual_do_backward_TMS() {
 // 			AssertThrow(false, dealii::ExcMessage("Your dual.Je_type is unknown, please check your inputs."));
 // 	}	
 // }
+
+
+
 
 
 // template<int dim>
@@ -1607,8 +1360,6 @@ dual_do_backward_TMS() {
 
 
 
-
-
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
@@ -1663,8 +1414,6 @@ dual_do_backward_TMS() {
 
 
 
-
-
 // template<int dim>
 // void
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
@@ -1698,7 +1447,6 @@ dual_do_backward_TMS() {
 // 		///////////////////////// begin dual ///////////////////////////////////
 // 		solve_dual_problem();
 // 		
-
 
 // 		// Compute I_eff:
 // 		std::cout << "dual.storage.eta hat Groesse = " << dual.storage.eta->size() << std::endl;
