@@ -504,7 +504,7 @@ primal_do_forward_TMS() {
 		// do error computations ( for global L2(L2) goal )
 		primal_do_error_L2(slab,u);
 		
-// 		// evaluate solution u(t_n)
+		// evaluate solution u(t_n)
 		primal.un = std::make_shared< dealii::Vector<double> >();
 		primal.un->reinit( slab->primal.dof->n_dofs() );
 		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
@@ -542,15 +542,17 @@ primal_do_forward_TMS() {
 		<< "*************" << std::endl
 		<< std::endl;
 	
-	////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
 	// allow garbage collector to clean up memory
 	//
+	
 	primal.um = nullptr;
 	primal.un = nullptr;
 	
-	
 	////////////////////////////////////////////////////////////////////////////
 	// finish error computation ( for global L2(L2) goal functional )
+	//
+	
 	primal_finish_error_computations();
 	DTM::pout
 		<< "*******************************************************************"
