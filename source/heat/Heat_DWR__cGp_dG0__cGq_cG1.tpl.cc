@@ -102,11 +102,16 @@ run() {
 	grid->set_boundary_indicators();
 	grid->distribute();
 	
-	reinit_storage();
 	
 	// primal problem:
+	primal_reinit_storage();
 	primal_init_data_output();
 	primal_do_forward_TMS();
+	
+	// dual problem
+	dual_reinit_storage();
+// 	dual_init_data_output();
+	dual_do_backward_TMS();
 }
 
 
@@ -166,10 +171,14 @@ init_grid() {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// primal problem
+//
+
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-reinit_storage() {
+primal_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
 	// init storage containers for vector data
 	//
@@ -267,63 +276,8 @@ reinit_storage() {
 			++slab;
 		}
 	}
-	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss-Lobatto(2)} )
-// 	//
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// primal solution dof vectors u (on dual solution space)
-// 	//
-// 	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<2> > ();
-// 	dual.storage.u->resize(N);
-// 	
-// 	{
-// 		auto slab = grid->slabs.begin();
-// 		for (auto &element : *dual.storage.u) {
-// 			for (unsigned int j{0}; j < element.x.size(); ++j) {
-// 				// create shared_ptr to Vector<double>
-// 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
-// 				
-// 				// init. Vector<double> with n_dofs components
-// 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
-// 				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-// 				Assert(
-// 					slab->dual.dof->n_dofs(),
-// 					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
-// 				);
-// 				
-// 				element.x[j]->reinit(
-// 					slab->dual.dof->n_dofs()
-// 				);
-// 			}
-// 			++slab;
-// 		}
-// 	}
-	
-// 	///////////////////////////////////////////////////////
-// 	// dual solution dof vectors z (on dual solution space)
-// 	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-// 	dual.storage.z->resize(N+1);
-// 	for (auto &element : *dual.storage.z) {
-// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
-// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-// 	}}
-	
-// 	/////////////////////////////////////////////////
-// 	// auxiliary vectors eta (on dual solution space)
-// 	dual.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
-// 	dual.storage.eta->resize(N);
-// 	for (auto &element : *dual.storage.eta) {
-// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
-// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
-// 	}}
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-// primal problem
-//
 
 template<int dim>
 void
@@ -682,6 +636,475 @@ primal_do_data_output(
 		t_trigger
 	);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// dual problem
+//
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_reinit_storage() {
+	////////////////////////////////////////////////////////////////////////////
+	// init storage containers for vector data
+	//
+	
+	////////////////////////////////////////////////////////////////////////////
+	// get number of time steps
+	//
+	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+	
+	////////////////////////////////////////////////////////////////////////////
+	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss(1)} with add. support point )
+	//
+	
+	////////////////////////////////////////////////////////////////////////////
+	// dual dof vectors zn (on dual solution space)
+	//
+	dual.storage.zn = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	dual.storage.zn->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *dual.storage.zn) {
+			// create shared_ptr to Vector<double>
+			element.x[0] = std::make_shared< dealii::Vector<double> > ();
+			
+			// init. Vector<double> with n_dofs components
+			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(
+				slab->dual.dof->n_dofs(),
+				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+			);
+			
+			element.x[0]->reinit(
+				slab->dual.dof->n_dofs()
+			);
+			
+			++slab;
+		}
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// dual dof vectors z (on dual solution space)
+	//
+	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<2> > ();
+	dual.storage.z->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *dual.storage.z) {
+			// create shared_ptr to Vector<double>
+			element.x[0] = std::make_shared< dealii::Vector<double> > ();
+			
+			// init. Vector<double> with n_dofs components
+			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(
+				slab->dual.dof->n_dofs(),
+				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+			);
+			
+			element.x[0]->reinit(
+				slab->dual.dof->n_dofs()
+			);
+			
+			++slab;
+		}
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// dual dof vectors zm (on dual solution space)
+	//
+	dual.storage.zm = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	dual.storage.zm->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *dual.storage.zm) {
+			// create shared_ptr to Vector<double>
+			element.x[0] = std::make_shared< dealii::Vector<double> > ();
+			
+			// init. Vector<double> with n_dofs components
+			Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+			Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+			Assert(
+				slab->dual.dof->n_dofs(),
+				dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+			);
+			
+			element.x[0]->reinit(
+				slab->dual.dof->n_dofs()
+			);
+			
+			++slab;
+		}
+	}
+	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// primal solution dof vectors u (on dual solution space)
+// 	//
+// 	dual.storage.u = std::make_shared< DTM::types::storage_data_vectors<2> > ();
+// 	dual.storage.u->resize(N);
+// 	
+// 	{
+// 		auto slab = grid->slabs.begin();
+// 		for (auto &element : *dual.storage.u) {
+// 			for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 				// create shared_ptr to Vector<double>
+// 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 				
+// 				// init. Vector<double> with n_dofs components
+// 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+// 				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
+// 				Assert(
+// 					slab->dual.dof->n_dofs(),
+// 					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
+// 				);
+// 				
+// 				element.x[j]->reinit(
+// 					slab->dual.dof->n_dofs()
+// 				);
+// 			}
+// 			++slab;
+// 		}
+// 	}
+	
+// 	///////////////////////////////////////////////////////
+// 	// dual solution dof vectors z (on dual solution space)
+// 	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.z->resize(N+1);
+// 	for (auto &element : *dual.storage.z) {
+// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 	}}
+	
+// 	/////////////////////////////////////////////////
+// 	// auxiliary vectors eta (on dual solution space)
+// 	dual.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+// 	dual.storage.eta->resize(N);
+// 	for (auto &element : *dual.storage.eta) {
+// 	for (unsigned int j{0}; j < element.x.size(); ++j) {
+// 		element.x[j] = std::make_shared< dealii::Vector<double> > ();
+// 	}}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_do_backward_TMS() {
+	////////////////////////////////////////////////////////////////////////////
+	// prepare TMS loop
+	//
+	
+	////////////////////////////////////////////////////////////////////////////
+	// grid: init slab iterator to last space-time slab: Omega x I_N
+	//
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = grid->slabs.rbegin();
+	
+	////////////////////////////////////////////////////////////////////////////
+	// storage: init iterators to storage_data_vectors
+	//          corresponding to last space-time slab: Omega x I_N
+	//
+	
+// 	Assert(primal.storage.un.use_count(), dealii::ExcNotInitialized());
+// 	Assert(primal.storage.un->size(), dealii::ExcNotInitialized());
+	auto zn = dual.storage.zn->rbegin();
+	
+// 	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
+// 	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
+	auto z = dual.storage.z->begin();
+	
+// 	Assert(primal.storage.um.use_count(), dealii::ExcNotInitialized());
+// 	Assert(primal.storage.um->size(), dealii::ExcNotInitialized());
+	auto zm = dual.storage.zm->begin();
+	
+	
+	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// interpolate (or project) initial value(s)
+// 	//
+// 	
+// 	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+// 	function.u_0->set_time(slab->t_m);
+// 	
+// 	Assert((slab != grid->slabs.end()), dealii::ExcInternalError());
+// 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
+// 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+// 	Assert((um != primal.storage.um->end()), dealii::ExcNotInitialized());
+// 	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
+// 	
+// 	dealii::VectorTools::interpolate(
+// 		*slab->primal.mapping,
+// 		*slab->primal.dof,
+// 		*function.u_0,
+// 		*um->x[0]
+// 	);
+// 	
+// 	// output "initial value solution" at initial time t0
+// 	primal_do_data_output(slab,um,slab->t_m);
+// 	
+// 	////////////////////////////////////////////////////////////////////////////
+// 	// do TMS loop
+// 	//
+// 	
+// 	DTM::pout
+// 		<< std::endl
+// 		<< "*******************************************************************"
+// 		<< "*************" << std::endl
+// 		<< "primal: solving forward TMS problem..." << std::endl
+// 		<< std::endl;
+// 	
+// 	unsigned int n{1};
+// 	while (slab != grid->slabs.end()) {
+// 		// local time variables: \f$ t0 \in I_n = (t_m, t_n) \f$
+// 		const double tm = slab->t_m;
+// 		const double t0 = tm + slab->tau_n()/2.;
+// 		const double tn = slab->t_n;
+// 		
+// 		DTM::pout
+// 			<< "primal: solving problem on "
+// 			<< "I_" << n << " = (" << tm << ", " << tn << ") "
+// 			<< std::endl;
+// 		
+// 		if (slab != grid->slabs.begin()) {
+// 			// for n > 1 interpolate between two (different) spatial meshes
+// 			// the solution u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}
+// 			dealii::VectorTools::interpolate_to_different_mesh(
+// 				// solution on I_{n-1}:
+// 				*std::prev(slab)->primal.dof,
+// 				*std::prev(un)->x[0],
+// 				// solution on I_n:
+// 				*slab->primal.dof,
+// 				*slab->primal.constraints,
+// 				*um->x[0]
+// 			);
+// 		}
+// 		
+// 		// assemble slab problem
+// 		primal_assemble_system(slab);
+// 		primal_assemble_rhs(slab,um,t0);
+// 		
+// 		// solve slab problem (i.e. apply boundary values and solve for u0)
+// 		primal_solve_slab_problem(slab,u);
+// 		
+// 		////////////////////////////////////////////////////////////////////////
+// 		// do postprocessing on the solution
+// 		//
+// 		
+// 		// evaluate solution u(t_n)
+// 		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
+// 		*un->x[0] = 0;
+// 		un->x[0]->add(zeta0, *u->x[0]);
+// 		
+// 		// output solution at t_n
+// 		primal_do_data_output(slab,un,tn);
+// 		
+// 		////////////////////////////////////////////////////////////////////////
+// 		// prepare next I_n slab problem:
+// 		//
+// 		
+// 		++n;
+// 		++slab;
+// 		
+// 		++um;
+// 		++u;
+// 		++un;
+// 		
+// 		DTM::pout << std::endl;
+// 	}
+// 	
+// 	DTM::pout
+// 		<< "primal: forward TMS problem done" << std::endl
+// 		<< "*******************************************************************"
+// 		<< "*************" << std::endl
+// 		<< std::endl;
+}
+
+
+
+
+
+// // TODO NOTE TEST remove the following:
+// template<int dim>
+// void
+// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+// solve_dual_problem() {
+// 		if (n == ((data.T-data.t0)/data.tau_n)) {
+// 			// Compute "initial condition" z_N and store it in dual.z_old and
+// 			// afterwards store this in the last element of list dual.storage.z (recognize
+// 			// that the list-iterator of dual.storage.z ist starting at the last element (dual.storage.z->rbegin())
+// 			
+// 			// Set iterator for primal solution u_kh (needed only for global L2-Error)
+// 			rit_In_uback = In_uth_test;
+// 			// Output of time_step 1 at time-point t_N
+// 			data.dual_time = n*data.tau_n;
+// 			++data.dual_timestep_number;
+// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
+// 						<< data.dual_time << std::endl;
+// 			// Set iterators
+// 			dual.iterator.slab = Inth_dual;
+// 			dual.iterator.slab_previous = Inth_dual_prev;
+// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			// Initialize rhs_vectors dual.Je_old and dual.Je
+// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			// Set time to t_N and compute z_N (at timepoint t_N = 0.5)
+// 			__sync_synchronize();
+// 			dual_set_time(data.T);
+// 			__sync_synchronize();
+// 			
+// 			dual_compute_initial_condition();
+// 
+// 			// Store initial condition z_N (dual.z_old) in the last element of list dual.storage.z
+// 			dual.storage.z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
+// 			*(dual.storage.z->back().x) = *(dual.z_old);
+// 			
+// 		}
+// 	
+// 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
+// 		else if (n == ((data.T-data.t0)/data.tau_n)-1) {
+// 			// Compute z_N-1 at time point t_N-1
+// 			
+// 			// Output of time_step N+1 at time-point t_0
+// 			data.dual_time = n*data.tau_n;
+// 			++data.dual_timestep_number;
+// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
+// 						<< data.dual_time << std::endl;
+// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
+// 			++In_uth_test;
+// 			rit_In_uback = In_uth_test;
+// 
+// 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
+// 			++Inth_dual; // "increase" iterator of list In (grids).
+// 			// Set iterators
+// 			dual.iterator.slab = Inth_dual;
+// 			dual.iterator.slab_previous = Inth_dual_prev;
+// 			
+// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			
+// 			dual_reinit();
+// 			dual_assemble_system();
+// 			__sync_synchronize();
+// 			volatile const double ttt{n*data.tau_n};
+// 			dual_set_time(ttt);
+// 			__sync_synchronize();
+// 			
+// 			dual_assemble_rhs_at_t_Nminus1();
+// 
+// 			dual_solve();
+// 
+// 			// Save current solution (dual.z) in list dual.storage.z;
+// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			*(In_zth->x) = *(dual.z);
+// 			
+// 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
+// 			// next time step in dual.z_old and dual.Je_old
+// 			// (needed within dual_assemble_rhs() of next time step) 
+// 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
+// 			dual.z_old->reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			*(dual.z_old) = *(dual.z);
+// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			dual.Je_old = dual.Je;
+// 			
+// 			++Inth_dual_prev;
+// 		}
+// 		else if (n == 0) {
+// 			// Compute z_0 at time point t_0
+// 
+// 			// Output of time_step N+1 at time-point t_0
+// 			data.dual_time = n*data.tau_n;
+// 			++data.dual_timestep_number;
+// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
+// 						<< data.dual_time << std::endl;
+// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
+// 			++In_uth_test;
+// 			rit_In_uback = In_uth_test;
+// 			++In_zth; // increase iterator of list dual.storage.z, points now on first element of list In-Z
+// 			// Set iterators
+// 			dual.iterator.slab = Inth_dual;
+// 			dual.iterator.slab_previous = Inth_dual_prev;
+// 			
+// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			
+// 			dual_reinit();
+// 			dual_assemble_system();
+// 			__sync_synchronize();
+// 			volatile const double ttt{n*data.tau_n};
+// 			dual_set_time(ttt);
+// 			__sync_synchronize();
+// 			
+// 			dual_assemble_rhs();
+// 			
+// 			dual_solve();
+// 			
+// 			// Store z_0 (dual.z) in the first element of list dual.storage.z.
+// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			*(In_zth->x) = *(dual.z);
+// 			
+// 			break;
+// 		}
+// 		else {
+// 			// Compute z_N-2,...,z_1
+// 			
+// 			// Output of time_steps 2,...,N at time-points t_N-1,...,t_1
+// 			data.dual_time = n*data.tau_n;
+// 			++data.dual_timestep_number;
+// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
+// 						<< data.dual_time << std::endl;
+// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
+// 			++In_uth_test;
+// 			rit_In_uback = In_uth_test;
+// 
+// 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
+// 			++Inth_dual; // "increase" iterator of list In (grids).
+// 			// Set iterators
+// 			dual.iterator.slab = Inth_dual;
+// 			dual.iterator.slab_previous = Inth_dual_prev;
+// 			
+// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
+// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
+// 			
+// 			dual_reinit();
+// 			dual_assemble_system();
+// 			
+// 			__sync_synchronize();
+// 			volatile const double ttt{n*data.tau_n};
+// 			dual_set_time(ttt);
+// 			__sync_synchronize();
+// 			dual_assemble_rhs();
+// 			
+// 			dual_solve();
+// 			
+// 			// Save current solution (dual.z) in list dual.storage.z
+// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			*(In_zth->x) = *(dual.z);
+// 			
+// 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
+// 			// next time step in dual.z_old and dual.Je_old
+// 			// (needed within dual_assemble_rhs() of next time step) 
+// 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
+// 			dual.z_old->reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			*(dual.z_old) = *(dual.z);
+// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
+// 			dual.Je_old = dual.Je;
+// 			
+// 			++Inth_dual_prev;
+// 		}
+// 	} //end for-loop n dual
+// }
+
+
+
+
 
 
 
@@ -1500,183 +1923,7 @@ primal_do_data_output(
 // }
 
 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// solve_dual_problem() {
-// 	auto Inth_dual(grid->slabs.rbegin());
-// 	auto endIn_dual(grid->slabs.rend());
-// 	auto Inth_dual_prev(grid->slabs.rbegin());
-// 	auto endIn_dual_prev(grid->slabs.rend());
-// 	auto In_zth(dual.storage.z->rbegin());
-// 	auto endIn_zth(dual.storage.z->rend());
-// 	auto In_uth_test(dual.storage.u->rbegin());
-// 	auto endIn_uth_test(dual.storage.u->rend());
-// 	
-// 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
-// 		if (n == ((data.T-data.t0)/data.tau_n)) {
-// 			// Compute "initial condition" z_N and store it in dual.z_old and
-// 			// afterwards store this in the last element of list dual.storage.z (recognize
-// 			// that the list-iterator of dual.storage.z ist starting at the last element (dual.storage.z->rbegin())
-// 			
-// 			// Set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			rit_In_uback = In_uth_test;
-// 			// Output of time_step 1 at time-point t_N
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			// Initialize rhs_vectors dual.Je_old and dual.Je
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			// Set time to t_N and compute z_N (at timepoint t_N = 0.5)
-// 			__sync_synchronize();
-// 			dual_set_time(data.T);
-// 			__sync_synchronize();
-// 			
-// 			dual_compute_initial_condition();
-// 
-// 			// Store initial condition z_N (dual.z_old) in the last element of list dual.storage.z
-// 			dual.storage.z->back().x->reinit(grid->slabs.back().dual.dof->n_dofs());
-// 			*(dual.storage.z->back().x) = *(dual.z_old);
-// 			
-// 		}
-// 		else if (n == ((data.T-data.t0)/data.tau_n)-1) {
-// 			// Compute z_N-1 at time point t_N-1
-// 			
-// 			// Output of time_step N+1 at time-point t_0
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			++In_uth_test;
-// 			rit_In_uback = In_uth_test;
-// 
-// 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
-// 			++Inth_dual; // "increase" iterator of list In (grids).
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			dual_reinit();
-// 			dual_assemble_system();
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			dual_set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// 			dual_assemble_rhs_at_t_Nminus1();
-// 
-// 			dual_solve();
-// 
-// 			// Save current solution (dual.z) in list dual.storage.z;
-// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(In_zth->x) = *(dual.z);
-// 			
-// 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
-// 			// next time step in dual.z_old and dual.Je_old
-// 			// (needed within dual_assemble_rhs() of next time step) 
-// 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 			dual.z_old->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(dual.z_old) = *(dual.z);
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je_old = dual.Je;
-// 			
-// 			++Inth_dual_prev;
-// 		}
-// 		else if (n == 0) {
-// 			// Compute z_0 at time point t_0
-// 
-// 			// Output of time_step N+1 at time-point t_0
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			++In_uth_test;
-// 			rit_In_uback = In_uth_test;
-// 			++In_zth; // increase iterator of list dual.storage.z, points now on first element of list In-Z
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			dual_reinit();
-// 			dual_assemble_system();
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			dual_set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// 			dual_assemble_rhs();
-// 			
-// 			dual_solve();
-// 			
-// 			// Store z_0 (dual.z) in the first element of list dual.storage.z.
-// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(In_zth->x) = *(dual.z);
-// 			
-// 			break;
-// 		}
-// 		else {
-// 			// Compute z_N-2,...,z_1
-// 			
-// 			// Output of time_steps 2,...,N at time-points t_N-1,...,t_1
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			++In_uth_test;
-// 			rit_In_uback = In_uth_test;
-// 
-// 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
-// 			++Inth_dual; // "increase" iterator of list In (grids).
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			dual_reinit();
-// 			dual_assemble_system();
-// 			
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			dual_set_time(ttt);
-// 			__sync_synchronize();
-// 			dual_assemble_rhs();
-// 			
-// 			dual_solve();
-// 			
-// 			// Save current solution (dual.z) in list dual.storage.z
-// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(In_zth->x) = *(dual.z);
-// 			
-// 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
-// 			// next time step in dual.z_old and dual.Je_old
-// 			// (needed within dual_assemble_rhs() of next time step) 
-// 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 			dual.z_old->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(dual.z_old) = *(dual.z);
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je_old = dual.Je;
-// 			
-// 			++Inth_dual_prev;
-// 		}
-// 	} //end for-loop n dual
-// }
+
 
 
 // template<int dim>
@@ -1705,31 +1952,15 @@ primal_do_data_output(
 // 		grid->set_boundary_indicators();
 // 		grid->distribute();
 // 		
-// 		////////////////////////////////////////////////////////////////////////
 // 		/////////////// begin primal ///////////////////////////////////////////
-// 		////////////////////////////////////////////////////////////////////////
-// 		
 // 		// solve complete forward TMS
 // 		solve_primal_problem();
 // 		
-// 		// For convergence results
-// 		primal_process_solution(data.T, cycle);
-// 
-// 		////////////////////////////////////////////////////////////////////////
-// 		///////////////////////// end primal ///////////////////////////////////
-// 		////////////////////////////////////////////////////////////////////////
-// 
-// 
-// 		////////////////////////////////////////////////////////////////////////
 // 		///////////////////////// begin dual ///////////////////////////////////
-// 		////////////////////////////////////////////////////////////////////////
-// 		
 // 		solve_dual_problem();
 // 		
-// 		////////////////////////////////////////////////////////////////////////
-// 		///////////////////////// end dual /////////////////////////////////////
-// 		////////////////////////////////////////////////////////////////////////
-// 		
+
+
 // 		// Compute I_eff:
 // 		std::cout << "dual.storage.eta hat Groesse = " << dual.storage.eta->size() << std::endl;
 // 	

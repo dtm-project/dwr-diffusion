@@ -123,14 +123,15 @@ protected:
 	struct {
 		// storage container
 		struct {
-			/// primal solutions interpolated into dual FE room list (time cG(s)-Q_{GL(s+1)} method)
-			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > zn; // on t_n
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;  // time dof
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > zm; // on t_m
 			
-			/// dual solutions list
-			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
 			
-			/// error_indicators list
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
+// 			/// primal solutions interpolated into dual FE room list (time cG(s)-Q_{GL(s+1)} method)
+// 			std::shared_ptr< DTM::types::storage_data_vectors<2> > u;
+// 			/// error_indicators list
+// 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
 		
 		// Data Output
@@ -142,14 +143,13 @@ protected:
 	//
 	
 	virtual void init_functions();
-	
 	virtual void init_grid();
-	
-	virtual void reinit_storage();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// primal problem:
 	//
+	
+	virtual void primal_reinit_storage();
 	
 	virtual void primal_assemble_system(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
@@ -177,17 +177,29 @@ protected:
 		const double &t_trigger
 	);
 	
+	////////////////////////////////////////////////////////////////////////////
+	// dual problem:
+	//
+	
+	virtual void dual_reinit_storage();
+	
+	/// do the backward time marching process of the dual problem
+	virtual void dual_do_backward_TMS();
+	
+	
+	
+	
 	
 	
 	////////////////////////////////////////////////////////////////////////////
 	// old functions:
 	
-// 	// primal problem
-
 // 	virtual void interpolate_primal_to_dual();
 	
+// 	// primal problem
+
+	
 // 	// dual problem
-// 	virtual void solve_dual_problem();
 // 	
 // 	virtual void dual_reinit();
 // 	
