@@ -628,7 +628,6 @@ primal_do_forward_TMS() {
 }
 
 
-
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
