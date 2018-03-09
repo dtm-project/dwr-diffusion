@@ -826,27 +826,9 @@ dual_do_backward_TMS() {
 	Assert(dual.storage.zm->size(), dealii::ExcNotInitialized());
 	auto zm = dual.storage.zm->rbegin();
 	
+	// compute final condition z_kh(T): for global L2(L2): z(T) = 0
+
 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// interpolate (or project) initial value(s)
-// 	//
-// 	
-// 	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
-// 	function.u_0->set_time(slab->t_m);
-// 	
-// 	Assert((slab != grid->slabs.end()), dealii::ExcInternalError());
-// 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
-// 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-// 	Assert((um != primal.storage.um->end()), dealii::ExcNotInitialized());
-// 	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
-// 	
-// 	dealii::VectorTools::interpolate(
-// 		*slab->primal.mapping,
-// 		*slab->primal.dof,
-// 		*function.u_0,
-// 		*um->x[0]
-// 	);
-// 	
 // 	// output "initial value solution" at initial time t0
 // 	primal_do_data_output(slab,um,slab->t_m);
 // 	
@@ -920,6 +902,28 @@ dual_do_backward_TMS() {
 // 		DTM::pout << std::endl;
 // 	}
 // 	
+	
+	// 	////////////////////////////////////////////////////////////////////////////
+// 	// interpolate (or project) initial value(s) (u(t_0)^- -> dual space, if needed)
+// 	//
+// 	
+// 	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+// 	function.u_0->set_time(slab->t_m);
+// 	
+// 	Assert((slab != grid->slabs.end()), dealii::ExcInternalError());
+// 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
+// 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+// 	Assert((um != primal.storage.um->end()), dealii::ExcNotInitialized());
+// 	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
+// 	
+// 	dealii::VectorTools::interpolate(
+// 		*slab->primal.mapping,
+// 		*slab->primal.dof,
+// 		*function.u_0,
+// 		*um->x[0]
+// 	);
+	
+	
 // 	DTM::pout
 // 		<< "primal: forward TMS problem done" << std::endl
 // 		<< "*******************************************************************"
@@ -937,28 +941,11 @@ dual_do_backward_TMS() {
 // Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 // solve_dual_problem() {
 // 		if (n == ((data.T-data.t0)/data.tau_n)) {
-// 			// Compute "initial condition" z_N and store it in dual.z_old and
-// 			// afterwards store this in the last element of list dual.storage.z (recognize
-// 			// that the list-iterator of dual.storage.z ist starting at the last element (dual.storage.z->rbegin())
-// 			
-// 			// Set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			rit_In_uback = In_uth_test;
-// 			// Output of time_step 1 at time-point t_N
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			// Initialize rhs_vectors dual.Je_old and dual.Je
+			// Compute "initial condition" z_N
+
 // 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
 // 			// Set time to t_N and compute z_N (at timepoint t_N = 0.5)
-// 			__sync_synchronize();
 // 			dual_set_time(data.T);
-// 			__sync_synchronize();
 // 			
 // 			dual_compute_initial_condition();
 // 
@@ -1281,21 +1268,12 @@ dual_do_backward_TMS() {
 // dual_compute_initial_condition() {
 // 	
 // 	switch (dual.Je_type) {
-// 		case Heat::types::error_functional::forbidden:
-// 			AssertThrow(false, dealii::ExcMessage("You need to initialise dual.Je_type."));
-// 			break;
-// 			
-// 		case Heat::types::error_functional::L2_final:
-// 			dual_compute_initial_condition_L2final();
-// 			// Initialize rhs_vector dual.Je_old 
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			break;
-// 			
+
 // 		case Heat::types::error_functional::L2_global:
+
 // 			// Compute ones the global space time L2 Error:
 // 			compute_global_STL2_error();
-// 			//
-// 			dual_compute_initial_condition_L2global();
+
 // 			// Initialize rhs_vectors dual.Je_old and dual.Je
 // 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
 // 			dual.Je.reinit(dual.iterator.slab->dual.dof->n_dofs());
@@ -1305,47 +1283,9 @@ dual_do_backward_TMS() {
 // 			dual.Je_old = dual.Je;
 // 			break;
 // 			
-// 		case Heat::types::error_functional::mean_final:
-// 			dual_compute_initial_condition_mean_final();
-// 			// Initialize rhs_vector dual.Je_old 
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			break;
-// 			
-// 		case Heat::types::error_functional::mean_global:
-// 			dual_compute_initial_condition_mean_global();
-// 			// Initialize rhs_vectors dual.Je_old and dual.Je
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
-// 			// and store it in dual.Je_old.
-// 			dual_assemble_Je_mean_global();
-// 			dual.Je_old = dual.Je;
-// 			break;
-// 			
-// 		case Heat::types::error_functional::point:
-// 			dual_compute_initial_condition_point_final();
-// 			// Initialize rhs_vectors dual.Je_old
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			break;
-// 			
-// 		default:
-// 			AssertThrow(false, dealii::ExcMessage("Your dual.Je_type is unknown, please check your inputs."));
-// 	} // end switch(dual.Je_type)
 // }
 
 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_compute_initial_condition_L2global() {
-// 	Assert(grid->slabs.back().dual.dof.use_count(), dealii::ExcNotInitialized());
-// ////////////////////////////////////////////////////////////////////////////////
-// 	// Initial condition for global L2Error-functional
-// ////////////////////////////////////////////////////////////////////////////////
-// 	
-// 	dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 	dual.z_old->reinit(grid->slabs.back().dual.dof->n_dofs());
-// }
 
 // template<int dim>
 // void
@@ -1709,165 +1649,7 @@ dual_do_backward_TMS() {
 // }
 
 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// compute_global_STL2_error() {
-// 	auto In_u_error(primal.storage.u->begin());
-// 	auto endIn_u_error(primal.storage.u->end());
-// 	auto In_error(grid->slabs.begin());
-// 	auto endIn_error(grid->slabs.end());
-// 	// Variable for local L2Error
-// 	double L2Error_local;
-// 	L2Error_local = 0;
-// // 	// Vector for global errors on each cell K (E_K in dealii notation)
-// // 	dealii::Vector<double> global_diff (primal.iterator.slab->tria->n_active_cells());
-// 	// Loop over all time-intervals I_n (n=1,...,N(=number of grids))
-// 	for (unsigned int n{0};n <= grid->slabs.size(); ++n,++In_u_error) {
-// 		
-// 		if (n == grid->slabs.size()) {
-// 			++In_error;
-// 			primal.iterator.slab = In_error;
-// 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
-// 			const dealii::QTrapez<1> q_trapez;
-// 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
-// 		
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			function.BoundaryValues_dual->set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
-// 													*(primal.iterator.slab->primal.dof),
-// 													*(In_u_error->x),
-// 													*(function.BoundaryValues_dual),
-// 													difference_per_cell,
-// 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
-// 													dealii::VectorTools::L2_norm);
-// 			
-// 			double L2_error_error_end = difference_per_cell.l2_norm();
-// 			L2_error_error_end *= L2_error_error_end;
-// 			L2_error_error_end *= (data.tau_n/2.);
-// 			L2Error_local += L2_error_error_end;
-// 		} // end if (n == grid->slabs.size())
-// 		else if (n == 0) {
-// 			primal.iterator.slab = In_error;
-// 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
-// 			const dealii::QTrapez<1> q_trapez;
-// 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
-// 			
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			function.BoundaryValues_dual->set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
-// 													*(primal.iterator.slab->primal.dof),
-// 													*(In_u_error->x),
-// 													*(function.BoundaryValues_dual),
-// 													difference_per_cell,
-// 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
-// 													dealii::VectorTools::L2_norm);
-// 			
-// 			double L2_error_error_end = difference_per_cell.l2_norm();
-// 			L2_error_error_end *= L2_error_error_end;
-// 			L2_error_error_end *= (data.tau_n/2.);
-// 			L2Error_local += L2_error_error_end;
-// 		}
-// 		else if (n == 1) {
-// 			primal.iterator.slab = In_error;
-// 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
-// 			const dealii::QTrapez<1> q_trapez;
-// 			const dealii::QIterated<dim> q_iterated (q_trapez,20);
-// 			
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			function.BoundaryValues_dual->set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
-// 													*(primal.iterator.slab->primal.dof),
-// 													*(In_u_error->x),
-// 													*(function.BoundaryValues_dual),
-// 													difference_per_cell,
-// 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
-// 													dealii::VectorTools::L2_norm);
-// 			
-// 			double L2_error_error_end = difference_per_cell.l2_norm();
-// 			L2_error_error_end *= L2_error_error_end;
-// 			L2_error_error_end *= (data.tau_n);
-// 			L2Error_local += L2_error_error_end;
-// 		}
-// 		else {
-// 		++In_error;
-// 		primal.iterator.slab = In_error;
-// 		dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
-// 		const dealii::QTrapez<1> q_trapez;
-// 		const dealii::QIterated<dim> q_iterated (q_trapez,20);
-// 		
-// 		__sync_synchronize();
-// 		volatile const double ttt{n*data.tau_n};
-// 		function.BoundaryValues_dual->set_time(ttt);
-// 		__sync_synchronize();
-// 		
-// 		dealii::VectorTools::integrate_difference (*(primal.iterator.slab->primal.mapping),
-// 													*(primal.iterator.slab->primal.dof),
-// 													*(In_u_error->x),
-// 													*(function.BoundaryValues_dual),
-// 													difference_per_cell,
-// 													q_iterated,//dealii::QGauss<dim>(4),//q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
-// 													dealii::VectorTools::L2_norm);
-// 		
-// 		double L2_error_error = difference_per_cell.l2_norm();
-// 		L2_error_error *= L2_error_error;
-// 		L2_error_error *= data.tau_n;
-// 		L2Error_local += L2_error_error;
-// 		
-// 		}//end else
-// 
-// 	} // end of loop n over all time-intervals I_n
-// 	L2Error_global = std::sqrt(L2Error_local);
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	/////////////// Rechteckregel //////////////////////////////////////////////
-// 	////////////////////////////////////////////////////////////////////////////
-// 	
-// // 	auto In_u_error(dual.storage.u->begin());
-// // 	auto endIn_u_error(dual.storage.u->end());
-// // 	auto In_error(grid->slabs.begin());
-// // 	auto endIn_error(grid->slabs.end());
-// // 	Variable for local L2Error
-// // 	double L2Error_local;
-// // 	L2Error_local = 0;
-// // 	Vector for global errors on each cell K (E_K in dealii notation)
-// // 	dealii::Vector<double> global_diff (primal.iterator.slab->tria->n_active_cells());
-// // 	Loop over all time-intervals I_n (n=1,...,N(=number of grids))
-// // 	for (unsigned int n{1};n <= grid->slabs.size(); ++n,++In_error) {
-// // 		
-// // 			++In_u_error;
-// // 			primal.iterator.slab = In_error;
-// // 			dealii::Vector<double> difference_per_cell (primal.iterator.slab->tria->n_active_cells());
-// // 			const dealii::QTrapez<1> q_trapez;
-// // 			const dealii::QIterated<dim> q_iterated (q_trapez,10);
-// // 		std::cout << "tau_n ist = " << data.tau_n << std::endl;
-// // 			function.BoundaryValues->set_time(n*data.tau_n);
-// // 			dealii::VectorTools::integrate_difference (*(primal.iterator.slab->dual.mapping),
-// // 													*(primal.iterator.slab->dual.dof),
-// // 													*(In_u_error->x),
-// // 													*(function.BoundaryValues),
-// // 													difference_per_cell,
-// // 													q_iterated, //dealii::QGauss<dim>(6),// q_iterated (alternativ)
-// // 													dealii::VectorTools::L2_norm);
-// // 			
-// // 			double L2_error_error_end = difference_per_cell.l2_norm();
-// // 			L2_error_error_end *= L2_error_error_end;
-// // 			L2_error_error_end *= (data.tau_n);
-// // 			L2Error_local += L2_error_error_end;
-// // 
-// // 
-// // 	} // end of loop n over all time-intervals I_n
-// // 	L2Error_global = std::sqrt(L2Error_local);
-// }
+
 
 
 // template<int dim>
