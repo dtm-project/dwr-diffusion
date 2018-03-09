@@ -587,11 +587,11 @@ primal_do_forward_TMS() {
 			);
 		}
 		
-		// assemble
+		// assemble slab problem
 		primal_assemble_system(slab);
 		primal_assemble_rhs(slab,um,t0);
 		
-		// apply boundary values and solve for u0
+		// solve slab problem (i.e. apply boundary values and solve for u0)
 		primal_solve_slab_problem(slab,u);
 		
 		////////////////////////////////////////////////////////////////////////
