@@ -48,8 +48,8 @@ value(
 	
 	double res{0.};
 	res =
-		std::cos(M_PI * t)*M_PI * x[0]*(x[0]-1) * x[1]*(x[1]-1)
-		- std::sin(M_PI * t) * epsilon * 2.0 * ( x[1]*(x[1]-1) + x[0]*(x[0]-1) );
+		std::cos(M_PI * t)*M_PI * 16 * x[0]*(x[0]-1) * x[1]*(x[1]-1)
+		- std::sin(M_PI * t) * epsilon * 16 * 2.0 * ( x[1]*(x[1]-1) + x[0]*(x[0]-1) );
 	
 	return res;
 }
