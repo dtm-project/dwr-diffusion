@@ -531,13 +531,13 @@ primal_do_forward_TMS() {
 	// interpolate (or project) initial value(s)
 	//
 	
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
 	function.u_0->set_time(slab->t_m);
 	
-	// primal grid
+	Assert((slab != grid->slabs.end()), dealii::ExcInternalError());
 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
+	Assert((um != primal.storage.um->end()), dealii::ExcNotInitialized());
 	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
 	
 	dealii::VectorTools::interpolate(
