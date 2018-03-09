@@ -84,6 +84,7 @@ protected:
 	std::shared_ptr< heat::dwr::ParameterSet > parameter_set;
 	
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
+	virtual void init_grid();
 	
 	/// function: keep shared_ptr to Function<dim> for several quantities
 	struct {
@@ -100,6 +101,13 @@ protected:
 		/// exact solution (if any)
 		std::shared_ptr< dealii::Function<dim> > u_E;
 	} function;
+	
+	virtual void init_functions();
+	
+	
+	////////////////////////////////////////////////////////////////////////////
+	// primal problem:
+	//
 	
 	/// primal: data structures for forward time marching
 	struct {
@@ -122,31 +130,6 @@ protected:
 		// Data Output
 		DTM::DataOutput<dim> data_output;
 	} primal;
-	
-	/// dual: data structures for backward time marching and error estimation
-	struct {
-		// storage container
-		struct {
-			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
-			
-// 			/// error_indicators list
-// 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
-		} storage;
-		
-		// Data Output
-		DTM::DataOutput<dim> data_output;
-	} dual;
-	
-	////////////////////////////////////////////////////////////////////////////
-	// protected member functions:
-	//
-	
-	virtual void init_functions();
-	virtual void init_grid();
-	
-	////////////////////////////////////////////////////////////////////////////
-	// primal problem:
-	//
 	
 	virtual void primal_reinit_storage();
 	
@@ -187,9 +170,24 @@ protected:
 		const double &t_trigger
 	);
 	
+	
 	////////////////////////////////////////////////////////////////////////////
 	// dual problem:
 	//
+	
+	/// dual: data structures for backward time marching and error estimation
+	struct {
+		// storage container
+		struct {
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
+			
+// 			/// error_indicators list
+// 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
+		} storage;
+		
+		// Data Output
+		DTM::DataOutput<dim> data_output;
+	} dual;
 	
 	virtual void dual_reinit_storage();
 	

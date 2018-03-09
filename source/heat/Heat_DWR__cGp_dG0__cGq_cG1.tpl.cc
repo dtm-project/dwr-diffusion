@@ -522,6 +522,17 @@ primal_do_forward_TMS() {
 		++slab;
 		++u;
 		
+		////////////////////////////////////////////////////////////////////////
+		// allow garbage collector to clean up memory
+		//
+		
+		primal.M = nullptr;
+		primal.A = nullptr;
+		primal.f0 = nullptr;
+		
+		primal.K = nullptr;
+		primal.b = nullptr;
+		
 		DTM::pout << std::endl;
 	}
 	
@@ -530,7 +541,15 @@ primal_do_forward_TMS() {
 		<< "*******************************************************************"
 		<< "*************" << std::endl
 		<< std::endl;
-		
+	
+	////////////////////////////////////////////////////////////////////////
+	// allow garbage collector to clean up memory
+	//
+	primal.um = nullptr;
+	primal.un = nullptr;
+	
+	
+	////////////////////////////////////////////////////////////////////////////
 	// finish error computation ( for global L2(L2) goal functional )
 	primal_finish_error_computations();
 	DTM::pout
@@ -691,7 +710,7 @@ primal_do_data_output(
 	
 	// TODO
 	primal.data_output.write_data(
-		"primal",
+		"solution",
 		u_trigger,
 		t_trigger
 	);
