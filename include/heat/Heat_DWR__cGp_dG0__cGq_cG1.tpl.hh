@@ -196,6 +196,10 @@ protected:
 	
 	virtual void dual_reinit_storage();
 	
+	virtual void dual_assemble_system(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab
+	);
+	
 	/// do the backward time marching process of the dual problem
 	virtual void dual_do_backward_TMS();
 	

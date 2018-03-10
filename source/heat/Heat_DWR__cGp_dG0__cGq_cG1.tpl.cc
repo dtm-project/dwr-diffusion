@@ -778,6 +778,75 @@ dual_reinit_storage() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_assemble_system(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab
+) {
+	// ASSEMBLY MASS MATRIX ////////////////////////////////////////////////////
+	dual.M = std::make_shared< dealii::SparseMatrix<double> > ();
+	dual.M->reinit(*slab->dual.sp);
+	
+	*dual.M = 0;
+	{
+		heat::Assemble::L2::Mass::
+		Assembler<dim> assemble_mass(
+			dual.M,
+			slab->dual.dof,
+			slab->dual.fe,
+			slab->dual.mapping,
+			slab->dual.constraints
+		);
+		
+		Assert(function.density.use_count(), dealii::ExcNotInitialized());
+		assemble_mass.set_density(function.density);
+		
+		DTM::pout << "dwr-heat: assemble mass matrix...";
+		assemble_mass.assemble();
+		DTM::pout << " (done)" << std::endl;
+	}
+	
+	// ASSEMBLY STIFFNESS MATRIX ///////////////////////////////////////////////
+	dual.A = std::make_shared< dealii::SparseMatrix<double> > ();
+	dual.A->reinit(*slab->dual.sp);
+	
+	*dual.A = 0;
+	{
+		heat::Assemble::L2::Laplace::
+		Assembler<dim> assemble_stiffness_cell_terms (
+			dual.A,
+			slab->dual.dof,
+			slab->dual.fe,
+			slab->dual.mapping,
+			slab->dual.constraints
+		);
+		
+		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
+		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
+		
+		DTM::pout << "dwr-heat: assemble cell stiffness matrix...";
+		assemble_stiffness_cell_terms.assemble();
+		DTM::pout << " (done)" << std::endl;
+	}
+	
+	// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
+	DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
+	
+	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
+	dual.K->reinit(*slab->dual.sp);
+	
+	*dual.K = 0;
+	dual.K->add(slab->tau_n()/2., *dual.A);
+	dual.K->add(1.0, *dual.M);
+	
+	DTM::pout << " (done)" << std::endl;
+}
+
+
+
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_do_backward_TMS() {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare TMS loop
@@ -850,7 +919,7 @@ dual_do_backward_TMS() {
 // 		}
 		
 		// assemble slab problem
-// 		dual_assemble_system(slab);
+		dual_assemble_system(slab);
 // 		dual_assemble_rhs(slab,z,t0,t1);
 		
 // 		// solve slab problem (i.e. apply boundary values and solve for u0)
@@ -912,6 +981,8 @@ dual_do_backward_TMS() {
 }
 
 
+
+
 // // TODO NOTE TEST remove the following:
 // template<int dim>
 // void
@@ -924,17 +995,12 @@ dual_do_backward_TMS() {
 // 	dual_assemble_Je_L2global();
 // 	
 // 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
-// 		else if (n == ((data.T-data.t0)/data.tau_n)-1) {
 // 			// Compute z_N-1 at time point t_N-1
 // 			
-// 			dual_reinit();
-// 			
-// dual_assemble_system();
-// 			__sync_synchronize();
+// 			dual_assemble_system();
+
 // 			volatile const double ttt{n*data.tau_n};
 // 			dual_set_time(ttt);
-// 			__sync_synchronize();
-// 			
 // 			dual_assemble_rhs_at_t_Nminus1();
 // 
 // 			dual_solve();
