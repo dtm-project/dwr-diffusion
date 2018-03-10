@@ -281,18 +281,6 @@ primal_assemble_system(
 		assemble_stiffness_cell_terms.assemble();
 		DTM::pout << " (done)" << std::endl;
 	}
-	
-	// construct system matrix K = M + tau A
-	DTM::pout << "dwr-heat: construct system matrix K = M + tau A...";
-	
-	primal.K = std::make_shared< dealii::SparseMatrix<double> > ();
-	primal.K->reinit(*slab->primal.sp);
-	
-	*primal.K = 0;
-	primal.K->add(slab->tau_n(), *primal.A);
-	primal.K->add(1.0, *primal.M);
-	
-	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -349,6 +337,22 @@ primal_solve_slab_problem(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<1>::iterator &u
 ) {
+	////////////////////////////////////////////////////////////////////////////
+	// construct system matrix K = M + tau A
+	//
+	
+	DTM::pout << "dwr-heat: construct system matrix K = M + tau A...";
+	
+	primal.K = std::make_shared< dealii::SparseMatrix<double> > ();
+	primal.K->reinit(*slab->primal.sp);
+	
+	*primal.K = 0;
+	primal.K->add(slab->tau_n(), *primal.A);
+	primal.K->add(1.0, *primal.M);
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	
 	////////////////////////////////////////////////////////////////////////////
 	// apply Dirichlet boundary values
 	//
