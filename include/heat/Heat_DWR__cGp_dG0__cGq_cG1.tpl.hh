@@ -187,6 +187,8 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > Je0;
 		std::shared_ptr< dealii::Vector<double> > Je1;
 		
+		std::shared_ptr< dealii::Vector<double> > u0;
+		
 		std::shared_ptr< dealii::SparseMatrix<double> > K;
 		std::shared_ptr< dealii::Vector<double> > b;
 		
@@ -198,6 +200,13 @@ protected:
 	
 	virtual void dual_assemble_system(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab
+	);
+	
+	virtual void dual_assemble_rhs(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::reverse_iterator &u,
+		const double &t0,
+		const double &t1
 	);
 	
 	/// do the backward time marching process of the dual problem

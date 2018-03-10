@@ -31,28 +31,29 @@
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
+#include <heat/types/boundary_id.hh>
+#include <heat/Force/Forces.hh>
+#include <heat/ExactSolution/ExactSolutions.hh>
+
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 #include <heat/assembler/L2_MassAssembly.tpl.hh>
-
 #include <heat/assembler/L2_LaplaceAssembly.tpl.hh>
 
 #include <heat/assembler/L2_ForceConstrainedAssembly.tpl.hh>
-
 template <int dim>
 using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 
-#include <heat/types/boundary_id.hh>
+#include <heat/assembler/L2_Je_global_L2L2_Assembly.tpl.hh>
 
-#include <heat/Force/Forces.hh>
-
-#include <heat/ExactSolution/ExactSolutions.hh>
 
 // DEAL.II includes
 
 // #include <deal.II/grid/grid_refinement.h>
 
 #include <deal.II/lac/sparse_direct.h>
+
+#include <deal.II/fe/fe_tools.h>
 
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -845,7 +846,88 @@ dual_assemble_system(
 }
 
 
-
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_assemble_rhs(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::reverse_iterator &u,
+	const double &t0,
+	const double &t1
+) {
+	////////////////////////////////////////////////////////////////////////////
+	// TODO: this is only for global L2(L2) goal functional
+	//
+	
+	Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
+	
+	// NOTE: forward problem is only dG(0) (constant in time):
+	
+	// interpolate primal solution(s) to dual solution space
+	dual.u0 = std::make_shared< dealii::Vector<double> > ();
+	dual.u0->reinit( slab->dual.dof->n_dofs() );
+	
+	dealii::FETools::interpolate(
+		*slab->primal.dof,
+		*u->x[0],
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*dual.u0
+	);
+	
+	// init assembler:
+	auto assemble_Je = std::make_shared<
+		heat::Assemble::L2::Je_global_L2L2::Assembler<dim> > (
+		slab->dual.dof,
+		slab->dual.fe,
+		slab->dual.mapping,
+		slab->dual.constraints
+	);
+	
+	// init vector and run assemble
+	DTM::pout << "dwr-heat: assemble Je0...";
+	dual.Je0 = std::make_shared< dealii::Vector<double> > ();
+	dual.Je0->reinit( slab->dual.dof->n_dofs() );
+	*dual.Je0 = 0;
+	assemble_Je->assemble(
+		dual.Je0,
+		t0,
+		function.u_E,
+		dual.u0,
+		0,   // n_q_points: 0 -> p+1 in auto mode
+		true // auto mode
+	);
+	DTM::pout << " (done)" << std::endl;
+	
+	// init vector and run assemble
+	DTM::pout << "dwr-heat: assemble Je1...";
+	dual.Je1 = std::make_shared< dealii::Vector<double> > ();
+	dual.Je1->reinit( slab->dual.dof->n_dofs() );
+	*dual.Je1 = 0;
+	assemble_Je->assemble(
+		dual.Je1,
+		t1,
+		function.u_E,
+		dual.u0,
+		0,   // n_q_points: 0 -> p+1 in auto mode
+		true // auto mode
+	);
+	DTM::pout << " (done)" << std::endl;
+	
+// 	// construct vector b = M um + tau_n f0
+// 	DTM::pout << "dwr-heat: construct linear system rhs vector...";
+// 	
+// 	primal.b = std::make_shared< dealii::Vector<double> > ();
+// 	primal.b->reinit( slab->primal.dof->n_dofs() );
+// 	
+// 	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
+// 	Assert(primal.um.use_count(), dealii::ExcNotInitialized());
+// 	primal.M->vmult(*primal.b, *primal.um);
+// 	
+// 	primal.b->add(slab->tau_n(), *primal.f0);
+// 	
+// 	DTM::pout << " (done)" << std::endl;
+}
 
 
 template<int dim>
@@ -872,6 +954,10 @@ dual_do_backward_TMS() {
 	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
 	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
 	auto z = dual.storage.z->rbegin();
+	
+	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
+	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
+	auto u = primal.storage.u->rbegin();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// final condition z_kh(T)
@@ -924,7 +1010,7 @@ dual_do_backward_TMS() {
 		
 		// assemble slab problem
 		dual_assemble_system(slab);
-// 		dual_assemble_rhs(slab,z,t0,t1);
+		dual_assemble_rhs(slab,u,t0,t1);
 		
 // 		// solve slab problem (i.e. apply boundary values and solve for u0)
 // 		primal_solve_slab_problem(slab,u);
@@ -949,7 +1035,8 @@ dual_do_backward_TMS() {
 		++slab;
 		
 // 		++um;
-// 		++u;
+		++u;
+		++z;
 // 		++un;
 		
 		DTM::pout << std::endl;
