@@ -900,9 +900,9 @@ dual_assemble_rhs(
 	);
 	
 	////////////////////////////////////////////////////////////////////////////
-	// NOTE: forward problem is dG(0) (constant in time and JUMPS in t0)
+	// NOTE: forward problem is dG(0) (constant in time and JUMPS in t_m = t0)
+	// NOTE: we need the reconstruction on dual cG(1)-Q_GL(2) here
 	//
-	
 	
 	///////////////////////////////
 	// u_h(t0) = u_h(t0)|_{I_{n-1}}
@@ -914,10 +914,13 @@ dual_assemble_rhs(
 	
 	if ( n > 1 ) {
 		// n > 1:
-		//   get u_h(t0)  from Omega_h^primal x I_{n-1}
-		//   interpolated to   Omega_h^dual x I_{n} dual solution space on 
+		//   get u_h(t0) from:    Omega_h^primal x I_{n-1} (t_{n-1})
+		//   (1) interpolated to: Omega_h^primal x I_{n} (t_m) => u0_on_primal
+		//   (2) interpolated to: Omega_h^dual x I_{n} (t_m)   => dual.u0
 		
-		// interpolate_to_different_mesh needs the same fe: dof1.get_fe() = dof2.get_fe()
+		// (1) interpolate_to_different_mesh (in primal):
+		//     - needs the same fe: dof1.get_fe() = dof2.get_fe()
+		//     - allow different triangulations: dof1.get_tria() != dof2.get_tria()
 		auto u0_on_primal = std::make_shared< dealii::Vector<double> > ();
 		u0_on_primal->reinit( slab->primal.dof->n_dofs() );
 		
@@ -931,7 +934,9 @@ dual_assemble_rhs(
 			*u0_on_primal
 		);
 		
-		// interpolate needs the same tria: dof1.get_tria() == dof2.get_tria()
+		// (2) interpolate primal -> dual:
+		//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
+		//     - allow different FE-spaces: dof1.get_fe() != dof2.get_fe()
 		dealii::FETools::interpolate(
 			// primal solution
 			*slab->primal.dof,
@@ -945,7 +950,7 @@ dual_assemble_rhs(
 		u0_on_primal = nullptr;
 	}
 	else {
-		// n == 1: interpolate initial value function u
+		// n == 1: interpolate initial value function u_0 to dual space
 		function.u_0->set_time(t0);
 		dealii::VectorTools::interpolate(
 			*slab->dual.mapping,
@@ -955,7 +960,7 @@ dual_assemble_rhs(
 		);
 	}
 	
-	// init vector and run assemble J(v)(e) = ((v,e))
+	// init vector and run assemble J(v)(e) = (v,e)
 	DTM::pout << "dwr-heat: assemble Je0...";
 	dual.Je0 = std::make_shared< dealii::Vector<double> > ();
 	dual.Je0->reinit( slab->dual.dof->n_dofs() );
@@ -1014,8 +1019,6 @@ dual_assemble_rhs(
 	// construct vector b = tau_n( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
 	//
 	
-// 	Assert(dual.b.use_count(), dealii::ExcNotInitialized());
-// 	Assert(dual.b->size(), dealii::ExcNotInitialized());
 	dual.b = std::make_shared< dealii::Vector<double> > ();
 	dual.b->reinit( slab->dual.dof->n_dofs() );
 	
