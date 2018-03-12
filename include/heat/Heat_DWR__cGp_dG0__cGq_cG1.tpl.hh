@@ -151,6 +151,15 @@ protected:
 	virtual void primal_do_forward_TMS();
 	
 	
+	// helping function
+	virtual void primal_get_u_on_slab(
+		std::shared_ptr< dealii::Vector<double> > u_result,
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u,
+		const double t
+	);
+	
+	
 	// post-processing functions for L2(L2) error
 	double primal_L2_L2_error_u;
 	virtual void primal_init_error_computations();
@@ -222,6 +231,29 @@ protected:
 	virtual void dual_do_backward_TMS();
 	
 	
+	// helping function
+	virtual void dual_get_z_on_slab(
+		std::shared_ptr< dealii::Vector<double> > z_result,
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double t
+	);
+	
+	virtual void dual_get_z_on_slab_after_primal_projection(
+		std::shared_ptr< dealii::Vector<double> > z_result_after_primal_projection,
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double t
+	);
+	
+	virtual void dual_get_u_on_slab(
+		std::shared_ptr< dealii::Vector<double> > u_result_on_dual_space,
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u,
+		const double t
+	);
+	
+	
 	// post-processing functions for data output
 	virtual void dual_init_data_output();
 	
@@ -233,22 +265,28 @@ protected:
 	
 	
 	////////////////////////////////////////////////////////////////////////////
+	// error estimation and grid adaption
+	//
+	
+	
+	
+	
+	
+	
+	////////////////////////////////////////////////////////////////////////////
 	// old functions:
 	
-
 // 	// dual problem
 // 	
-	
 // 	virtual void refine_grids_dwr();
-	
+// 	
 // 	// Compute I_effs
 // 	virtual void compute_Ieff();
 // 	virtual void compute_Ieff_L2global();
-// 
-
+// 	
 // 		// TODO:
 // 		Heat::types::error_functional Je_type;		 ///< target functional type for rhs of dual problem
-	
+// 	
 // 	struct {
 // 		std::shared_ptr< Heat::DWR::ErrorEstimator<dim> > DWR;
 // 	} error_estimator;

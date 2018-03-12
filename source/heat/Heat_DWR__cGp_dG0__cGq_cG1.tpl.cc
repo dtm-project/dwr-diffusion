@@ -570,6 +570,31 @@ primal_do_forward_TMS() {
 }
 
 
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_get_u_on_slab(
+	std::shared_ptr< dealii::Vector<double> > u_result,
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	[[maybe_unused]] const double t
+) {
+	Assert( (t > slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+// 	const double _t{ (t - slab->t_m) / slab->tau_n() };
+	const double zeta0{1.};
+	
+	u_result = std::make_shared< dealii::Vector<double> > ();
+	u_result->reinit(
+		slab->primal.dof->n_dofs()
+	);
+	
+	u_result->equ(zeta0, *u->x[0]);
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // primal: L2(L2) error computation
 //
@@ -1207,6 +1232,141 @@ dual_do_backward_TMS() {
 }
 
 
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_get_z_on_slab(
+	std::shared_ptr< dealii::Vector<double> > z_result,
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	const double t
+) {
+	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	// time on reference time interval I_hat = (0,1)
+	const double _t{ (t - slab->t_m) / slab->tau_n() };
+	
+	// (trial) basis functions on reference interval
+	const double xi0{ 1. - _t };
+	const double xi1{ _t };
+	
+	z_result = std::make_shared< dealii::Vector<double> > ();
+	z_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	z_result->equ(xi0, *z->x[0]);
+	z_result->add(xi1, *z->x[1]);
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_get_z_on_slab_after_primal_projection(
+	std::shared_ptr< dealii::Vector<double> > z_result,
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	[[maybe_unused]]const double t
+) {
+	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	// construct solutions on dof in time of primal time discretisation
+	
+	// evaluate z_h(t) on the time-dof dG(0)-Q_G(1) (i.e. t_hat = 0.5)
+	auto zz = std::make_shared< dealii::Vector<double> > ();
+	zz->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	const double _t{ 0.5 };
+	const double xi0{ 1.-_t };
+	const double xi1{ _t };
+	
+	zz->equ(xi0, *z->x[0]);
+	zz->add(xi1, *z->x[1]);
+	
+	// interpolate zz -> primal as zzp
+	auto zzp = std::make_shared< dealii::Vector<double> > ();
+	zzp->reinit(
+		slab->primal.dof->n_dofs()
+	);
+	
+	dealii::FETools::interpolate(
+		// dual solution
+		*slab->dual.dof,
+		*zz,
+		// primal solution
+		*slab->primal.dof,
+		*slab->primal.constraints,
+		*zzp
+	);
+	
+	// TODO:
+	// evaluate solution for t \in I_n for higher-order time discretisation
+	// NOTE: primal problem has dG(0)-Q_G(1) discretisation, which is constant
+	
+	// interpolate zzp -> dual as z_result
+	z_result = std::make_shared< dealii::Vector<double> > ();
+	z_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	dealii::FETools::interpolate(
+		// primal solution
+		*slab->primal.dof,
+		*zzp,
+		// dual solution
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*z_result
+	);
+	
+	zzp = nullptr;
+	
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_get_u_on_slab(
+	std::shared_ptr< dealii::Vector<double> > u_result,
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	const double t
+) {
+	Assert( (t > slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	u_result = std::make_shared< dealii::Vector<double> > ();
+	u_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	// interpolate needs the same tria: dof1.get_tria() == dof2.get_tria()
+	dealii::FETools::interpolate(
+		// primal solution
+		*slab->primal.dof,
+		*u->x[0],
+		// dual solution
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*u_result
+	);
+	
+// 	// TODO: for higher-order time discretisations:
+// 	// time on reference time interval I_hat = (0,1)
+// 	const double _t{ (t - slab->t_m) / slab->tau_n() };
+// 	const double zeta0{ 1. };
+// 	*u_result *= zeta0;
+}
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // dual data output
 //
@@ -1267,6 +1427,10 @@ dual_do_data_output(
 	);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// error estimation
+//
 
 
 // // TODO NOTE TEST remove the following:
