@@ -188,6 +188,7 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > Je1;
 		
 		std::shared_ptr< dealii::Vector<double> > u0;
+		std::shared_ptr< dealii::Vector<double> > u1;
 		
 		std::shared_ptr< dealii::SparseMatrix<double> > K;
 		std::shared_ptr< dealii::Vector<double> > b;
@@ -199,12 +200,14 @@ protected:
 	virtual void dual_reinit_storage();
 	
 	virtual void dual_assemble_system(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 	);
 	
 	virtual void dual_assemble_rhs(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab,
-		const typename DTM::types::storage_data_vectors<1>::reverse_iterator &u,
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const unsigned int &n,
 		const double &t0,
 		const double &t1
 	);

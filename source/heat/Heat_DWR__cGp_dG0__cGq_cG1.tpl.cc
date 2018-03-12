@@ -784,7 +784,7 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_assemble_system(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 ) {
 	// ASSEMBLY MASS MATRIX ////////////////////////////////////////////////////
 	dual.M = std::make_shared< dealii::SparseMatrix<double> > ();
@@ -850,8 +850,10 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_assemble_rhs(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::reverse_iterator &slab,
-	const typename DTM::types::storage_data_vectors<1>::reverse_iterator &u,
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	const unsigned int &n,
 	const double &t0,
 	const double &t1
 ) {
@@ -860,20 +862,6 @@ dual_assemble_rhs(
 	//
 	
 	Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
-	
-	// NOTE: forward problem is only dG(0) (constant in time):
-	
-	// interpolate primal solution(s) to dual solution space
-	dual.u0 = std::make_shared< dealii::Vector<double> > ();
-	dual.u0->reinit( slab->dual.dof->n_dofs() );
-	
-	dealii::FETools::interpolate(
-		*slab->primal.dof,
-		*u->x[0],
-		*slab->dual.dof,
-		*slab->dual.constraints,
-		*dual.u0
-	);
 	
 	// init assembler:
 	auto assemble_Je = std::make_shared<
@@ -884,49 +872,130 @@ dual_assemble_rhs(
 		slab->dual.constraints
 	);
 	
-	// init vector and run assemble
+	////////////////////////////////////////////////////////////////////////////
+	// NOTE: forward problem is dG(0) (constant in time and JUMPS in t0)
+	//
+	
+	
+	///////////////////////////////
+	// u_h(t0) = u_h(t0)|_{I_{n-1}}
+	//
+	
+	// interpolate primal solution u_h(t0) to dual solution space
+	dual.u0 = std::make_shared< dealii::Vector<double> > ();
+	dual.u0->reinit( slab->dual.dof->n_dofs() );
+	
+	if ( n > 1 ) {
+		// n > 1:
+		//   get u_h(t0)  from Omega_h^primal x I_{n-1}
+		//   interpolated to   Omega_h^dual x I_{n} dual solution space on 
+		
+		// interpolate_to_different_mesh needs the same fe: dof1.get_fe() = dof2.get_fe()
+		auto u0_on_primal = std::make_shared< dealii::Vector<double> > ();
+		u0_on_primal->reinit( slab->primal.dof->n_dofs() );
+		
+		dealii::VectorTools::interpolate_to_different_mesh(
+			// solution on I_{n-1}:
+			*std::prev(slab)->primal.dof,
+			*std::prev(u)->x[0],
+			// solution on I_n:
+			*slab->primal.dof,
+			*slab->primal.constraints,
+			*u0_on_primal
+		);
+		
+		// interpolate needs the same tria: dof1.get_tria() == dof2.get_tria()
+		dealii::FETools::interpolate(
+			// primal solution
+			*slab->primal.dof,
+			*u0_on_primal,
+			// dual solution
+			*slab->dual.dof,
+			*slab->dual.constraints,
+			*dual.u0
+		);
+	}
+	else {
+		// n == 1: interpolate initial value function u
+		dealii::VectorTools::interpolate(
+			*slab->dual.mapping,
+			*slab->dual.dof,
+			*function.u_0,
+			*dual.u0
+		);
+	}
+	
+	// init vector and run assemble J(v)(e) = ((v,e))
 	DTM::pout << "dwr-heat: assemble Je0...";
 	dual.Je0 = std::make_shared< dealii::Vector<double> > ();
 	dual.Je0->reinit( slab->dual.dof->n_dofs() );
+	
 	*dual.Je0 = 0;
 	assemble_Je->assemble(
 		dual.Je0,
 		t0,
 		function.u_E,
 		dual.u0,
-		0,   // n_q_points: 0 -> p+1 in auto mode
+		0,   // n_q_points: 0 -> q+1 in auto mode
 		true // auto mode
 	);
+	
+	*dual.Je0 *= 1./primal_L2_L2_error_u;
 	DTM::pout << " (done)" << std::endl;
 	
-	// init vector and run assemble
+	
+	///////////////////////////////
+	// u_h(t1) = u_h(t1)|_{I_{n}}
+	//
+	
+	// interpolate primal solution u_h(t1) to dual solution space
+	dual.u1 = std::make_shared< dealii::Vector<double> > ();
+	dual.u1->reinit( slab->dual.dof->n_dofs() );
+	
+	dealii::FETools::interpolate(
+		*slab->primal.dof,
+		*u->x[0],
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*dual.u1
+	);
+	
+	// init vector and run assemble J(v)(e) = ((v,e))
 	DTM::pout << "dwr-heat: assemble Je1...";
 	dual.Je1 = std::make_shared< dealii::Vector<double> > ();
 	dual.Je1->reinit( slab->dual.dof->n_dofs() );
+	
 	*dual.Je1 = 0;
 	assemble_Je->assemble(
 		dual.Je1,
 		t1,
 		function.u_E,
-		dual.u0,
-		0,   // n_q_points: 0 -> p+1 in auto mode
+		dual.u1,
+		0,   // n_q_points: 0 -> q+1 in auto mode
 		true // auto mode
 	);
+	
+	*dual.Je1 *= 1./primal_L2_L2_error_u;
 	DTM::pout << " (done)" << std::endl;
 	
-// 	// construct vector b = M um + tau_n f0
-// 	DTM::pout << "dwr-heat: construct linear system rhs vector...";
-// 	
-// 	primal.b = std::make_shared< dealii::Vector<double> > ();
-// 	primal.b->reinit( slab->primal.dof->n_dofs() );
-// 	
-// 	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
-// 	Assert(primal.um.use_count(), dealii::ExcNotInitialized());
-// 	primal.M->vmult(*primal.b, *primal.um);
-// 	
-// 	primal.b->add(slab->tau_n(), *primal.f0);
-// 	
-// 	DTM::pout << " (done)" << std::endl;
+	////////////////////////////////////////////////////////////////////////////
+	// construct vector b = tau_n( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
+	//
+	
+// 	Assert(dual.b.use_count(), dealii::ExcNotInitialized());
+// 	Assert(dual.b->size(), dealii::ExcNotInitialized());
+	dual.b = std::make_shared< dealii::Vector<double> > ();
+	dual.b->reinit( slab->dual.dof->n_dofs() );
+	
+	dual.A->vmult(*dual.b, *z->x[1]);
+	*dual.b *= -slab->tau_n()/2.;
+	
+	dual.M->vmult_add(*dual.b, *z->x[1]);
+	
+	dual.b->add(slab->tau_n()/2., *dual.Je0 );
+	dual.b->add(slab->tau_n()/2., *dual.Je1 );
+	
+	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -944,7 +1013,7 @@ dual_do_backward_TMS() {
 	
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
-	auto slab = grid->slabs.rbegin();
+	auto slab = std::prev(grid->slabs.end());
 	
 	////////////////////////////////////////////////////////////////////////////
 	// storage: init iterators to storage_data_vectors
@@ -953,11 +1022,11 @@ dual_do_backward_TMS() {
 	
 	Assert(dual.storage.z.use_count(), dealii::ExcNotInitialized());
 	Assert(dual.storage.z->size(), dealii::ExcNotInitialized());
-	auto z = dual.storage.z->rbegin();
+	auto z = std::prev(dual.storage.z->end());
 	
 	Assert(primal.storage.u.use_count(), dealii::ExcNotInitialized());
 	Assert(primal.storage.u->size(), dealii::ExcNotInitialized());
-	auto u = primal.storage.u->rbegin();
+	auto u = std::prev(primal.storage.u->end());
 	
 	////////////////////////////////////////////////////////////////////////////
 	// final condition z_kh(T)
@@ -980,9 +1049,10 @@ dual_do_backward_TMS() {
 		<< std::endl;
 	
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	unsigned int n{static_cast<unsigned int>(grid->slabs.size())};
+	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+	unsigned int n{N};
 	
-	while (slab != grid->slabs.rend()) {
+	while (n) {
 		// local time variables: \f$ t0, t1 \in I_n = (t_m, t_n) \f$
 		const double tm = slab->t_m;
 		const double t0 = slab->t_m;
@@ -994,35 +1064,30 @@ dual_do_backward_TMS() {
 			<< "I_" << n << " = (" << tm << ", " << tn << ") "
 			<< std::endl;
 		
-// 		if (slab != grid->slabs.begin()) {
-// 			// for n > 1 interpolate between two (different) spatial meshes
-// 			// the solution u(t_n)|_{I_{n-1}}  to  u(t_m)|_{I_n}
-// 			dealii::VectorTools::interpolate_to_different_mesh(
-// 				// solution on I_{n-1}:
-// 				*std::prev(slab)->primal.dof,
-// 				*std::prev(un)->x[0],
-// 				// solution on I_n:
-// 				*slab->primal.dof,
-// 				*slab->primal.constraints,
-// 				*um->x[0]
-// 			);
-// 		}
+		if (n < N) {
+			// for 0 < n < N interpolate between two (different) spatial meshes
+			// the solution z(t_m)|_{I_{n+1}}  to  z(t_n)|_{I_n}
+			dealii::VectorTools::interpolate_to_different_mesh(
+				// solution on I_{n+1}:
+				*std::next(slab)->dual.dof,
+				*std::next(z)->x[0],
+				// solution on I_n:
+				*slab->dual.dof,
+				*slab->dual.constraints,
+				*z->x[1]
+			);
+		}
 		
 		// assemble slab problem
 		dual_assemble_system(slab);
-		dual_assemble_rhs(slab,u,t0,t1);
+		dual_assemble_rhs(slab,u,z,n,t0,t1);
 		
-// 		// solve slab problem (i.e. apply boundary values and solve for u0)
+		// solve slab problem (i.e. apply boundary values and solve for z0)
 // 		primal_solve_slab_problem(slab,u);
-// 		
+		
 // 		////////////////////////////////////////////////////////////////////////
 // 		// do postprocessing on the solution
 // 		//
-// 		
-// 		// evaluate solution u(t_n)
-// 		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
-// 		*un->x[0] = 0;
-// 		un->x[0]->add(zeta0, *u->x[0]);
 // 		
 // 		// output solution at t_n
 // 		primal_do_data_output(slab,un,tn);
@@ -1032,12 +1097,10 @@ dual_do_backward_TMS() {
 		//
 		
 		--n;
-		++slab;
+		--slab;
 		
-// 		++um;
-		++u;
-		++z;
-// 		++un;
+		--u;
+		--z;
 		
 		DTM::pout << std::endl;
 	}
