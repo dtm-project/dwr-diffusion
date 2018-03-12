@@ -914,6 +914,8 @@ dual_assemble_rhs(
 			*slab->dual.constraints,
 			*dual.u0
 		);
+		
+		u0_on_primal = nullptr;
 	}
 	else {
 		// n == 1: interpolate initial value function u
@@ -940,6 +942,7 @@ dual_assemble_rhs(
 		0,   // n_q_points: 0 -> q+1 in auto mode
 		true // auto mode
 	);
+	dual.u0 = nullptr;
 	
 	*dual.Je0 *= 1./primal_L2_L2_error_u;
 	DTM::pout << " (done)" << std::endl;
@@ -975,6 +978,7 @@ dual_assemble_rhs(
 		0,   // n_q_points: 0 -> q+1 in auto mode
 		true // auto mode
 	);
+	dual.u1 = nullptr;
 	
 	*dual.Je1 *= 1./primal_L2_L2_error_u;
 	DTM::pout << " (done)" << std::endl;
@@ -1024,9 +1028,8 @@ dual_solve_slab_problem(
 	
 	
 	////////////////////////////////////////////////////////////////////////////
-	// apply homog. Dirichlet boundary values on
-	// \partial \Gamma = \Gamma_D \cup \Gamma_N
-	// TODO: check if this is the correct boundary condition for the dual problem
+	// apply homog. Dirichlet boundary and homg. Neumann boundary condition on
+	// respective parts of the boundary
 	//
 	
 	DTM::pout << "dwr-heat: dealii::MatrixTools::apply_boundary_values...";
@@ -1036,15 +1039,6 @@ dual_solve_slab_problem(
 		*slab->dual.dof,
 		static_cast< dealii::types::boundary_id > (
 			heat::types::boundary_id::Dirichlet
-		),
-		dealii::ZeroFunction<dim>(1),
-		boundary_values
-	);
-	
-	dealii::VectorTools::interpolate_boundary_values(
-		*slab->dual.dof,
-		static_cast< dealii::types::boundary_id > (
-			heat::types::boundary_id::Neumann
 		),
 		dealii::ZeroFunction<dim>(1),
 		boundary_values
@@ -1187,36 +1181,29 @@ dual_do_backward_TMS() {
 		--u;
 		--z;
 		
+		////////////////////////////////////////////////////////////////////////
+		// allow garbage collector to clean up memory
+		//
+		
+		dual.M = nullptr;
+		dual.A = nullptr;
+		
+		dual.Je0 = nullptr;
+		dual.Je1 = nullptr;
+		
+		dual.K = nullptr;
+		dual.b = nullptr;
+		
 		DTM::pout << std::endl;
 	}
-	// 	
 	
-	// 	////////////////////////////////////////////////////////////////////////////
-// 	// interpolate (or project) initial value(s) (u(t_0)^- -> dual space, if needed)
-// 	//
-// 	
-// 	Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
-// 	function.u_0->set_time(slab->t_m);
-// 	
-// 	Assert((slab != grid->slabs.end()), dealii::ExcInternalError());
-// 	Assert(slab->primal.mapping.use_count(), dealii::ExcNotInitialized());
-// 	Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
-// 	Assert((um != primal.storage.um->end()), dealii::ExcNotInitialized());
-// 	Assert(um->x[0]->size(), dealii::ExcNotInitialized());
-// 	
-// 	dealii::VectorTools::interpolate(
-// 		*slab->primal.mapping,
-// 		*slab->primal.dof,
-// 		*function.u_0,
-// 		*um->x[0]
-// 	);
+	DTM::pout
+		<< "dual: forward TMS problem done" << std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< std::endl;
 	
 	
-// 	DTM::pout
-// 		<< "primal: forward TMS problem done" << std::endl
-// 		<< "*******************************************************************"
-// 		<< "*************" << std::endl
-// 		<< std::endl;
 }
 
 

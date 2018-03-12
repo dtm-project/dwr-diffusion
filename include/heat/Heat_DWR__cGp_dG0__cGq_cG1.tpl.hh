@@ -184,11 +184,12 @@ protected:
 		
 		std::shared_ptr< dealii::SparseMatrix<double> > M;
 		std::shared_ptr< dealii::SparseMatrix<double> > A;
-		std::shared_ptr< dealii::Vector<double> > Je0;
-		std::shared_ptr< dealii::Vector<double> > Je1;
 		
 		std::shared_ptr< dealii::Vector<double> > u0;
+		std::shared_ptr< dealii::Vector<double> > Je0;
+		
 		std::shared_ptr< dealii::Vector<double> > u1;
+		std::shared_ptr< dealii::Vector<double> > Je1;
 		
 		std::shared_ptr< dealii::SparseMatrix<double> > K;
 		std::shared_ptr< dealii::Vector<double> > b;
@@ -231,35 +232,12 @@ protected:
 	);
 	
 	
-	
 	////////////////////////////////////////////////////////////////////////////
 	// old functions:
 	
-// 	virtual void interpolate_primal_to_dual();
-	
-// 	// primal problem
 
-	
 // 	// dual problem
 // 	
-// 	virtual void dual_reinit();
-// 	
-// 	virtual void dual_compute_initial_condition();
-// // 	virtual void dual_compute_initial_condition_L2global();
-// 	
-// 	virtual void dual_assemble_system();
-// 	
-// 	virtual void dual_assemble_rhs_at_t_Nminus1();
-// 	virtual void dual_assemble_rhs();
-// 	
-// 	virtual void dual_assemble_Je_L2global();
-// 	
-// 	virtual void dual_interpolate_to_next_grid();
-// 	
-// 	virtual void dual_assemble_rhs_L2global();
-	
-// 	virtual void dual_solve();
-// 	// end dual problem
 	
 // 	virtual void refine_grids_dwr();
 	
@@ -267,52 +245,9 @@ protected:
 // 	virtual void compute_Ieff();
 // 	virtual void compute_Ieff_L2global();
 // 
-// 	// Compute global errors
-// 	virtual void compute_global_STL2_error(); // maybe not here / STL: space-time L2
-	
-// 	// Solution output
-// 	virtual void primal_and_dual_solution_output();
 
-// 	virtual void primal_do_data_output(const double n);
-// 	virtual void dual_init_data_output();
-// 	virtual void dual_do_data_output(const double n);
-// 	virtual void do_data_output(const double cycle);
-	
-// 	struct {
-// 		// storage container
-// 		struct {
-// 			std::shared_ptr< storage_data_vectors > u; ///< primal solutions interpolated into dual FE room list
-// 			std::shared_ptr< storage_data_vectors > z; ///< dual solutions list
-// 			
-// 			std::shared_ptr< storage_data_vectors > eta; ///< error_indicators list
-// 		} storage;
-		
-// 		struct {
-// 			/// reverse iterator for slab struct elements for backward time marching
-// 			typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator slab;
-// 			typename DTM::types::spacetime::DWR::slabs<dim>::reverse_iterator slab_previous;
-// 		} iterator;
-		
 // 		// TODO:
-// 		std::shared_ptr< dealii::Vector<double> > u; ///< primal problem solution on dual space
-// 		dealii::SparseMatrix<double> M;				 ///< dual problem mass matrix
-// 		dealii::SparseMatrix<double> A;              ///< dual problem stiffness matrix
-// 		dealii::SparseMatrix<double> system_matrix;  ///< dual problem system matrix (M+(tau_n/2)*A)
-// 		std::shared_ptr< dealii::Vector<double> > z; ///< dual problem solution
-// 		std::shared_ptr< dealii::Vector<double> > z_old;	///< dual solution from time step ago
-// 		std::shared_ptr< dealii::Vector<double> > z_old_interpolated;	///< z_old interpolated to next grid
-		
 // 		Heat::types::error_functional Je_type;		 ///< target functional type for rhs of dual problem
-// 		dealii::Vector<double> Je;                   ///< dual problem rhs
-// 		dealii::Vector<double> Je_old;                   ///< only for convergence tests
-// 		dealii::Vector<double> Je_old_interpolated; ///< Je_old interpolated to next grid
-// 		dealii::Vector<double> system_rhs; ///< dual problem system_rhs vector 
-// 										   ///  ((M-(tau_n/2)*A)*z_old_interpolated+(tau_n/2)*(Je_old+Je_new))
-		
-// 		// Data Output
-// 		DTM::DataOutput<dim> data_output;
-// 		unsigned int data_output_patches;
-// 	} dual;
 	
 // 	struct {
 // 		std::shared_ptr< Heat::DWR::ErrorEstimator<dim> > DWR;
