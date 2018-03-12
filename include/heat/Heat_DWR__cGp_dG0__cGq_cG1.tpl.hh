@@ -151,12 +151,12 @@ protected:
 	virtual void primal_do_forward_TMS();
 	
 	
-	// helping function
-	virtual void primal_get_u_on_slab(
-		std::shared_ptr< dealii::Vector<double> > u_result,
+	/// evaluate solution dof vector u^primal(t) on primal solution space
+	virtual void primal_get_u_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u,
-		const double t
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &u_result
 	);
 	
 	
@@ -231,26 +231,29 @@ protected:
 	virtual void dual_do_backward_TMS();
 	
 	
-	// helping function
-	virtual void dual_get_z_on_slab(
-		std::shared_ptr< dealii::Vector<double> > z_result,
+	/// evaluate solution dof vector z^dual(t) on dual solution space
+	virtual void dual_get_z_t_on_slab(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result
+	);
+	
+	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
+	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction,
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double t
 	);
 	
-	virtual void dual_get_z_on_slab_after_primal_projection(
-		std::shared_ptr< dealii::Vector<double> > z_result_after_primal_projection,
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double t
-	);
-	
-	virtual void dual_get_u_on_slab(
-		std::shared_ptr< dealii::Vector<double> > u_result_on_dual_space,
+	/// evaluate solution dof vector I^dual( u^primal(t) ) on dual solution space
+	// NOTE: this function needs: primal_get_u_t_on_slab
+	virtual void dual_get_u_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u,
-		const double t
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_u_result
 	);
 	
 	
