@@ -917,6 +917,7 @@ dual_assemble_rhs(
 	}
 	else {
 		// n == 1: interpolate initial value function u
+		function.u_0->set_time(t0);
 		dealii::VectorTools::interpolate(
 			*slab->dual.mapping,
 			*slab->dual.dof,
