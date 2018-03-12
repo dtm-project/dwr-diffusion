@@ -113,7 +113,7 @@ run() {
 	
 	// dual problem
 	dual_reinit_storage();
-// 	dual_init_data_output();
+	dual_init_data_output();
 	dual_do_backward_TMS();
 }
 
@@ -1003,6 +1003,89 @@ dual_assemble_rhs(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_solve_slab_problem(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z
+) {
+	////////////////////////////////////////////////////////////////////////////
+	// construct system matrix K = M + tau A
+	//
+	
+	DTM::pout << "dwr-heat: construct system matrix K = M + tau A...";
+	
+	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
+	dual.K->reinit(*slab->dual.sp);
+	
+	*dual.K = 0;
+	dual.K->add(slab->tau_n(), *dual.A);
+	dual.K->add(1.0, *dual.M);
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	
+	////////////////////////////////////////////////////////////////////////////
+	// apply homog. Dirichlet boundary values on
+	// \partial \Gamma = \Gamma_D \cup \Gamma_N
+	// TODO: check if this is the correct boundary condition for the dual problem
+	//
+	
+	DTM::pout << "dwr-heat: dealii::MatrixTools::apply_boundary_values...";
+	std::map<dealii::types::global_dof_index, double> boundary_values;
+	
+	dealii::VectorTools::interpolate_boundary_values(
+		*slab->dual.dof,
+		static_cast< dealii::types::boundary_id > (
+			heat::types::boundary_id::Dirichlet
+		),
+		dealii::ZeroFunction<dim>(1),
+		boundary_values
+	);
+	
+	dealii::VectorTools::interpolate_boundary_values(
+		*slab->dual.dof,
+		static_cast< dealii::types::boundary_id > (
+			heat::types::boundary_id::Neumann
+		),
+		dealii::ZeroFunction<dim>(1),
+		boundary_values
+	);
+	
+	dealii::MatrixTools::apply_boundary_values(
+		boundary_values,
+		*dual.K,
+		*z->x[0],
+		*dual.b
+	);
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// solve linear system directly
+	//
+	
+	DTM::pout << "dwr-heat: setup direct lss and solve...";
+	
+	dealii::SparseDirectUMFPACK iA;
+	iA.initialize(*dual.K);
+	iA.vmult(*z->x[0], *dual.b);
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// distribute hanging node constraints on solution
+	//
+	
+	DTM::pout << "dwr-heat: primal.constraints->distribute...";
+	slab->dual.constraints->distribute(
+		*z->x[0]
+	);
+	DTM::pout << " (done)" << std::endl;
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_do_backward_TMS() {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare TMS loop
@@ -1037,6 +1120,7 @@ dual_do_backward_TMS() {
 	*z->x[1] = 0;
 	
 	// output "final value solution" at final time T
+	dual_do_data_output(slab,z->x[1],slab->t_n);
 	
 	////////////////////////////////////////////////////////////////////////////
 	// do TMS loop
@@ -1084,14 +1168,14 @@ dual_do_backward_TMS() {
 		dual_assemble_rhs(slab,u,z,n,t0,t1);
 		
 		// solve slab problem (i.e. apply boundary values and solve for z0)
-// 		primal_solve_slab_problem(slab,u);
+		dual_solve_slab_problem(slab,z);
 		
-// 		////////////////////////////////////////////////////////////////////////
-// 		// do postprocessing on the solution
-// 		//
-// 		
-// 		// output solution at t_n
-// 		primal_do_data_output(slab,un,tn);
+		////////////////////////////////////////////////////////////////////////
+		// do postprocessing on the solution
+		//
+		
+		// output "final value solution" at final time "t_m=t0"
+		dual_do_data_output(slab,z->x[0],t0);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -1105,7 +1189,7 @@ dual_do_backward_TMS() {
 		
 		DTM::pout << std::endl;
 	}
-// 	
+	// 	
 	
 	// 	////////////////////////////////////////////////////////////////////////////
 // 	// interpolate (or project) initial value(s) (u(t_0)^- -> dual space, if needed)
@@ -1135,6 +1219,66 @@ dual_do_backward_TMS() {
 // 		<< std::endl;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// dual data output
+//
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_init_data_output() {
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	// TODO:
+	DTM::pout
+		<< "dual solution data output: patches = "
+		<< parameter_set->fe.q // auto mode = cG in space: take q patches per K
+// 		<< parameter_set->data_output.patches
+		<< std::endl;
+	
+	std::vector<std::string> data_field_names;
+	data_field_names.push_back("z");
+	
+	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
+	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
+	
+	dual.data_output.set_data_field_names(data_field_names);
+	dual.data_output.set_data_component_interpretation_field(dci_field);
+	
+	// TODO:
+	dual.data_output.set_data_output_patches(
+		parameter_set->fe.q // auto mode = cG in space: take q patches per K
+// 		parameter_set->data_output.patches
+	);
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_do_data_output(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	std::shared_ptr< dealii::Vector<double> > z_trigger,
+	const double &t_trigger) {
+	
+	dual.data_output.set_DoF_data(
+		slab->dual.dof
+	);
+	
+	// TODO: construct solution at t_trigger
+	
+	//const double xi0 = ...; (xi0(t_trigger))
+	//const double xi1 = ...; (xi1(t_trigger))
+	//u_trigger.add(xi0, *z->x[0])
+	//u_trigger.add(xi1, *z->x[1])
+	
+	// TODO
+	dual.data_output.write_data(
+		"dual",
+		z_trigger,
+		t_trigger
+	);
+}
 
 
 

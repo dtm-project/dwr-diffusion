@@ -212,11 +212,23 @@ protected:
 		const double &t1
 	);
 	
+	virtual void dual_solve_slab_problem(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z
+	);
+	
 	/// do the backward time marching process of the dual problem
 	virtual void dual_do_backward_TMS();
 	
 	
+	// post-processing functions for data output
+	virtual void dual_init_data_output();
 	
+	virtual void dual_do_data_output(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		std::shared_ptr< dealii::Vector<double> > z_trigger,
+		const double &t_trigger
+	);
 	
 	
 	
