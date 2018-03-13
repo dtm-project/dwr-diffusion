@@ -66,18 +66,18 @@ struct ErrorEstimateOnCell {
 	ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch);
 	
 	dealii::FEValues<dim> fe_values;
+	std::vector< dealii::types::global_dof_index > local_dof_indices;
+	
+	std::vector<double>   phi;
+	std::vector<dealii::Tensor<1,dim> > grad_phi;
+	dealii::Tensor<2,dim> hessian_phi;
+	std::vector<double>   laplace_phi;
+	
+	double value_f;
+	double value_epsilon;
+	dealii::Tensor<1,dim> grad_epsilon;
 	
 	double R_u;
-	
-	
-	
-	std::vector<double> rhs_values;
-	std::vector<double> cell_laplacians;
-	std::vector<double> cell_values;
-	std::vector<double> dual_weights;
-	
-	std::vector< dealii::Tensor<1,dim> > cell_gradients;
-	std::vector< dealii::Tensor<1,dim> > dual_weights_gradients;
 };
 
 
@@ -187,7 +187,6 @@ public:
 	);
 	
 protected:
-	
 	virtual void primal_get_u_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u,
@@ -292,6 +291,7 @@ protected:
 		} storage;
 	} error_estimator;
 	
+	
 	struct {
 		std::shared_ptr< dealii::Function<dim> > epsilon;
 		std::shared_ptr< dealii::Function<dim> > f;
@@ -300,11 +300,24 @@ protected:
 // 		std::shared_ptr< dealii::Function<dim> > density;
 	} function;
 	
+	double tau_n;
+	
+	std::shared_ptr< dealii::Vector<double> > dual_um_on_tm;
+	
+	std::shared_ptr< dealii::Vector<double> > dual_z_on_tm;
+	std::shared_ptr< dealii::Vector<double> > dual_Rz_on_tm;
+	
+	std::shared_ptr< dealii::Vector<double> > dual_z_on_t0;
+	std::shared_ptr< dealii::Vector<double> > dual_Rz_on_t0;
+	
+	std::shared_ptr< dealii::Vector<double> > dual_u_on_t0;
+	std::shared_ptr< dealii::Vector<double> > dual_up_on_tm;
+	
+	std::shared_ptr< dealii::Vector<double> > dual_uD_on_t0;
+	
+	
 	std::map< typename dealii::DoFHandler<dim>::cell_iterator, double > cell_integrals;
 	std::map< typename dealii::DoFHandler<dim>::face_iterator, double > face_integrals;
-	
-	
-	
 	
 	dealii::Vector<double> dual_weights;
 	dealii::Vector<double> g_interpolated;

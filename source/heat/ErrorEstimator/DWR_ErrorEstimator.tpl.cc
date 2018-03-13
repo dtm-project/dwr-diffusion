@@ -54,39 +54,38 @@ namespace Assembly {
 namespace Scratch {
 
 /// (Struct-) Constructor.
-// template<int dim>
-// ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(
-// 	const dealii::FiniteElement<dim> &fe,
-// 	const dealii::Mapping<dim> &mapping,
-// 	const dealii::Quadrature<dim> &quad,
-// 	const dealii::UpdateFlags &uflags) :
-// 	fe_values(mapping, fe, quad, uflags),
-// 	rhs_values(quad.size()),
-// 	cell_laplacians(quad.size()),
-// 	cell_values(quad.size()),
-// 	dual_weights(quad.size()),
-// 	R_u_h(quad.size()),
-// 	cell_gradients(quad.size()),
-// 	dual_weights_gradients(quad.size()) {
-// }
+template<int dim>
+ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(
+	const dealii::FiniteElement<dim> &fe,
+	const dealii::Mapping<dim> &mapping,
+	const dealii::Quadrature<dim> &quad,
+	const dealii::UpdateFlags &uflags) :
+	fe_values(mapping, fe, quad, uflags),
+	local_dof_indices(fe.dofs_per_cell),
+	phi(fe.dofs_per_cell),
+	grad_phi(fe.dofs_per_cell),
+	laplace_phi(fe.dofs_per_cell) {
+}
 
 
 /// (Struct-) Copy constructor.
-// template<int dim>
-// ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch) :
-// 	fe_values(
-// 		scratch.fe_values.get_mapping(),
-// 		scratch.fe_values.get_fe(),
-// 		scratch.fe_values.get_quadrature(),
-// 		scratch.fe_values.get_update_flags()),
-// 	rhs_values(scratch.rhs_values),
-// 	cell_laplacians(scratch.cell_laplacians), 
-// 	cell_values(scratch.cell_values),
-// 	dual_weights(scratch.dual_weights),
-// 	R_u_h(scratch.R_u_h),
-// 	cell_gradients(scratch.cell_gradients),
-// 	dual_weights_gradients(scratch.dual_weights_gradients) {
-// }
+template<int dim>
+ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch) :
+	fe_values(
+		scratch.fe_values.get_mapping(),
+		scratch.fe_values.get_fe(),
+		scratch.fe_values.get_quadrature(),
+		scratch.fe_values.get_update_flags()),
+	local_dof_indices(scratch.local_dof_indices),
+	phi(scratch.phi),
+	grad_phi(scratch.grad_phi),
+	hessian_phi(scratch.hessian_phi),
+	laplace_phi(scratch.laplace_phi),
+	value_f(scratch.value_f),
+	value_epsilon(scratch.value_epsilon),
+	grad_epsilon(scratch.grad_epsilon),
+	R_u(scratch.R_u) {
+}
 
 
 /// (Struct-) Constructor.
@@ -267,13 +266,15 @@ estimate(
 		const double tm = slab->t_m;
 		const double t0 = tm + slab->tau_n()/2.;
 		
+		// set tau_n in error_estimator
+		tau_n = slab->tau_n();
+		
 		DTM::pout
 			<< "error estimator: assemble on "
 			<< "I_" << n << " = (" << tm << ", " << tn << ") "
 			<< std::endl;
 		
 		// interpolate primal solution u^-(t_m) to dual solution space
-		std::shared_ptr< dealii::Vector<double> > dual_um_on_tm;
 		dual_um_on_tm = std::make_shared< dealii::Vector<double> > ();
 		dual_um_on_tm->reinit( slab->dual.dof->n_dofs() );
 		
@@ -342,32 +343,24 @@ estimate(
 			primal_um_on_tm = nullptr;
 		}
 		
-		std::shared_ptr< dealii::Vector<double> > dual_z_on_tm;
 		dual_get_z_t_on_slab(slab, z, tm, dual_z_on_tm);
 		
-		std::shared_ptr< dealii::Vector<double> > dual_Rz_on_tm;
 		dual_get_z_t_on_slab_after_restriction_to_primal_space(
 			slab, z, tm, dual_Rz_on_tm
 		);
 		
-		std::shared_ptr< dealii::Vector<double> > dual_z_on_t0;
 		dual_get_z_t_on_slab(slab, z, t0, dual_z_on_t0);
 		
-		std::shared_ptr< dealii::Vector<double> > dual_Rz_on_t0;
 		dual_get_z_t_on_slab_after_restriction_to_primal_space(
 			slab, z, t0, dual_Rz_on_t0
 		);
 		
-		std::shared_ptr< dealii::Vector<double> > dual_u_on_t0;
 		dual_get_u_t_on_slab(slab, u, t0, dual_u_on_t0);
 		
-		std::shared_ptr< dealii::Vector<double> > dual_up_on_tm;
 		dual_up_on_tm = dual_u_on_t0;
 		
-		// get interpolated 
 		// interpolate boundary values u_D(t0) to dual solution space
-		
-		auto dual_uD_on_t0 = std::make_shared< dealii::Vector<double> > ();
+		dual_uD_on_t0 = std::make_shared< dealii::Vector<double> > ();
 		dual_uD_on_t0->reinit( slab->dual.dof->n_dofs() );
 		
 		{
@@ -483,7 +476,6 @@ estimate(
 		face_integrals.clear();
 		
 		
-		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
 		//
@@ -501,6 +493,9 @@ estimate(
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//
 
 template<int dim>
 void
@@ -560,7 +555,6 @@ dual_get_u_t_on_slab(
 }
 
 
-
 template<int dim>
 void
 ErrorEstimator<dim>::
@@ -588,8 +582,6 @@ dual_get_z_t_on_slab(
 	z_result->equ(xi0, *z->x[0]);
 	z_result->add(xi1, *z->x[1]);
 }
-
-
 
 
 template<int dim>
@@ -679,8 +671,9 @@ dual_get_z_t_on_slab_after_restriction_to_primal_space(
 }
 
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+//
+//
 
 template<int dim>
 void
@@ -690,9 +683,17 @@ assemble_local_error(
 	Assembly::Scratch::ErrorEstimates<dim> &scratch,
 	Assembly::CopyData::ErrorEstimates<dim> &copydata) {
 	
+	////////////////////////////////////////////////////////////////////////
+	// cell integrals:
+	//
 	assemble_error_on_cell(cell, scratch.cell, copydata.cell);
 	
-	for (unsigned int face_no=0; face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
+	////////////////////////////////////////////////////////////////////////
+	// face integrals:
+	//
+	for (unsigned int face_no{0};
+		face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
+		////////////////////////////////////////////////////////////////////////
 		// handle boundary faces
 		if (cell->face(face_no)->at_boundary()) {
 
@@ -704,6 +705,7 @@ assemble_local_error(
 			);
 			continue;
 		}
+		
 		////////////////////////////////////////////////////////////////////////
 		// interior faces only:
 		
@@ -751,105 +753,85 @@ assemble_error_on_cell(
 	
 	// reinit scratch and data to current cell
 	scratch.fe_values.reinit(cell);
-	cell->get_dof_indices(copydata.local_dof_indices);
+	cell->get_dof_indices(scratch.local_dof_indices);
 	
 	// initialize local matrix with zeros
-	copydata.vi_Jei_vector = 0;
+	copydata.value=0.;
 	
 	// assemble cell terms
 	for (unsigned int q{0}; q < scratch.fe_values.n_quadrature_points; ++q) {
-		scratch.JxW = scratch.fe_values.JxW(q);
+// 		TODO scratch.JxW = scratch.fe_values.JxW(q);
 		
-		// loop over all components of this finite element
-		for (unsigned int component{0};
-			component < scratch.fe_values.get_fe().n_components();
-			++component) {
-			// loop over all basis functions to get the shape values
-			for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
-				scratch.phi[k] =
-					scratch.fe_values.shape_value_component(k,q,component);
-			}
+		
+		// loop over all basis functions to get the shape values
+		for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
+			scratch.phi[k] =
+				scratch.fe_values.shape_value_component(k,q,0);
+		}
+		
+		for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
+			scratch.grad_phi[k] =
+				scratch.fe_values.shape_grad(n,q)
+		}
+		
+		for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
+			scratch.hessian_phi_trial = fe_values.shape_hessian(k,q);
 			
-			scratch.u_E = function.u_E->value(
-				scratch.fe_values.quadrature_point(q),
-				component
+			scratch.laplace_phi[k] = 0.;
+			for (unsigned int d{0}; d < dim; ++d) {
+				scratch.laplace_phi[k] += scratch.hessian_phi_trial[d][d];
+			}
+		}
+		
+		scratch.value_f = function.f->value(scratch.fe_values.quadrature_point(q), 0);
+		
+		scratch.value_epsilon =
+			function.epsilon->value(scratch.fe_values.quadrature_point(q), 0);
+		
+		scratch.grad_epsilon =
+			function.epsilon->gradient(scratch.fe_values.quadrature_point(q), 0);
+		
+		// loop over all basis function combinitions to get the assembly
+		for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+			// \int_{I_n} ... :
+			copydata.value += (
+				// R(u_kh):
+				(	scratch.value_f
+					// - 0 = density * \partial_t u * 1/tau_n
+					+ scratch.grad_epsilon *
+					((*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.grad_phi[j])
+					+ value_epsilon *
+					(*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.laplace_phi[j]
+				)
+				*
+				// z_h - Rz_h:
+				(
+					((*dual_z_on_t0)[ scratch.local_dof_indices[j] ]
+					- (*dual_Rz_on_t0)[ scratch.local_dof_indices[j] ]) * scratch.phi[j])
+				)
+				* tau_n
+				* scratch.fe_values.JxW(q)
 			);
 			
-			// loop over all basis functions to get u_h
-			scratch.u_h = 0;
-			for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
-				scratch.u_h +=
-					(*u_h)[ copydata.local_dof_indices[j] ] *
-					scratch.phi[j];
-			}
-			
-			
-			// loop over all basis function combinitions to get the assembly
-			for (unsigned int i{0}; i < scratch.fe_values.get_fe().dofs_per_cell; ++i) {
-			for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
-				copydata.vi_Jei_vector[i] += (
-					scratch.phi[i] *
-					(scratch.u_E - scratch.u_h) *
-					scratch.JxW
-				);
-			}} // for i,j
-		} // for component
+			// + [ u_kh(t_m) ] * (z_h(tm) - Rz_h(tm) )
+			copydata.value += (
+				// [ u_kh(t_m) ] = u^+ - u^-:
+				(
+					((*dual_up_on_tm)[ scratch.local_dof_indices[j] ]
+					- (*dual_um_on_tm)[ scratch.local_dof_indices[j] ]) * scratch.phi[j])
+				)
+				*
+				// z_h(tm) - Rz_h(tm):
+				(
+					((*dual_z_on_tm)[ scratch.local_dof_indices[j] ]
+					- (*dual_Rz_on_tm)[ scratch.local_dof_indices[j] ]) * scratch.phi[j])
+				)
+				* scratch.fe_values.JxW(q)
+			);
+		}} // for j
 	} // for q
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	function.f->value_list(								// calculates f
-		scratch.fe_values.get_quadrature_points(),
-		scratch.rhs_values
-	);
-	
-	scratch.fe_values.get_function_laplacians(			// calculates Laplace(u_h)
-		*dual.u,
-		scratch.cell_laplacians
-	);
-	
-	scratch.fe_values.get_function_values(				// calculates "z-phi_h" respectively z_h-Interp(z_h)
-		dual_weights,
-		scratch.dual_weights
-	);
-
-	for (unsigned int q=0; q < scratch.fe_values.n_quadrature_points; ++q) {
-		scratch.R_u_h[q] = (
-					scratch.rhs_values[q] + 
-					(function.epsilon->value(scratch.fe_values.quadrature_point(q), 0)*scratch.cell_laplacians[q]) 
-					);
-
-	}
-	
-	// initialize local matrix with zeros
-	copydata.cell = cell;
-	copydata.value = 0;
-	
-	for (unsigned int q=0; q < scratch.fe_values.n_quadrature_points; ++q) {
-		copydata.value += 
-			((
-			scratch.R_u_h[q]*
-			scratch.dual_weights[q]
-			)*
-			scratch.fe_values.JxW(q));
-	}
-	
 	cell_integrals[copydata.cell] = copydata.value;
-
 }
 
 
@@ -865,7 +847,7 @@ assemble_error_on_boundary_face(
 		(cell->face(face_no).state() == dealii::IteratorState::valid),
 		dealii::ExcInternalError()
 	);
-
+/*	
 	scratch.fe_face_values.reinit(cell, face_no);
 	
 	function.BoundaryValues->value_list(scratch.fe_face_values.get_quadrature_points(),
@@ -896,7 +878,7 @@ assemble_error_on_boundary_face(
 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
 			scratch.dual_solution_gradients[q])))*
 			scratch.fe_face_values.JxW(q));
-	}
+	}*/
 
 	face_integrals[copydata.face] = copydata.value;
 }
@@ -915,45 +897,45 @@ assemble_error_on_regular_face(
 		dealii::ExcInternalError()
 	);
 	
-	scratch.fe_face_values.reinit(cell, face_no);
-	
-	scratch.fe_face_values_neighbor.reinit(
-		cell->neighbor(face_no),
-		cell->neighbor_of_neighbor(face_no)
-	);
-	
-	scratch.fe_face_values.get_function_gradients(
-		*dual.u,
-		scratch.cell_grads
-	);
-	
-	scratch.fe_face_values_neighbor.get_function_gradients(
-		*dual.u,
-		scratch.neighbor_grads
-	);
-	
-	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-		scratch.jump_residuals[q] = (
-			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
-			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
-			scratch.fe_face_values.normal_vector(q)
-		);
-	}
-	
-	scratch.fe_face_values.get_function_values(
-		dual_weights,
-		scratch.dual_weights
-	);
-	
-	copydata.face  = cell->face(face_no);
-	copydata.value = 0;
-	
-	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-		copydata.value += (
-			scratch.jump_residuals[q] * scratch.dual_weights[q] *
-			scratch.fe_face_values.JxW(q)
-		);
-	}
+// 	scratch.fe_face_values.reinit(cell, face_no);
+// 	
+// 	scratch.fe_face_values_neighbor.reinit(
+// 		cell->neighbor(face_no),
+// 		cell->neighbor_of_neighbor(face_no)
+// 	);
+// 	
+// 	scratch.fe_face_values.get_function_gradients(
+// 		*dual.u,
+// 		scratch.cell_grads
+// 	);
+// 	
+// 	scratch.fe_face_values_neighbor.get_function_gradients(
+// 		*dual.u,
+// 		scratch.neighbor_grads
+// 	);
+// 	
+// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		scratch.jump_residuals[q] = (
+// 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
+// 			scratch.fe_face_values.normal_vector(q)
+// 		);
+// 	}
+// 	
+// 	scratch.fe_face_values.get_function_values(
+// 		dual_weights,
+// 		scratch.dual_weights
+// 	);
+// 	
+// 	copydata.face  = cell->face(face_no);
+// 	copydata.value = 0;
+// 	
+// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		copydata.value += (
+// 			scratch.jump_residuals[q] * scratch.dual_weights[q] *
+// 			scratch.fe_face_values.JxW(q)
+// 		);
+// 	}
 	
 	face_integrals[copydata.face] = copydata.value;
 }
@@ -977,66 +959,66 @@ assemble_error_on_irregular_face(
 		dealii::ExcInternalError()
 	);
 	
-	for (unsigned int subface_no=0; subface_no < cell->face(face_no)->n_children();
-		++subface_no) {
-		Assert(
-			(cell->neighbor_child_on_subface(face_no,subface_no)->face(
-				cell->neighbor_of_neighbor(face_no) ) ==
-			cell->face(face_no)->child(subface_no)),
-			dealii::ExcInternalError()
-		);
-		
-		scratch.fe_subface_values.reinit(cell, face_no, subface_no);
-		
-		scratch.fe_face_values_neighbor.reinit(
-			cell->neighbor_child_on_subface(face_no, subface_no),
-			cell->neighbor_of_neighbor(face_no)
-		);
-		
-		scratch.fe_subface_values.get_function_gradients(
-			*dual.u,
-			scratch.cell_grads
-		);
-		
-		scratch.fe_face_values_neighbor.get_function_gradients(
-			*dual.u,
-			scratch.neighbor_grads
-		);
-		
-		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-			scratch.jump_residuals[q] = (
-				(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
-				(scratch.neighbor_grads[q] - scratch.cell_grads[q])) *
-				scratch.fe_face_values_neighbor.normal_vector(q)
-			);
-		}
-		
-		scratch.fe_face_values_neighbor.get_function_values(
-			dual_weights,
-			scratch.dual_weights
-		);
-		
-		copydata.face  = cell->face(face_no)->child(subface_no);
-		copydata.value = 0;
-		
-		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-			copydata.value += (
-				scratch.jump_residuals[q] * scratch.dual_weights[q] *
-				scratch.fe_face_values_neighbor.JxW(q)
-			);
-		}
-		
-		face_integrals[copydata.face] = copydata.value;
-	}
-	
-	// compute integral value of big face as sum of the subface integral values
-	copydata.face  = cell->face(face_no);
-	copydata.value = 0;
-	
-	for (unsigned int subface_no=0; subface_no < cell->face(face_no)->n_children();
-		++subface_no) {
-		copydata.value += face_integrals[cell->face(face_no)->child(subface_no)];
-	}
+// 	for (unsigned int subface_no=0; subface_no < cell->face(face_no)->n_children();
+// 		++subface_no) {
+// 		Assert(
+// 			(cell->neighbor_child_on_subface(face_no,subface_no)->face(
+// 				cell->neighbor_of_neighbor(face_no) ) ==
+// 			cell->face(face_no)->child(subface_no)),
+// 			dealii::ExcInternalError()
+// 		);
+// 		
+// 		scratch.fe_subface_values.reinit(cell, face_no, subface_no);
+// 		
+// 		scratch.fe_face_values_neighbor.reinit(
+// 			cell->neighbor_child_on_subface(face_no, subface_no),
+// 			cell->neighbor_of_neighbor(face_no)
+// 		);
+// 		
+// 		scratch.fe_subface_values.get_function_gradients(
+// 			*dual.u,
+// 			scratch.cell_grads
+// 		);
+// 		
+// 		scratch.fe_face_values_neighbor.get_function_gradients(
+// 			*dual.u,
+// 			scratch.neighbor_grads
+// 		);
+// 		
+// 		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 			scratch.jump_residuals[q] = (
+// 				(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 				(scratch.neighbor_grads[q] - scratch.cell_grads[q])) *
+// 				scratch.fe_face_values_neighbor.normal_vector(q)
+// 			);
+// 		}
+// 		
+// 		scratch.fe_face_values_neighbor.get_function_values(
+// 			dual_weights,
+// 			scratch.dual_weights
+// 		);
+// 		
+// 		copydata.face  = cell->face(face_no)->child(subface_no);
+// 		copydata.value = 0;
+// 		
+// 		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 			copydata.value += (
+// 				scratch.jump_residuals[q] * scratch.dual_weights[q] *
+// 				scratch.fe_face_values_neighbor.JxW(q)
+// 			);
+// 		}
+// 		
+// 		face_integrals[copydata.face] = copydata.value;
+// 	}
+// 	
+// 	// compute integral value of big face as sum of the subface integral values
+// 	copydata.face  = cell->face(face_no);
+// 	copydata.value = 0;
+// 	
+// 	for (unsigned int subface_no=0; subface_no < cell->face(face_no)->n_children();
+// 		++subface_no) {
+// 		copydata.value += face_integrals[cell->face(face_no)->child(subface_no)];
+// 	}
 	
 	face_integrals[cell->face(face_no)] = copydata.value;
 }
