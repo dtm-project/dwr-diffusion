@@ -1,12 +1,15 @@
 /**
  * @file DWR_ErrorEstimator.inst.in
- * @author Uwe Koecher (UK), Marius Paul Bruchhaeuser (MPB)
- * @date 2017-11-08, ErrorEstimator class, UK, MPB
+ * 
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-03-13, UK, MPB
  *
  * @brief Instanciation file.
  */
 
-/*  Copyright (C) 2012-2017 by Uwe Koecher, Marius Paul Bruchhaeuser          */  
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */  
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -27,8 +30,8 @@
 #define __DWR_ErrorEstimator_inst_in
 
 
-namespace Poisson {
-namespace DWR {
+namespace heat {
+namespace dwr {
 
 template class ErrorEstimator<2>;
 template class ErrorEstimator<3>;

@@ -1,10 +1,14 @@
 /**
  * @file DWR_ErrorEstimator.tpl.hh
- * @author Uwe Koecher (UK), Marius Paul Bruchhaeuser (MPB)
+ *
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ *
+ * @date 2018-03-13, ErrorEstimator class for heat, UK, MPB
  * @date 2017-11-08, ErrorEstimator class, UK, MPB
  */
 
-/*  Copyright (C) 2012-2017 by Uwe Koecher, Marius Paul Bruchhaeuser          */  
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */  
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -25,7 +29,7 @@
 #define __DWR_ErrorEstimator_tpl_hh
 
 // PROJECT includes
-#include <Poisson/Grid/Grid_DWR.tpl.hh>
+#include <heat/grid/Grid_DWR.tpl.hh>
 
 // DTM++ includes
 
@@ -43,8 +47,8 @@
 #include <memory>
 #include <string>
 
-namespace Poisson {
-namespace DWR {
+namespace heat {
+namespace dwr {
 
 namespace Assembly {
 namespace Scratch {
@@ -63,11 +67,14 @@ struct ErrorEstimateOnCell {
 	
 	dealii::FEValues<dim> fe_values;
 	
+	double R_u;
+	
+	
+	
 	std::vector<double> rhs_values;
 	std::vector<double> cell_laplacians;
 	std::vector<double> cell_values;
 	std::vector<double> dual_weights;
-	std::vector<double> R_u_h;
 	
 	std::vector< dealii::Tensor<1,dim> > cell_gradients;
 	std::vector< dealii::Tensor<1,dim> > dual_weights_gradients;
@@ -168,20 +175,55 @@ public:
 	ErrorEstimator() = default;
 	virtual ~ErrorEstimator() = default;
 	
-	virtual void set_objects(
-		std::shared_ptr< Poisson::Grid_DWR<dim,1> > grid,
+	virtual void estimate(
 		std::shared_ptr< dealii::Function<dim> > epsilon,
-		std::shared_ptr< dealii::Function<dim> > BoundaryValues,
-		std::shared_ptr< dealii::Function<dim> > f
+		std::shared_ptr< dealii::Function<dim> > f,
+		std::shared_ptr< dealii::Function<dim> > u_D,
+		std::shared_ptr< dealii::Function<dim> > u_0,
+		std::shared_ptr< heat::Grid_DWR<dim,1> > grid,
+		std::shared_ptr< DTM::types::storage_data_vectors<1> > u,
+		std::shared_ptr< DTM::types::storage_data_vectors<2> > z,
+		std::shared_ptr< DTM::types::storage_data_vectors<1> > eta
 	);
 	
-	virtual void estimate(
-		std::shared_ptr< dealii::Vector<double> > u, ///< primal problem solution on dual space
-		std::shared_ptr< dealii::Vector<double> > z, ///< dual problem solution
-		std::shared_ptr< dealii::Vector<double> > error_indicators
-	);
-
 protected:
+	
+	virtual void primal_get_u_t_on_slab(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &u_result
+	);
+	
+	/// evaluate solution dof vector I^dual( u^primal(t) ) on dual solution space
+	// NOTE: this function needs: primal_get_u_t_on_slab
+	virtual void dual_get_u_t_on_slab(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<1>::iterator &u,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_u_result
+	);
+	
+	
+	/// evaluate solution dof vector z^dual(t) on dual solution space
+	virtual void dual_get_z_t_on_slab(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result
+	);
+	
+	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
+	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction
+	);
+	
+	
+	
+	
 	virtual void assemble_local_error(
 		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 		Assembly::Scratch::ErrorEstimates<dim> &scratch,
@@ -219,26 +261,50 @@ protected:
 		const Assembly::CopyData::ErrorEstimates<dim> &copydata
 	);
 	
+	
+	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
+	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction,
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double t
+	);
+	
+	
+	
+	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
+	
 	struct {
-		std::shared_ptr< dealii::Vector<double> > u; ///< primal problem solution on dual space
-		std::shared_ptr< dealii::Vector<double> > z; ///< dual problem solution
+		struct {
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
+		} storage;
+	} primal;
+	
+	struct {
+		struct {
+			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
+		} storage;
 	} dual;
 	
-	std::shared_ptr< Poisson::Grid_DWR<dim,1> > grid; ///< grid class
-	
-	std::shared_ptr< dealii::Function<dim> > BoundaryValues; ///< exact solution/boundary values
-	
-	std::shared_ptr< dealii::Function<dim> > epsilon; ///< diffusion coefficient
+	struct {
+		struct {
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
+		} storage;
+	} error_estimator;
 	
 	struct {
-		std::shared_ptr< dealii::Function<dim> > f; ///< Force function.
+		std::shared_ptr< dealii::Function<dim> > epsilon;
+		std::shared_ptr< dealii::Function<dim> > f;
+		std::shared_ptr< dealii::Function<dim> > u_D;
+		std::shared_ptr< dealii::Function<dim> > u_0;
+// 		std::shared_ptr< dealii::Function<dim> > density;
 	} function;
 	
 	std::map< typename dealii::DoFHandler<dim>::cell_iterator, double > cell_integrals;
 	std::map< typename dealii::DoFHandler<dim>::face_iterator, double > face_integrals;
 	
-	dealii::Vector<double> primal_z; //TEST
-	dealii::Vector<double> primal_z_dual;
+	
+	
 	
 	dealii::Vector<double> dual_weights;
 	dealii::Vector<double> g_interpolated;

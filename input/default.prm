@@ -37,4 +37,3 @@ subsection Time Integration
     set final time     = 0.5
     set time step size = 0.2
 end
-

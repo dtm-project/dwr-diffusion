@@ -1,10 +1,14 @@
 /**
  * @file DWR_ErrorEstimator.tpl.cc
- * @author Uwe Koecher (UK), Marius Paul Bruchhaeuser (MPB)
+ *
+ * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
+ *
+ * @date 2018-03-13, ErrorEstimator class for heat, UK, MPB
  * @date 2017-11-08, ErrorEstimator class, UK, MPB
  */
 
-/*  Copyright (C) 2012-2017 by Uwe Koecher, Marius Paul Bruchhaeuser          */  
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */  
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,7 +28,8 @@
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
-#include <Poisson/ErrorEstimator/DWR_ErrorEstimator.tpl.hh>
+#include <heat/ErrorEstimator/DWR_ErrorEstimator.tpl.hh>
+
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
@@ -42,118 +47,118 @@
 #include <fstream>
 #include <vector>
 
-namespace Poisson {
-namespace DWR {
+namespace heat {
+namespace dwr {
 
 namespace Assembly {
 namespace Scratch {
 
 /// (Struct-) Constructor.
-template<int dim>
-ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(
-	const dealii::FiniteElement<dim> &fe,
-	const dealii::Mapping<dim> &mapping,
-	const dealii::Quadrature<dim> &quad,
-	const dealii::UpdateFlags &uflags) :
-	fe_values(mapping, fe, quad, uflags),
-	rhs_values(quad.size()),
-	cell_laplacians(quad.size()),
-	cell_values(quad.size()),
-	dual_weights(quad.size()),
-	R_u_h(quad.size()),
-	cell_gradients(quad.size()),
-	dual_weights_gradients(quad.size()) {
-}
+// template<int dim>
+// ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(
+// 	const dealii::FiniteElement<dim> &fe,
+// 	const dealii::Mapping<dim> &mapping,
+// 	const dealii::Quadrature<dim> &quad,
+// 	const dealii::UpdateFlags &uflags) :
+// 	fe_values(mapping, fe, quad, uflags),
+// 	rhs_values(quad.size()),
+// 	cell_laplacians(quad.size()),
+// 	cell_values(quad.size()),
+// 	dual_weights(quad.size()),
+// 	R_u_h(quad.size()),
+// 	cell_gradients(quad.size()),
+// 	dual_weights_gradients(quad.size()) {
+// }
 
 
 /// (Struct-) Copy constructor.
-template<int dim>
-ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch) :
-	fe_values(
-		scratch.fe_values.get_mapping(),
-		scratch.fe_values.get_fe(),
-		scratch.fe_values.get_quadrature(),
-		scratch.fe_values.get_update_flags()),
-	rhs_values(scratch.rhs_values),
-	cell_laplacians(scratch.cell_laplacians), 
-	cell_values(scratch.cell_values),
-	dual_weights(scratch.dual_weights),
-	R_u_h(scratch.R_u_h),
-	cell_gradients(scratch.cell_gradients),
-	dual_weights_gradients(scratch.dual_weights_gradients) {
-}
+// template<int dim>
+// ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch) :
+// 	fe_values(
+// 		scratch.fe_values.get_mapping(),
+// 		scratch.fe_values.get_fe(),
+// 		scratch.fe_values.get_quadrature(),
+// 		scratch.fe_values.get_update_flags()),
+// 	rhs_values(scratch.rhs_values),
+// 	cell_laplacians(scratch.cell_laplacians), 
+// 	cell_values(scratch.cell_values),
+// 	dual_weights(scratch.dual_weights),
+// 	R_u_h(scratch.R_u_h),
+// 	cell_gradients(scratch.cell_gradients),
+// 	dual_weights_gradients(scratch.dual_weights_gradients) {
+// }
 
 
 /// (Struct-) Constructor.
-template<int dim>
-ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
-	const dealii::FiniteElement<dim> &fe,
-	const dealii::Mapping<dim> &mapping,
-	const dealii::Quadrature<dim-1> &quad,
-	const dealii::UpdateFlags &uflags) :
-	fe_face_values(mapping, fe, quad, uflags),
-	fe_face_values_neighbor(mapping, fe, quad, uflags),
-	fe_subface_values(mapping, fe, quad, dealii::UpdateFlags::update_gradients),
-	boundary_values(quad.size()),
-	g_h(quad.size()),
-	jump_residuals(quad.size()),
-	dual_weights(quad.size()),
-	inhom_dirichlet_difference(quad.size()),
-	dual_solution_gradients(quad.size()),
-	cell_grads(quad.size()),
-	neighbor_grads(quad.size()) {
-}
+// template<int dim>
+// ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
+// 	const dealii::FiniteElement<dim> &fe,
+// 	const dealii::Mapping<dim> &mapping,
+// 	const dealii::Quadrature<dim-1> &quad,
+// 	const dealii::UpdateFlags &uflags) :
+// 	fe_face_values(mapping, fe, quad, uflags),
+// 	fe_face_values_neighbor(mapping, fe, quad, uflags),
+// 	fe_subface_values(mapping, fe, quad, dealii::UpdateFlags::update_gradients),
+// 	boundary_values(quad.size()),
+// 	g_h(quad.size()),
+// 	jump_residuals(quad.size()),
+// 	dual_weights(quad.size()),
+// 	inhom_dirichlet_difference(quad.size()),
+// 	dual_solution_gradients(quad.size()),
+// 	cell_grads(quad.size()),
+// 	neighbor_grads(quad.size()) {
+// }
 
 
 /// (Struct-) Copy constructor.
-template<int dim>
-ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch) :
-	fe_face_values(
-		scratch.fe_face_values.get_mapping(),
-		scratch.fe_face_values.get_fe(),
-		scratch.fe_face_values.get_quadrature(),
-		scratch.fe_face_values.get_update_flags()),
-	fe_face_values_neighbor(
-		scratch.fe_face_values_neighbor.get_mapping(),
-		scratch.fe_face_values_neighbor.get_fe(),
-		scratch.fe_face_values_neighbor.get_quadrature(),
-		scratch.fe_face_values_neighbor.get_update_flags()),
-	fe_subface_values(
-		scratch.fe_subface_values.get_mapping(),
-		scratch.fe_subface_values.get_fe(),
-		scratch.fe_subface_values.get_quadrature(),
-		scratch.fe_subface_values.get_update_flags()),
-	boundary_values(scratch.boundary_values),
-	g_h(scratch.g_h),
-	jump_residuals(scratch.jump_residuals),
-	dual_weights(scratch.dual_weights),
-	inhom_dirichlet_difference(scratch.inhom_dirichlet_difference),
-	dual_solution_gradients(scratch.dual_solution_gradients),
-	cell_grads(scratch.cell_grads),
-	neighbor_grads(scratch.neighbor_grads) {
-}
+// template<int dim>
+// ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch) :
+// 	fe_face_values(
+// 		scratch.fe_face_values.get_mapping(),
+// 		scratch.fe_face_values.get_fe(),
+// 		scratch.fe_face_values.get_quadrature(),
+// 		scratch.fe_face_values.get_update_flags()),
+// 	fe_face_values_neighbor(
+// 		scratch.fe_face_values_neighbor.get_mapping(),
+// 		scratch.fe_face_values_neighbor.get_fe(),
+// 		scratch.fe_face_values_neighbor.get_quadrature(),
+// 		scratch.fe_face_values_neighbor.get_update_flags()),
+// 	fe_subface_values(
+// 		scratch.fe_subface_values.get_mapping(),
+// 		scratch.fe_subface_values.get_fe(),
+// 		scratch.fe_subface_values.get_quadrature(),
+// 		scratch.fe_subface_values.get_update_flags()),
+// 	boundary_values(scratch.boundary_values),
+// 	g_h(scratch.g_h),
+// 	jump_residuals(scratch.jump_residuals),
+// 	dual_weights(scratch.dual_weights),
+// 	inhom_dirichlet_difference(scratch.inhom_dirichlet_difference),
+// 	dual_solution_gradients(scratch.dual_solution_gradients),
+// 	cell_grads(scratch.cell_grads),
+// 	neighbor_grads(scratch.neighbor_grads) {
+// }
 
 
 /// (Struct-) Constructor.
-template<int dim>
-ErrorEstimates<dim>::ErrorEstimates(
-	const dealii::FiniteElement<dim> &fe,
-	const dealii::Mapping<dim>       &mapping,
-	const dealii::Quadrature<dim>    &quad_cell,
-	const dealii::Quadrature<dim-1>  &quad_face,
-	const dealii::UpdateFlags        &uflags_cell,
-	const dealii::UpdateFlags        &uflags_face) :
-	cell(fe, mapping, quad_cell, uflags_cell),
-	face(fe, mapping, quad_face, uflags_face) {
-}
+// template<int dim>
+// ErrorEstimates<dim>::ErrorEstimates(
+// 	const dealii::FiniteElement<dim> &fe,
+// 	const dealii::Mapping<dim>       &mapping,
+// 	const dealii::Quadrature<dim>    &quad_cell,
+// 	const dealii::Quadrature<dim-1>  &quad_face,
+// 	const dealii::UpdateFlags        &uflags_cell,
+// 	const dealii::UpdateFlags        &uflags_face) :
+// 	cell(fe, mapping, quad_cell, uflags_cell),
+// 	face(fe, mapping, quad_face, uflags_face) {
+// }
 
 
 /// (Struct-) Copy constructor.
-template<int dim>
-ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &scratch) :
-	cell(scratch.cell),
-	face(scratch.face) {
-}
+// template<int dim>
+// ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &scratch) :
+// 	cell(scratch.cell),
+// 	face(scratch.face) {
+// }
 
 }
 
@@ -208,182 +213,473 @@ ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &copydata) :
 template<int dim>
 void
 ErrorEstimator<dim>::
-set_objects(
-	std::shared_ptr< Poisson::Grid_DWR<dim,1> > _grid,
+estimate(
 	std::shared_ptr< dealii::Function<dim> > _epsilon,
-	std::shared_ptr< dealii::Function<dim> > _BoundaryValues,
-	std::shared_ptr< dealii::Function<dim> > f) {
+	std::shared_ptr< dealii::Function<dim> > _f,
+	std::shared_ptr< dealii::Function<dim> > _u_D,
+	std::shared_ptr< dealii::Function<dim> > _u_0,
+	std::shared_ptr< heat::Grid_DWR<dim,1> > _grid,
+	std::shared_ptr< DTM::types::storage_data_vectors<1> > _u,
+	std::shared_ptr< DTM::types::storage_data_vectors<2> > _z,
+	std::shared_ptr< DTM::types::storage_data_vectors<1> > _eta
+) {
+	function.epsilon = _epsilon;
+	function.f = _f;
+	function.u_D = _u_D;
+	function.u_0 = _u_0;
+	
 	grid = _grid;
-	epsilon = _epsilon;
-	BoundaryValues = _BoundaryValues;
-	function.f = f;
+	
+	primal.storage.u = _u;
+	dual.storage.z = _z;
+	error_estimator.storage.eta = _eta;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// prepare TMS loop for eta_K on Omega x I_n
+	//
+	
+	////////////////////////////////////////////////////////////////////////////
+	// grid: init slab iterator to first space-time slab: Omega x I_1
+	//
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = grid->slabs.begin();
+	
+	auto u = primal.storage.u->begin();
+	auto z = dual.storage.z->begin();
+	auto eta = error_estimator.storage.eta->begin();
+	
+	////////////////////////////////////////////////////////////////////////////
+	// do TMS loop
+	//
+	
+	DTM::pout
+		<< std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< "error estimator: assemble eta ..." << std::endl
+		<< std::endl;
+	
+	unsigned int n{1};
+	while (slab != grid->slabs.end()) {
+		// local time variables
+		const double tm = slab->t_m;
+		const double t0 = tm + slab->tau_n()/2.;
+		
+		DTM::pout
+			<< "error estimator: assemble on "
+			<< "I_" << n << " = (" << tm << ", " << tn << ") "
+			<< std::endl;
+		
+		// interpolate primal solution u^-(t_m) to dual solution space
+		std::shared_ptr< dealii::Vector<double> > dual_um_on_tm;
+		dual_um_on_tm = std::make_shared< dealii::Vector<double> > ();
+		dual_um_on_tm->reinit( slab->dual.dof->n_dofs() );
+		
+		if (slab == grid->slabs.begin()) {
+			// n == 1: interpolate initial value function u_0 to dual space
+			
+			auto primal_um_on_tm = std::make_shared< dealii::Vector<double> > ();
+			primal_um_on_tm->reinit( slab->primal.dof->n_dofs() );
+			
+			function.u_0->set_time(tm);
+			dealii::VectorTools::interpolate(
+				*slab->primal.mapping,
+				*slab->primal.dof,
+				*function.u_0,
+				*primal_um_on_tm
+			);
+			
+			dealii::FETools::interpolate(
+				// primal solution
+				*slab->primal.dof,
+				*primal_um_on_tm,
+				// dual solution
+				*slab->dual.dof,
+				*slab->dual.constraints,
+				*dual_um_on_tm
+			);
+			
+			primal_um_on_tm = nullptr;
+		}
+		else {
+			// n > 1
+			
+			//   get u^-(t_m) from:   Omega_h^primal x I_{n-1} (t_{n-1})
+			//   (1) interpolated to: Omega_h^primal x I_{n} (t_m) => primal_um_on_tm
+			//   (2) interpolated to: Omega_h^dual x I_{n} (t_m)   => dual_um_on_tm
+			
+			// (1) interpolate_to_different_mesh (in primal):
+			//     - needs the same fe: dof1.get_fe() = dof2.get_fe()
+			//     - allow different triangulations: dof1.get_tria() != dof2.get_tria()
+			auto primal_um_on_tm = std::make_shared< dealii::Vector<double> > ();
+			primal_um_on_tm->reinit( slab->primal.dof->n_dofs() );
+			
+			dealii::VectorTools::interpolate_to_different_mesh(
+				// solution on I_{n-1}:
+				*std::prev(slab)->primal.dof,
+				*std::prev(u)->x[0],
+				// solution on I_n:
+				*slab->primal.dof,
+				*slab->primal.constraints,
+				*primal_um_on_tm
+			);
+			
+			// (2) interpolate primal -> dual:
+			//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
+			//     - allow different FE-spaces: dof1.get_fe() != dof2.get_fe()
+			dealii::FETools::interpolate(
+				// primal solution
+				*slab->primal.dof,
+				*primal_um_on_tm,
+				// dual solution
+				*slab->dual.dof,
+				*slab->dual.constraints,
+				*dual_um_on_tm
+			);
+			
+			primal_um_on_tm = nullptr;
+		}
+		
+		std::shared_ptr< dealii::Vector<double> > dual_z_on_tm;
+		dual_get_z_t_on_slab(slab, z, tm, dual_z_on_tm);
+		
+		std::shared_ptr< dealii::Vector<double> > dual_Rz_on_tm;
+		dual_get_z_t_on_slab_after_restriction_to_primal_space(
+			slab, z, tm, dual_Rz_on_tm
+		);
+		
+		std::shared_ptr< dealii::Vector<double> > dual_z_on_t0;
+		dual_get_z_t_on_slab(slab, z, t0, dual_z_on_t0);
+		
+		std::shared_ptr< dealii::Vector<double> > dual_Rz_on_t0;
+		dual_get_z_t_on_slab_after_restriction_to_primal_space(
+			slab, z, t0, dual_Rz_on_t0
+		);
+		
+		std::shared_ptr< dealii::Vector<double> > dual_u_on_t0;
+		dual_get_u_t_on_slab(slab, u, t0, dual_u_on_t0);
+		
+		std::shared_ptr< dealii::Vector<double> > dual_up_on_tm;
+		dual_up_on_tm = dual_u_on_t0;
+		
+		// get interpolated 
+		// interpolate boundary values u_D(t0) to dual solution space
+		
+		auto dual_uD_on_t0 = std::make_shared< dealii::Vector<double> > ();
+		dual_uD_on_t0->reinit( slab->dual.dof->n_dofs() );
+		
+		{
+			auto primal_uD_on_t0 = std::make_shared< dealii::Vector<double> > ();
+			primal_uD_on_t0->reinit( slab->primal.dof->n_dofs() );
+			
+			function.u_D->set_time(t0);
+			dealii::VectorTools::interpolate(
+				*slab->primal.mapping,
+				*slab->primal.dof,
+				*function.u_D,
+				*primal_uD_on_t0
+			);
+			
+			dealii::FETools::interpolate(
+				// primal solution
+				*slab->primal.dof,
+				*primal_uD_on_t0,
+				// dual solution
+				*slab->dual.dof,
+				*slab->dual.constraints,
+				*dual_uD_on_t0
+			);
+			
+			primal_uD_on_t0 = nullptr;
+		}
+		
+		// init storage for slab problem
+		{
+			auto cell = slab->dual.dof->begin_active();
+			auto endc = slab->dual.dof->end();
+			for ( ; cell != endc; ++cell) {
+				cell_integrals[cell] = std::numeric_limits< double >::quiet_NaN();
+				for (unsigned int face_no = 0; face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
+					face_integrals[cell->face(face_no)] = std::numeric_limits< double >::quiet_NaN();
+				}
+			}
+		}
+		
+		// assemble slab problem
+		dealii::QGauss<dim> quad_cell(slab->dual.fe->tensor_degree()+1);
+		dealii::QGauss<dim-1> quad_face(slab->dual.fe->tensor_degree()+1);
+		
+		dealii::WorkStream::run(
+			slab->dual.dof->begin_active(),
+			slab->dual.dof->end(),
+			std::bind (
+				&ErrorEstimator<dim>::assemble_local_error,
+				this,
+				std::placeholders::_1,
+				std::placeholders::_2,
+				std::placeholders::_3
+			),
+			std::bind (
+				&ErrorEstimator<dim>::copy_local_error,
+				this,
+				std::placeholders::_1
+			),
+			Assembly::Scratch::ErrorEstimates<dim> (
+				*slab->dual.fe,
+				*slab->dual.mapping,
+				quad_cell,
+				quad_face,
+				//
+				dealii::update_values |
+				dealii::update_gradients |
+				dealii::update_hessians |
+				dealii::update_quadrature_points |
+				dealii::update_JxW_values,
+				//
+				dealii::update_values |
+				dealii::update_gradients |
+				dealii::update_quadrature_points |
+				dealii::update_normal_vectors |
+				dealii::update_JxW_values),
+			Assembly::CopyData::ErrorEstimates<dim> ()
+		);
+		
+		// copy data
+		(*eta->x[0]) = 0;
+		{
+			auto cell = slab->dual.dof->begin_active();
+			auto endc = slab->dual.dof->end();
+			
+			for (unsigned int cell_no{0}; cell != endc; ++cell, ++cell_no) {
+				(*eta->x[0])[cell_no] = cell_integrals[cell];
+				
+				for (unsigned int face_no{0};
+					face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
+					Assert(
+						(face_integrals.find(cell->face(face_no)) != face_integrals.end()),
+						dealii::ExcMessage("Your face iterator does not exist in your map(face_it,double). \
+						Please check if you have assembled this error integral.")
+					);
+					
+					(*eta->x[0])[cell_no] -= 0.5 * face_integrals[cell->face(face_no)];
+				}
+			}
+		}
+		
+		// check if error_indicators vector has valid entries only
+		{
+			for (unsigned int cell_no{0}; cell_no < eta->x[0]->size(); ++cell_no) {
+				Assert(
+					!std::isnan((*eta->x[0])[cell_no]),
+					dealii::ExcMessage("Your error indicator has quiet_NaN entries. \
+					Please check if you have assembled cell_integrals and face_integrals correctly.")
+				);
+				(void)cell_no;
+			}
+		}
+		cell_integrals.clear();
+		face_integrals.clear();
+		
+		
+		
+		////////////////////////////////////////////////////////////////////////
+		// prepare next I_n slab problem:
+		//
+		
+		++n;
+		++slab;
+		++u; ++z; ++eta;
+	}
+	
+	DTM::pout
+		<< "error estimator: assemble eta_K done" << std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< std::endl;
+}
+
+
+
+template<int dim>
+void
+ErrorEstimator<dim>::
+primal_get_u_t_on_slab(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	const double &t,
+	std::shared_ptr< dealii::Vector<double> > &u_result
+) {
+	Assert( (t > slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	u_result = std::make_shared< dealii::Vector<double> > ();
+	u_result->reinit(
+		slab->primal.dof->n_dofs()
+	);
+	
+	// get time _t on reference time interval I_hat = (0,1)
+	[[maybe_unused]] const double _t{ (t - slab->t_m) / slab->tau_n() };
+	
+	// trial basis functions evaluation on reference interval
+	const double zeta0{1.};
+	
+	u_result->equ(zeta0, *u->x[0]);
 }
 
 
 template<int dim>
 void
 ErrorEstimator<dim>::
-estimate(
-	std::shared_ptr< dealii::Vector<double> > u, ///< primal problem solution on dual space
-	std::shared_ptr< dealii::Vector<double> > z, ///< dual problem solution
-	std::shared_ptr< dealii::Vector<double> > error_indicators
+dual_get_u_t_on_slab(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	const double &t,
+	std::shared_ptr< dealii::Vector<double> > &u_result
 ) {
-	Assert(u.use_count(), dealii::ExcNotInitialized());
-	Assert(z.use_count(), dealii::ExcNotInitialized());
-	Assert(error_indicators.use_count(), dealii::ExcNotInitialized());
-	Assert(function.f.use_count(), dealii::ExcNotInitialized());
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	// evaluate dof vector u(t) on primal solution space:
+	std::shared_ptr< dealii::Vector<double> > primal_u_t;
+	primal_get_u_t_on_slab(slab, u, t, primal_u_t);
 	
-	dual.u = u;
-	dual.z = z;
-
-	dual_weights.reinit(grid->dual.dof->n_dofs());
-	
-	dealii::FETools::interpolation_difference(
-		*grid->dual.dof,
-		*grid->dual.constraints,
-		*dual.z,
-		*grid->primal.dof,
-		*grid->primal.constraints,
-		dual_weights
+	u_result = std::make_shared< dealii::Vector<double> > ();
+	u_result->reinit(
+		slab->dual.dof->n_dofs()
 	);
 	
-// 	std::cout << "dual.z = " << *dual.z << std::endl;
-	
-////////////////////////////////////////////////////////////////////////////////
-/////// Interpolation of dual.z into primal FE-room: //TEST
-	primal_z.reinit(grid->primal.dof->n_dofs());
+	// interpolate primal dof vector to dual dof vector
 	dealii::FETools::interpolate(
-		*(grid->dual.dof),
-		*(dual.z),
-		*(grid->primal.dof),
-		*(grid->primal.constraints),
-		primal_z
+		// primal solution
+		*slab->primal.dof,
+		*primal_u_t,
+		// dual solution
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*u_result
 	);
-// 	std::cout << "primal_z = " << primal_z << std::endl;
-	
-	primal_z_dual.reinit(grid->dual.dof->n_dofs());
-	dealii::FETools::interpolate(
-		*(grid->primal.dof),
-		primal_z,
-		*(grid->dual.dof),
-		*(grid->dual.constraints),
-		primal_z_dual
-	);
-// 	std::cout << "primal_z_dual = " << primal_z_dual << std::endl;
-////////////////////////////////////////////////////////////////////////////////
-/////// Interpolation of g (u = g on dOmega):
-	dealii::Vector<double> vec_g(grid->primal.dof->n_dofs());
-	dealii::VectorTools::interpolate(*(grid->primal.mapping),
-									 *(grid->primal.dof),
-									 *BoundaryValues,
-									 vec_g);
-	grid->primal.constraints->distribute(vec_g);
-	
-	g_interpolated.reinit(grid->dual.dof->n_dofs());
-	dealii::FETools::interpolate(
-		*(grid->primal.dof),
-		vec_g,
-		*(grid->dual.dof),
-		*grid->dual.constraints,
-		g_interpolated
-	);
-	
-// 	g_interpolated.reinit(grid->dual.dof->n_dofs());
-// 	dealii::VectorTools::interpolate(*(grid->dual.mapping),
-// 									 *(grid->dual.dof),
-// 									 *BoundaryValues,
-// 									 g_interpolated);
-// 	grid->primal.constraints->distribute(g_interpolated);
-////////////////////////////////////////////////////////////////////////////////	
-	
-	{
-		auto cell = grid->dual.dof->begin_active();
-		auto endc = grid->dual.dof->end();
-		for ( ; cell != endc; ++cell) {
-			cell_integrals[cell] = std::numeric_limits< double >::quiet_NaN();
-			for (unsigned int face_no = 0; face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
-				face_integrals[cell->face(face_no)] = std::numeric_limits< double >::quiet_NaN();
-			}
-		}
-	}
-	
-	std::cout << "number of cells: " << cell_integrals.size() << std::endl;
-	std::cout << "number of faces: " << face_integrals.size() << std::endl;
-	
-	dealii::QGauss<dim> quad_cell(grid->dual.fe->tensor_degree()+2);
-	dealii::QGauss<dim-1> quad_face(grid->dual.fe->tensor_degree()+2);
-	
-	dealii::WorkStream::run(
-		grid->dual.dof->begin_active(),
-		grid->dual.dof->end(),
-		std::bind (
-			&ErrorEstimator<dim>::assemble_local_error,
-			this,
-			std::placeholders::_1,
-			std::placeholders::_2,
-			std::placeholders::_3
-		),
-		std::bind (
-			&ErrorEstimator<dim>::copy_local_error,
-			this,
-			std::placeholders::_1
-		),
-		Assembly::Scratch::ErrorEstimates<dim> (
-			*grid->dual.fe,
-			*grid->dual.mapping,
-			quad_cell,
-			quad_face,
-			//
-			dealii::update_values |
-			dealii::update_gradients |
-			dealii::update_hessians |
-			dealii::update_quadrature_points |
-			dealii::update_JxW_values,
-			//
-			dealii::update_values |
-			dealii::update_gradients |
-			dealii::update_quadrature_points |
-			dealii::update_normal_vectors |
-			dealii::update_JxW_values),
-		Assembly::CopyData::ErrorEstimates<dim> ()
-	);
-	
-	(*error_indicators) = 0;
-	{
-		auto cell = grid->dual.dof->begin_active();
-		auto endc = grid->dual.dof->end();
-		
-		for (unsigned int cell_no=0; cell != endc; ++cell, ++cell_no) {
-			(*error_indicators)[cell_no] = cell_integrals[cell];
-			
-			for (unsigned int face_no=0;
-				face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
-				Assert(
-					(face_integrals.find(cell->face(face_no)) != face_integrals.end()),
-					dealii::ExcMessage("Your face iterator does not exist in your map(face_it,double). \
-					Please check if you have assembled this error integral.")
-				);
-				
-				(*error_indicators)[cell_no] -= 0.5 * face_integrals[cell->face(face_no)];
-			}
-		}
-	}
-	
-	// check if error_indicators vector has valid entries only
-	{
-		for (unsigned int cell_no=0; cell_no < error_indicators->size(); ++cell_no) {
-			Assert(
-				!std::isnan((*error_indicators)[cell_no]),
-				dealii::ExcMessage("Your error indicator has quiet_NaN entries. \
-				Please check if you have assembled cell_integrals and face_integrals correctly.")
-			);
-			(void)cell_no;
-		}
-	}
-	cell_integrals.clear();
-	face_integrals.clear();
 }
+
+
+
+template<int dim>
+void
+ErrorEstimator<dim>::
+dual_get_z_t_on_slab(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	const double &t,
+	std::shared_ptr< dealii::Vector<double> > &z_result
+) {
+	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	z_result = std::make_shared< dealii::Vector<double> > ();
+	z_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	// get time _t on reference time interval I_hat = (0,1)
+	const double _t{ (t - slab->t_m) / slab->tau_n() };
+	
+	// trial basis functions evaluation on reference interval
+	const double xi0{ 1. - _t };
+	const double xi1{ _t };
+	
+	z_result->equ(xi0, *z->x[0]);
+	z_result->add(xi1, *z->x[1]);
+}
+
+
+
+
+template<int dim>
+void
+ErrorEstimator<dim>::
+dual_get_z_t_on_slab_after_restriction_to_primal_space(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	[[maybe_unused]]const double &t,
+	std::shared_ptr< dealii::Vector<double> > &z_result
+) {
+	////////////////////////////////////////////////////////////////////////////
+	// NOTE: this function must know the time discretisation of
+	//       the primal problem!
+	//
+	
+	// result is: z^dual(t) = I^dual{ [R^primal(z^dual)] (t) }
+	
+	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	////////////////////////////////////////////////////////////////////////////
+	// compute the restriction z^primal(t) = R^primal(z^dual) (t)
+	//
+	
+	/// primal_z_t = R^primal(z^dual) (t)
+	std::shared_ptr< dealii::Vector<double> > primal_z_t;
+	{
+		// get dual_z_on_primal_t0 for t0 of primal problem
+		auto dual_z_on_primal_t0 = std::make_shared< dealii::Vector<double> > ();
+		dual_z_on_primal_t0->reinit(
+			slab->dual.dof->n_dofs()
+		);
+		
+		// _t = t0 = 0.5 <=> time dof of dG(0)-Q_G(1) on \hat I = (0,1)
+		const double _t{ 1./2. };
+		
+		// evaluate dual trial functions in time on _t
+		const double xi0{ 1.-_t };
+		const double xi1{ _t };
+		
+		// evaluate z^dual on time-dof t0 of the primal problem
+		dual_z_on_primal_t0->equ(xi0, *z->x[0]);
+		dual_z_on_primal_t0->add(xi1, *z->x[1]);
+		
+		// interpolate dual_z_on_primal_t0 to primal_z_on_primal_t0
+		auto primal_z_on_primal_t0 = std::make_shared< dealii::Vector<double> > ();
+		primal_z_on_primal_t0->reinit(
+			slab->primal.dof->n_dofs()
+		);
+		
+		dealii::FETools::interpolate(
+			// dual solution
+			*slab->dual.dof,
+			*dual_z_on_primal_t0,
+			// primal solution
+			*slab->primal.dof,
+			*slab->primal.constraints,
+			*primal_z_on_primal_t0
+		);
+		
+		// evaluate solution for t \in I_n on primal time discretisation:
+		// NOTE: primal problem: dG(0)-Q_G(1) discretisation (constant in time):
+		//   primal_z_t = zeta0(_t) * primal_z_on_primal_t0
+		//              = 1 * primal_z_on_primal_t0
+		primal_z_t = primal_z_on_primal_t0;
+	}
+	
+	// interpolate primal_z_t to z_result (on dual space for fixed t)
+	Assert(primal_z_t.use_count(), dealii::ExcNotInitialized());
+	Assert(primal_z_t->size(), dealii::ExcNotInitialized());
+	
+	z_result = std::make_shared< dealii::Vector<double> > ();
+	z_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	dealii::FETools::interpolate(
+		// primal solution
+		*slab->primal.dof,
+		*primal_z_t,
+		// dual solution
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*z_result
+	);
+}
+
+
+
 
 
 template<int dim>
@@ -452,10 +748,70 @@ assemble_error_on_cell(
 	const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 	Assembly::Scratch::ErrorEstimateOnCell<dim> &scratch,
 	Assembly::CopyData::ErrorEstimateOnCell<dim> &copydata) {
-
+	
 	// reinit scratch and data to current cell
 	scratch.fe_values.reinit(cell);
-
+	cell->get_dof_indices(copydata.local_dof_indices);
+	
+	// initialize local matrix with zeros
+	copydata.vi_Jei_vector = 0;
+	
+	// assemble cell terms
+	for (unsigned int q{0}; q < scratch.fe_values.n_quadrature_points; ++q) {
+		scratch.JxW = scratch.fe_values.JxW(q);
+		
+		// loop over all components of this finite element
+		for (unsigned int component{0};
+			component < scratch.fe_values.get_fe().n_components();
+			++component) {
+			// loop over all basis functions to get the shape values
+			for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
+				scratch.phi[k] =
+					scratch.fe_values.shape_value_component(k,q,component);
+			}
+			
+			scratch.u_E = function.u_E->value(
+				scratch.fe_values.quadrature_point(q),
+				component
+			);
+			
+			// loop over all basis functions to get u_h
+			scratch.u_h = 0;
+			for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+				scratch.u_h +=
+					(*u_h)[ copydata.local_dof_indices[j] ] *
+					scratch.phi[j];
+			}
+			
+			
+			// loop over all basis function combinitions to get the assembly
+			for (unsigned int i{0}; i < scratch.fe_values.get_fe().dofs_per_cell; ++i) {
+			for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+				copydata.vi_Jei_vector[i] += (
+					scratch.phi[i] *
+					(scratch.u_E - scratch.u_h) *
+					scratch.JxW
+				);
+			}} // for i,j
+		} // for component
+	} // for q
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	function.f->value_list(								// calculates f
 		scratch.fe_values.get_quadrature_points(),
 		scratch.rhs_values
@@ -474,7 +830,7 @@ assemble_error_on_cell(
 	for (unsigned int q=0; q < scratch.fe_values.n_quadrature_points; ++q) {
 		scratch.R_u_h[q] = (
 					scratch.rhs_values[q] + 
-					(epsilon->value(scratch.fe_values.quadrature_point(q), 0)*scratch.cell_laplacians[q]) 
+					(function.epsilon->value(scratch.fe_values.quadrature_point(q), 0)*scratch.cell_laplacians[q]) 
 					);
 
 	}
@@ -512,7 +868,7 @@ assemble_error_on_boundary_face(
 
 	scratch.fe_face_values.reinit(cell, face_no);
 	
-	BoundaryValues->value_list(scratch.fe_face_values.get_quadrature_points(),
+	function.BoundaryValues->value_list(scratch.fe_face_values.get_quadrature_points(),
 							   scratch.boundary_values);
 	
 	scratch.fe_face_values.get_function_gradients(
@@ -537,7 +893,7 @@ assemble_error_on_boundary_face(
 			2.*(													//multiplied with 2, because within the estimate() function
 			(scratch.inhom_dirichlet_difference[q] *						//the whole faces contribution will be subtracted  by the factor
 			(scratch.fe_face_values.normal_vector(q)*
-			(epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
 			scratch.dual_solution_gradients[q])))*
 			scratch.fe_face_values.JxW(q));
 	}
@@ -578,7 +934,7 @@ assemble_error_on_regular_face(
 	
 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
 		scratch.jump_residuals[q] = (
-			(epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
 			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
 			scratch.fe_face_values.normal_vector(q)
 		);
@@ -649,7 +1005,7 @@ assemble_error_on_irregular_face(
 		
 		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
 			scratch.jump_residuals[q] = (
-				(epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+				(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
 				(scratch.neighbor_grads[q] - scratch.cell_grads[q])) *
 				scratch.fe_face_values_neighbor.normal_vector(q)
 			);

@@ -239,22 +239,6 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > &dual_z_result
 	);
 	
-	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
-	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
-		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction,
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double t
-	);
-	
-	/// evaluate solution dof vector I^dual( u^primal(t) ) on dual solution space
-	// NOTE: this function needs: primal_get_u_t_on_slab
-	virtual void dual_get_u_t_on_slab(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<1>::iterator &u,
-		const double &t,
-		std::shared_ptr< dealii::Vector<double> > &dual_u_result
-	);
 	
 	
 	// post-processing functions for data output
@@ -271,7 +255,15 @@ protected:
 	// error estimation and grid adaption
 	//
 	
-	
+	struct {
+		struct {
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
+		} storage;
+		
+		
+		// error estimator
+// 		std::shared_ptr< heat::dwr::ErrorEstimator<dim> > dwr;
+	} error_estimator;
 	
 	
 	
@@ -291,7 +283,6 @@ protected:
 // 		Heat::types::error_functional Je_type;		 ///< target functional type for rhs of dual problem
 // 	
 // 	struct {
-// 		std::shared_ptr< Heat::DWR::ErrorEstimator<dim> > DWR;
 // 	} error_estimator;
 	
 };
