@@ -32,6 +32,7 @@
 #include <heat/grid/Grid_DWR.tpl.hh>
 
 // DTM++ includes
+#include <DTM++/types/storage_data_vectors.tpl.hh>
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
@@ -78,6 +79,8 @@ struct ErrorEstimateOnCell {
 	dealii::Tensor<1,dim> grad_epsilon;
 	
 	double R_u;
+	
+	double JxW;
 };
 
 
@@ -314,7 +317,6 @@ protected:
 	std::shared_ptr< dealii::Vector<double> > dual_up_on_tm;
 	
 	std::shared_ptr< dealii::Vector<double> > dual_uD_on_t0;
-	
 	
 	std::map< typename dealii::DoFHandler<dim>::cell_iterator, double > cell_integrals;
 	std::map< typename dealii::DoFHandler<dim>::face_iterator, double > face_integrals;

@@ -84,7 +84,8 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	value_f(scratch.value_f),
 	value_epsilon(scratch.value_epsilon),
 	grad_epsilon(scratch.grad_epsilon),
-	R_u(scratch.R_u) {
+	R_u(scratch.R_u),
+	JxW(scratch.JxW) {
 }
 
 
@@ -270,8 +271,8 @@ estimate(
 		tau_n = slab->tau_n();
 		
 		DTM::pout
-			<< "error estimator: assemble on "
-			<< "I_" << n << " = (" << tm << ", " << tn << ") "
+			<< "error estimator: assemble on " << "I_" << n 
+// 			<< " = (" << tm << ", " << tn << ") "
 			<< std::endl;
 		
 		// interpolate primal solution u^-(t_m) to dual solution space
@@ -760,8 +761,7 @@ assemble_error_on_cell(
 	
 	// assemble cell terms
 	for (unsigned int q{0}; q < scratch.fe_values.n_quadrature_points; ++q) {
-// 		TODO scratch.JxW = scratch.fe_values.JxW(q);
-		
+		scratch.JxW = scratch.fe_values.JxW(q);
 		
 		// loop over all basis functions to get the shape values
 		for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
@@ -771,15 +771,15 @@ assemble_error_on_cell(
 		
 		for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
 			scratch.grad_phi[k] =
-				scratch.fe_values.shape_grad(n,q)
+				scratch.fe_values.shape_grad(k,q);
 		}
 		
 		for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
-			scratch.hessian_phi_trial = fe_values.shape_hessian(k,q);
+			scratch.hessian_phi = scratch.fe_values.shape_hessian(k,q);
 			
 			scratch.laplace_phi[k] = 0.;
 			for (unsigned int d{0}; d < dim; ++d) {
-				scratch.laplace_phi[k] += scratch.hessian_phi_trial[d][d];
+				scratch.laplace_phi[k] += scratch.hessian_phi[d][d];
 			}
 		}
 		
@@ -799,36 +799,36 @@ assemble_error_on_cell(
 				(	scratch.value_f
 					// - 0 = density * \partial_t u * 1/tau_n
 					+ scratch.grad_epsilon *
-					((*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.grad_phi[j])
-					+ value_epsilon *
+					( (*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.grad_phi[j] )
+					+ scratch.value_epsilon *
 					(*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.laplace_phi[j]
 				)
 				*
 				// z_h - Rz_h:
 				(
-					((*dual_z_on_t0)[ scratch.local_dof_indices[j] ]
-					- (*dual_Rz_on_t0)[ scratch.local_dof_indices[j] ]) * scratch.phi[j])
+					( (*dual_z_on_t0)[ scratch.local_dof_indices[j] ]
+					- (*dual_Rz_on_t0)[ scratch.local_dof_indices[j] ] ) * scratch.phi[j]
 				)
 				* tau_n
-				* scratch.fe_values.JxW(q)
+				* scratch.JxW
 			);
 			
 			// + [ u_kh(t_m) ] * (z_h(tm) - Rz_h(tm) )
 			copydata.value += (
 				// [ u_kh(t_m) ] = u^+ - u^-:
 				(
-					((*dual_up_on_tm)[ scratch.local_dof_indices[j] ]
-					- (*dual_um_on_tm)[ scratch.local_dof_indices[j] ]) * scratch.phi[j])
+					( (*dual_up_on_tm)[ scratch.local_dof_indices[j] ]
+					- (*dual_um_on_tm)[ scratch.local_dof_indices[j] ] ) * scratch.phi[j]
 				)
 				*
 				// z_h(tm) - Rz_h(tm):
 				(
-					((*dual_z_on_tm)[ scratch.local_dof_indices[j] ]
-					- (*dual_Rz_on_tm)[ scratch.local_dof_indices[j] ]) * scratch.phi[j])
+					( (*dual_z_on_tm)[ scratch.local_dof_indices[j] ]
+					- (*dual_Rz_on_tm)[ scratch.local_dof_indices[j] ] ) * scratch.phi[j]
 				)
-				* scratch.fe_values.JxW(q)
+				* scratch.JxW
 			);
-		}} // for j
+		} // for j
 	} // for q
 	
 	cell_integrals[copydata.cell] = copydata.value;
