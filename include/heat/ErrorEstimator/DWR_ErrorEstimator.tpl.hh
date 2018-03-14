@@ -67,19 +67,33 @@ struct ErrorEstimateOnCell {
 	ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch);
 	
 	dealii::FEValues<dim> fe_values;
+	
 	std::vector< dealii::types::global_dof_index > local_dof_indices;
 	
+	// shape fun scratch:
 	std::vector<double>   phi;
 	std::vector<dealii::Tensor<1,dim> > grad_phi;
 	dealii::Tensor<2,dim> hessian_phi;
 	std::vector<double>   laplace_phi;
 	
+	// local dof scratch:
+	std::vector<double> local_u0;
+	std::vector<double> local_z0;
+	std::vector<double> local_Rz0;
+	
+	std::vector<double> local_um; // u^-(t_m)
+	std::vector<double> local_up; // u^+(t_m)
+	
+	std::vector<double> local_zm;
+	std::vector<double> local_Rzm;
+	
+	
+	// function eval scratch:
 	double value_f;
 	double value_epsilon;
 	dealii::Tensor<1,dim> grad_epsilon;
 	
-	double R_u;
-	
+	// other:
 	double JxW;
 };
 
@@ -96,19 +110,42 @@ struct ErrorEstimateOnFace {
 	
 	ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch);
 	
-	dealii::FEFaceValues<dim> fe_face_values;
-	dealii::FEFaceValues<dim> fe_face_values_neighbor;
-	dealii::FESubfaceValues<dim> fe_subface_values;
 	
-	std::vector<double> boundary_values;
-	std::vector<double> g_h;
-	std::vector<double> jump_residuals;
-	std::vector<double> dual_weights;
-	std::vector<double> inhom_dirichlet_difference;
+	// data structures of current face on cell (+)
+	dealii::FEFaceValues<dim>            fe_values_face;
+	dealii::FESubfaceValues<dim>         fe_values_subface;
 	
-	std::vector< dealii::Tensor<1,dim> > dual_solution_gradients;
-	std::vector< dealii::Tensor<1,dim> > cell_grads;
-	std::vector< dealii::Tensor<1,dim> > neighbor_grads;
+	std::vector< dealii::types::global_dof_index > local_dof_indices;
+	
+	// shape fun scratch:
+	std::vector<dealii::Tensor<1,dim> >  grad_phi;
+	dealii::Tensor<1,dim>                normal_vector;
+	
+	// local dof scratch:
+	std::vector<double> local_u0;
+	std::vector<double> local_z0;
+	std::vector<double> local_Rz0;
+	
+	
+	// data structures of neighboring face of cell (-)
+	dealii::FEFaceValues<dim>                      neighbor_fe_values_face;
+	
+	std::vector<dealii::Tensor<1,dim> >            neighbor_grad_phi;
+	
+	std::vector< dealii::types::global_dof_index > neighbor_local_dof_indices;
+	
+	std::vector<double> neighbor_local_u0;
+	
+	// data structures of boundary face (-)
+	std::vector<double> local_uD0; // interpolated boundary values
+	
+	
+	// function eval
+	double value_epsilon;
+	double value_u_D;
+	
+	// other
+	double JxW;
 };
 
 

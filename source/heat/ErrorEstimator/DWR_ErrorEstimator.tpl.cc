@@ -64,7 +64,14 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(
 	local_dof_indices(fe.dofs_per_cell),
 	phi(fe.dofs_per_cell),
 	grad_phi(fe.dofs_per_cell),
-	laplace_phi(fe.dofs_per_cell) {
+	laplace_phi(fe.dofs_per_cell),
+	local_u0(fe.dofs_per_cell),
+	local_z0(fe.dofs_per_cell),
+	local_Rz0(fe.dofs_per_cell),
+	local_um(fe.dofs_per_cell),
+	local_up(fe.dofs_per_cell),
+	local_zm(fe.dofs_per_cell),
+	local_Rzm(fe.dofs_per_cell) {
 }
 
 
@@ -81,10 +88,16 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	grad_phi(scratch.grad_phi),
 	hessian_phi(scratch.hessian_phi),
 	laplace_phi(scratch.laplace_phi),
+	local_u0(scratch.local_u0),
+	local_z0(scratch.local_z0),
+	local_Rz0(scratch.local_Rz0),
+	local_um(scratch.local_um),
+	local_up(scratch.local_up),
+	local_zm(scratch.local_zm),
+	local_Rzm(scratch.local_Rzm),
 	value_f(scratch.value_f),
 	value_epsilon(scratch.value_epsilon),
 	grad_epsilon(scratch.grad_epsilon),
-	R_u(scratch.R_u),
 	JxW(scratch.JxW) {
 }
 
@@ -754,7 +767,37 @@ assemble_error_on_cell(
 	
 	// reinit scratch and data to current cell
 	scratch.fe_values.reinit(cell);
+	
+	// fetch local dof data
 	cell->get_dof_indices(scratch.local_dof_indices);
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_u0[j] = (*dual_u_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_z0[j] = (*dual_z_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_Rz0[j] = (*dual_Rz_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_um[j] = (*dual_um_on_tm)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_up[j] = (*dual_up_on_tm)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_zm[j] = (*dual_z_on_tm)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+		scratch.local_Rzm[j] = (*dual_Rz_on_tm)[ scratch.local_dof_indices[j] ];
+	}
 	
 	// initialize local matrix with zeros
 	copydata.value=0.;
@@ -797,35 +840,20 @@ assemble_error_on_cell(
 			copydata.value += (
 				// R(u_kh):
 				(	scratch.value_f
-					// - 0 = density * \partial_t u * 1/tau_n
-					+ scratch.grad_epsilon *
-					( (*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.grad_phi[j] )
-					+ scratch.value_epsilon *
-					(*dual_u_on_t0)[ scratch.local_dof_indices[j] ] * scratch.laplace_phi[j]
+					// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
+					+ scratch.local_u0[j] * (scratch.grad_phi[j] * scratch.grad_epsilon)
+					+ scratch.value_epsilon * scratch.local_u0[j] * scratch.laplace_phi[j]
 				)
-				*
 				// z_h - Rz_h:
-				(
-					( (*dual_z_on_t0)[ scratch.local_dof_indices[j] ]
-					- (*dual_Rz_on_t0)[ scratch.local_dof_indices[j] ] ) * scratch.phi[j]
-				)
+				* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
 				* tau_n
 				* scratch.JxW
 			);
 			
-			// + [ u_kh(t_m) ] * (z_h(tm) - Rz_h(tm) )
+			// - [ u_kh(t_m) ] * ( z_h(t_m) - I(R(z_h(t_m))) )
 			copydata.value += (
-				// [ u_kh(t_m) ] = u^+ - u^-:
-				(
-					( (*dual_up_on_tm)[ scratch.local_dof_indices[j] ]
-					- (*dual_um_on_tm)[ scratch.local_dof_indices[j] ] ) * scratch.phi[j]
-				)
-				*
-				// z_h(tm) - Rz_h(tm):
-				(
-					( (*dual_z_on_tm)[ scratch.local_dof_indices[j] ]
-					- (*dual_Rz_on_tm)[ scratch.local_dof_indices[j] ] ) * scratch.phi[j]
-				)
+				- (scratch.local_up[j] - scratch.local_um[j]) * scratch.phi[j]
+				* (scratch.local_zm[j] - scratch.local_Rzm[j]) * scratch.phi[j]
 				* scratch.JxW
 			);
 		} // for j
@@ -897,45 +925,45 @@ assemble_error_on_regular_face(
 		dealii::ExcInternalError()
 	);
 	
-// 	scratch.fe_face_values.reinit(cell, face_no);
-// 	
-// 	scratch.fe_face_values_neighbor.reinit(
-// 		cell->neighbor(face_no),
-// 		cell->neighbor_of_neighbor(face_no)
-// 	);
-// 	
-// 	scratch.fe_face_values.get_function_gradients(
-// 		*dual.u,
-// 		scratch.cell_grads
-// 	);
-// 	
-// 	scratch.fe_face_values_neighbor.get_function_gradients(
-// 		*dual.u,
-// 		scratch.neighbor_grads
-// 	);
-// 	
-// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-// 		scratch.jump_residuals[q] = (
-// 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
-// 			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
-// 			scratch.fe_face_values.normal_vector(q)
-// 		);
-// 	}
-// 	
-// 	scratch.fe_face_values.get_function_values(
-// 		dual_weights,
-// 		scratch.dual_weights
-// 	);
-// 	
-// 	copydata.face  = cell->face(face_no);
-// 	copydata.value = 0;
-// 	
-// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-// 		copydata.value += (
-// 			scratch.jump_residuals[q] * scratch.dual_weights[q] *
-// 			scratch.fe_face_values.JxW(q)
-// 		);
-// 	}
+	scratch.fe_face_values.reinit(cell, face_no);
+	
+	scratch.fe_face_values_neighbor.reinit(
+		cell->neighbor(face_no),
+		cell->neighbor_of_neighbor(face_no)
+	);
+	
+	scratch.fe_face_values.get_function_gradients(
+		*dual.u,
+		scratch.cell_grads
+	);
+	
+	scratch.fe_face_values_neighbor.get_function_gradients(
+		*dual.u,
+		scratch.neighbor_grads
+	);
+	
+	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+		scratch.jump_residuals[q] = (
+			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
+			scratch.fe_face_values.normal_vector(q)
+		);
+	}
+	
+	scratch.fe_face_values.get_function_values(
+		dual_weights,
+		scratch.dual_weights
+	);
+	
+	copydata.face  = cell->face(face_no);
+	copydata.value = 0;
+	
+	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+		copydata.value += (
+			scratch.jump_residuals[q] * scratch.dual_weights[q] *
+			scratch.fe_face_values.JxW(q)
+		);
+	}
 	
 	face_integrals[copydata.face] = copydata.value;
 }
