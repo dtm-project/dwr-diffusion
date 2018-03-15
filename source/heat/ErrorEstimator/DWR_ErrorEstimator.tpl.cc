@@ -103,75 +103,96 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 
 
 /// (Struct-) Constructor.
-// template<int dim>
-// ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
-// 	const dealii::FiniteElement<dim> &fe,
-// 	const dealii::Mapping<dim> &mapping,
-// 	const dealii::Quadrature<dim-1> &quad,
-// 	const dealii::UpdateFlags &uflags) :
-// 	fe_face_values(mapping, fe, quad, uflags),
-// 	fe_face_values_neighbor(mapping, fe, quad, uflags),
-// 	fe_subface_values(mapping, fe, quad, dealii::UpdateFlags::update_gradients),
-// 	boundary_values(quad.size()),
-// 	g_h(quad.size()),
-// 	jump_residuals(quad.size()),
-// 	dual_weights(quad.size()),
-// 	inhom_dirichlet_difference(quad.size()),
-// 	dual_solution_gradients(quad.size()),
-// 	cell_grads(quad.size()),
-// 	neighbor_grads(quad.size()) {
-// }
+template<int dim>
+ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
+	const dealii::FiniteElement<dim> &fe,
+	const dealii::Mapping<dim> &mapping,
+	const dealii::Quadrature<dim-1> &quad,
+	const dealii::UpdateFlags &uflags) :
+	// data structures of current face on cell (+)
+	fe_values_face(mapping, fe, quad, uflags),
+	fe_values_subface(mapping, fe, quad, dealii::UpdateFlags::update_gradients),
+	local_dof_indices(fe.dofs_per_cell),
+	phi(fe.dofs_per_cell),
+	grad_phi(fe.dofs_per_cell),
+	local_u0(fe.dofs_per_cell),
+	local_z0(fe.dofs_per_cell),
+	local_Rz0(fe.dofs_per_cell),
+	// data structures of neighboring face of cell (-)
+	neighbor_fe_values_face(mapping, fe, quad, uflags),
+	neighbor_local_dof_indices(fe.dofs_per_cell),
+	neighbor_phi(fe.dofs_per_cell),
+	neighbor_grad_phi(fe.dofs_per_cell),
+	neighbor_local_u0(fe.dofs_per_cell),
+	neighbor_local_z0(fe.dofs_per_cell),
+	neighbor_local_Rz0(fe.dofs_per_cell)
+	{
+}
 
 
 /// (Struct-) Copy constructor.
-// template<int dim>
-// ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch) :
-// 	fe_face_values(
-// 		scratch.fe_face_values.get_mapping(),
-// 		scratch.fe_face_values.get_fe(),
-// 		scratch.fe_face_values.get_quadrature(),
-// 		scratch.fe_face_values.get_update_flags()),
-// 	fe_face_values_neighbor(
-// 		scratch.fe_face_values_neighbor.get_mapping(),
-// 		scratch.fe_face_values_neighbor.get_fe(),
-// 		scratch.fe_face_values_neighbor.get_quadrature(),
-// 		scratch.fe_face_values_neighbor.get_update_flags()),
-// 	fe_subface_values(
-// 		scratch.fe_subface_values.get_mapping(),
-// 		scratch.fe_subface_values.get_fe(),
-// 		scratch.fe_subface_values.get_quadrature(),
-// 		scratch.fe_subface_values.get_update_flags()),
-// 	boundary_values(scratch.boundary_values),
-// 	g_h(scratch.g_h),
-// 	jump_residuals(scratch.jump_residuals),
-// 	dual_weights(scratch.dual_weights),
-// 	inhom_dirichlet_difference(scratch.inhom_dirichlet_difference),
-// 	dual_solution_gradients(scratch.dual_solution_gradients),
-// 	cell_grads(scratch.cell_grads),
-// 	neighbor_grads(scratch.neighbor_grads) {
-// }
+template<int dim>
+ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch) :
+	// data structures of current face on cell (+)
+	fe_values_face(
+		scratch.fe_values_face.get_mapping(),
+		scratch.fe_values_face.get_fe(),
+		scratch.fe_values_face.get_quadrature(),
+		scratch.fe_values_face.get_update_flags()
+	),
+	fe_values_subface(
+		scratch.fe_values_subface.get_mapping(),
+		scratch.fe_values_subface.get_fe(),
+		scratch.fe_values_subface.get_quadrature(),
+		scratch.fe_values_subface.get_update_flags()
+	),
+	local_dof_indices(scratch.local_dof_indices),
+	phi(scratch.phi),
+	grad_phi(scratch.grad_phi),
+	normal_vector(scratch.normal_vector),
+	local_u0(scratch.local_u0),
+	local_z0(scratch.local_z0),
+	local_Rz0(scratch.local_Rz0),
+	// data structures of neighboring face of cell (-)
+	neighbor_fe_values_face(
+		scratch.neighbor_fe_values_face.get_mapping(),
+		scratch.neighbor_fe_values_face.get_fe(),
+		scratch.neighbor_fe_values_face.get_quadrature(),
+		scratch.neighbor_fe_values_face.get_update_flags()
+	),
+	neighbor_local_dof_indices(scratch.neighbor_local_dof_indices),
+	neighbor_phi(scratch.neighbor_phi),
+	neighbor_grad_phi(scratch.neighbor_grad_phi),
+	neighbor_local_u0(scratch.neighbor_local_u0),
+	neighbor_local_z0(scratch.neighbor_local_z0),
+	neighbor_local_Rz0(scratch.neighbor_local_Rz0),
+	// other
+	value_epsilon(scratch.value_epsilon),
+	value_u_D(scratch.value_u_D),
+	JxW(scratch.JxW) {
+}
 
 
 /// (Struct-) Constructor.
-// template<int dim>
-// ErrorEstimates<dim>::ErrorEstimates(
-// 	const dealii::FiniteElement<dim> &fe,
-// 	const dealii::Mapping<dim>       &mapping,
-// 	const dealii::Quadrature<dim>    &quad_cell,
-// 	const dealii::Quadrature<dim-1>  &quad_face,
-// 	const dealii::UpdateFlags        &uflags_cell,
-// 	const dealii::UpdateFlags        &uflags_face) :
-// 	cell(fe, mapping, quad_cell, uflags_cell),
-// 	face(fe, mapping, quad_face, uflags_face) {
-// }
+template<int dim>
+ErrorEstimates<dim>::ErrorEstimates(
+	const dealii::FiniteElement<dim> &fe,
+	const dealii::Mapping<dim>       &mapping,
+	const dealii::Quadrature<dim>    &quad_cell,
+	const dealii::Quadrature<dim-1>  &quad_face,
+	const dealii::UpdateFlags        &uflags_cell,
+	const dealii::UpdateFlags        &uflags_face) :
+	cell(fe, mapping, quad_cell, uflags_cell),
+	face(fe, mapping, quad_face, uflags_face) {
+}
 
 
 /// (Struct-) Copy constructor.
-// template<int dim>
-// ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &scratch) :
-// 	cell(scratch.cell),
-// 	face(scratch.face) {
-// }
+template<int dim>
+ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &scratch) :
+	cell(scratch.cell),
+	face(scratch.face) {
+}
 
 }
 
@@ -604,9 +625,8 @@ ErrorEstimator<dim>::
 dual_get_z_t_on_slab_after_restriction_to_primal_space(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
-	[[maybe_unused]]const double &t,
-	std::shared_ptr< dealii::Vector<double> > &z_result
-) {
+	const double &t,
+	std::shared_ptr< dealii::Vector<double> > &z_result) {
 	////////////////////////////////////////////////////////////////////////////
 	// NOTE: this function must know the time discretisation of
 	//       the primal problem!
@@ -875,38 +895,38 @@ assemble_error_on_boundary_face(
 		(cell->face(face_no).state() == dealii::IteratorState::valid),
 		dealii::ExcInternalError()
 	);
-/*	
-	scratch.fe_face_values.reinit(cell, face_no);
 	
-	function.BoundaryValues->value_list(scratch.fe_face_values.get_quadrature_points(),
-							   scratch.boundary_values);
-	
-	scratch.fe_face_values.get_function_gradients(
-	*dual.z,
-	scratch.dual_solution_gradients
-	);
-	
-	scratch.fe_face_values.get_function_values(
-		g_interpolated,
-		scratch.g_h
-	);
-	
-	for (unsigned int q=0;q<scratch.fe_face_values.n_quadrature_points; ++q) {
-		scratch.inhom_dirichlet_difference[q] = (scratch.boundary_values[q] - scratch.g_h[q]);
-	}
-	
-	copydata.face  = cell->face(face_no);
-	copydata.value = 0;
-	
-	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) { // (g-g_h, epsilon*grad(z_h)*n)_dOmega
-		copydata.value +=
-			2.*(													//multiplied with 2, because within the estimate() function
-			(scratch.inhom_dirichlet_difference[q] *						//the whole faces contribution will be subtracted  by the factor
-			(scratch.fe_face_values.normal_vector(q)*
-			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
-			scratch.dual_solution_gradients[q])))*
-			scratch.fe_face_values.JxW(q));
-	}*/
+// 	scratch.fe_face_values.reinit(cell, face_no);
+// 	
+// 	function.BoundaryValues->value_list(scratch.fe_face_values.get_quadrature_points(),
+// 							   scratch.boundary_values);
+// 	
+// 	scratch.fe_face_values.get_function_gradients(
+// 	*dual.z,
+// 	scratch.dual_solution_gradients
+// 	);
+// 	
+// 	scratch.fe_face_values.get_function_values(
+// 		g_interpolated,
+// 		scratch.g_h
+// 	);
+// 	
+// 	for (unsigned int q=0;q<scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		scratch.inhom_dirichlet_difference[q] = (scratch.boundary_values[q] - scratch.g_h[q]);
+// 	}
+// 	
+// 	copydata.face  = cell->face(face_no);
+// 	copydata.value = 0;
+// 	
+// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) { // (g-g_h, epsilon*grad(z_h)*n)_dOmega
+// 		copydata.value +=
+// 			2.*(													//multiplied with 2, because within the estimate() function
+// 			(scratch.inhom_dirichlet_difference[q] *						//the whole faces contribution will be subtracted  by the factor
+// 			(scratch.fe_face_values.normal_vector(q)*
+// 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 			scratch.dual_solution_gradients[q])))*
+// 			scratch.fe_face_values.JxW(q));
+// 	}
 
 	face_integrals[copydata.face] = copydata.value;
 }
@@ -925,45 +945,45 @@ assemble_error_on_regular_face(
 		dealii::ExcInternalError()
 	);
 	
-	scratch.fe_face_values.reinit(cell, face_no);
-	
-	scratch.fe_face_values_neighbor.reinit(
-		cell->neighbor(face_no),
-		cell->neighbor_of_neighbor(face_no)
-	);
-	
-	scratch.fe_face_values.get_function_gradients(
-		*dual.u,
-		scratch.cell_grads
-	);
-	
-	scratch.fe_face_values_neighbor.get_function_gradients(
-		*dual.u,
-		scratch.neighbor_grads
-	);
-	
-	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-		scratch.jump_residuals[q] = (
-			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
-			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
-			scratch.fe_face_values.normal_vector(q)
-		);
-	}
-	
-	scratch.fe_face_values.get_function_values(
-		dual_weights,
-		scratch.dual_weights
-	);
-	
-	copydata.face  = cell->face(face_no);
-	copydata.value = 0;
-	
-	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
-		copydata.value += (
-			scratch.jump_residuals[q] * scratch.dual_weights[q] *
-			scratch.fe_face_values.JxW(q)
-		);
-	}
+// 	scratch.fe_face_values.reinit(cell, face_no);
+// 	
+// 	scratch.fe_face_values_neighbor.reinit(
+// 		cell->neighbor(face_no),
+// 		cell->neighbor_of_neighbor(face_no)
+// 	);
+// 	
+// 	scratch.fe_face_values.get_function_gradients(
+// 		*dual.u,
+// 		scratch.cell_grads
+// 	);
+// 	
+// 	scratch.fe_face_values_neighbor.get_function_gradients(
+// 		*dual.u,
+// 		scratch.neighbor_grads
+// 	);
+// 	
+// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		scratch.jump_residuals[q] = (
+// 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
+// 			scratch.fe_face_values.normal_vector(q)
+// 		);
+// 	}
+// 	
+// 	scratch.fe_face_values.get_function_values(
+// 		dual_weights,
+// 		scratch.dual_weights
+// 	);
+// 	
+// 	copydata.face  = cell->face(face_no);
+// 	copydata.value = 0;
+// 	
+// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		copydata.value += (
+// 			scratch.jump_residuals[q] * scratch.dual_weights[q] *
+// 			scratch.fe_face_values.JxW(q)
+// 		);
+// 	}
 	
 	face_integrals[copydata.face] = copydata.value;
 }

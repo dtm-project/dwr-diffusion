@@ -110,7 +110,6 @@ struct ErrorEstimateOnFace {
 	
 	ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch);
 	
-	
 	// data structures of current face on cell (+)
 	dealii::FEFaceValues<dim>            fe_values_face;
 	dealii::FESubfaceValues<dim>         fe_values_subface;
@@ -118,27 +117,29 @@ struct ErrorEstimateOnFace {
 	std::vector< dealii::types::global_dof_index > local_dof_indices;
 	
 	// shape fun scratch:
+	std::vector<double>                  phi;
 	std::vector<dealii::Tensor<1,dim> >  grad_phi;
 	dealii::Tensor<1,dim>                normal_vector;
 	
 	// local dof scratch:
-	std::vector<double> local_u0;
-	std::vector<double> local_z0;
-	std::vector<double> local_Rz0;
-	
+	std::vector<double>                  local_u0;
+	std::vector<double>                  local_z0;
+	std::vector<double>                  local_Rz0;
 	
 	// data structures of neighboring face of cell (-)
-	dealii::FEFaceValues<dim>                      neighbor_fe_values_face;
-	
-	std::vector<dealii::Tensor<1,dim> >            neighbor_grad_phi;
+	dealii::FEFaceValues<dim>            neighbor_fe_values_face;
 	
 	std::vector< dealii::types::global_dof_index > neighbor_local_dof_indices;
 	
-	std::vector<double> neighbor_local_u0;
+	std::vector<double>                  neighbor_phi;
+	std::vector<dealii::Tensor<1,dim> >  neighbor_grad_phi;
+	
+	std::vector<double>                  neighbor_local_u0;
+	std::vector<double>                  neighbor_local_z0;
+	std::vector<double>                  neighbor_local_Rz0;
 	
 	// data structures of boundary face (-)
-	std::vector<double> local_uD0; // interpolated boundary values
-	
+// 	std::vector<double> local_uD0; // interpolated boundary values: use neighbor_local_u0
 	
 	// function eval
 	double value_epsilon;
@@ -299,17 +300,6 @@ protected:
 	virtual void copy_local_error(
 		const Assembly::CopyData::ErrorEstimates<dim> &copydata
 	);
-	
-	
-	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
-	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
-		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction,
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double t
-	);
-	
-	
 	
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	
