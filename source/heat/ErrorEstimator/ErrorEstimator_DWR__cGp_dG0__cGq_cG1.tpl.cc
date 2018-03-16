@@ -471,7 +471,7 @@ estimate(
 		#ifdef DEBUG
 		// init *eta->x[0] with quiet_NaN (only for debugging)
 		for (unsigned int cell_no{0}; cell_no < eta->x[0]->size(); ++cell_no) {
-			(*eta->x[0])[cell_no] = std::numeric_limits<double>::quiet_NaN;
+			(*eta->x[0])[cell_no] = std::numeric_limits<double>::quiet_NaN();
 		}
 		#endif
 		
