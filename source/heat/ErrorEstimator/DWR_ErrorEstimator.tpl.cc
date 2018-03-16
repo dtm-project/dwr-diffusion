@@ -237,6 +237,10 @@ estimate(
 	dual.storage.z = _z;
 	error_estimator.storage.eta = _eta;
 	
+	Assert(error_estimator.storage.eta.use_count(), dealii::ExcNotInitialized());
+	Assert(error_estimator.storage.eta->size(), dealii::ExcNotInitialized());
+	Assert(error_estimator.storage.eta->front().x[0].use_count(), dealii::ExcNotInitialized());
+	
 	////////////////////////////////////////////////////////////////////////////
 	// prepare TMS loop for eta_K on Omega x I_n
 	//
@@ -274,8 +278,7 @@ estimate(
 		tau_n = slab->tau_n();
 		
 		DTM::pout
-			<< "error estimator: assemble on " << "I_" << n 
-// 			<< " = (" << tm << ", " << tn << ") "
+			<< "error estimator: assemble on " << "I_" << n
 			<< std::endl;
 		
 		// interpolate primal solution u^-(t_m) to dual solution space
@@ -394,6 +397,16 @@ estimate(
 		
 		// init storage for slab problem
 		{
+			Assert(
+				(cell_integrals.size()==0),
+				dealii::ExcMessage("cell_integrals must be empty")
+			);
+			
+			Assert(
+				(face_integrals.size()==0),
+				dealii::ExcMessage("face_integrals must be empty")
+			);
+			
 			auto cell = slab->dual.dof->begin_active();
 			auto endc = slab->dual.dof->end();
 			for ( ; cell != endc; ++cell) {
@@ -444,7 +457,9 @@ estimate(
 		);
 		
 		// copy data
-		(*eta->x[0]) = 0;
+		Assert(eta->x[0].use_count(), dealii::ExcNotInitialized());
+		Assert(eta->x[0]->size(), dealii::ExcNotInitialized());
+		*eta->x[0] = 0;
 		{
 			auto cell = slab->dual.dof->begin_active();
 			auto endc = slab->dual.dof->end();
@@ -467,22 +482,24 @@ estimate(
 		
 		// check if error_indicators vector has valid entries only
 		{
+			#ifdef DEBUG
 			for (unsigned int cell_no{0}; cell_no < eta->x[0]->size(); ++cell_no) {
 				Assert(
 					!std::isnan((*eta->x[0])[cell_no]),
 					dealii::ExcMessage("Your error indicator has quiet_NaN entries. \
 					Please check if you have assembled cell_integrals and face_integrals correctly.")
 				);
-				(void)cell_no;
 			}
+			#endif
 		}
-		cell_integrals.clear();
-		face_integrals.clear();
 		
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
 		//
+		
+		cell_integrals.clear();
+		face_integrals.clear();
 		
 		++n;
 		++slab;
@@ -697,20 +714,26 @@ assemble_local_error(
 	for (unsigned int face_no{0};
 		face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
 		////////////////////////////////////////////////////////////////////////
-		// handle boundary faces
+		// handle Dirichlet boundary faces
 		if (cell->face(face_no)->at_boundary()) {
-
-			assemble_error_on_boundary_face(
-				cell,
-				face_no,
-				scratch.face,
-				copydata.face
-			);
+			if (cell->face(face_no)->boundary_id() ==
+				static_cast<dealii::types::boundary_id> (
+						heat::types::boundary_id::Dirichlet) ) {
+				// only on Dirichlet type boundary face
+				assemble_error_on_boundary_face(
+					cell,
+					face_no,
+					scratch.face,
+					copydata.face
+				);
+			}
+			
 			continue;
 		}
 		
 		////////////////////////////////////////////////////////////////////////
 		// interior faces only:
+		Assert(!cell->face(face_no)->at_boundary(), dealii::ExcInvalidState());
 		
 		// skip face with same refinement level where the neighbor cell index
 		// is smaller than this ones

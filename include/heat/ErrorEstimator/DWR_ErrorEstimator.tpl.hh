@@ -222,6 +222,7 @@ public:
 	);
 	
 protected:
+	/// evaluate solution dof vector u^primal(t) on primal solution space
 	virtual void primal_get_u_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u,
@@ -237,7 +238,6 @@ protected:
 		const double &t,
 		std::shared_ptr< dealii::Vector<double> > &dual_u_result
 	);
-	
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
 	virtual void dual_get_z_t_on_slab(
@@ -255,8 +255,9 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction
 	);
 	
-	
-	
+	////////////////////////////////////////////////////////////////////////////
+	// assemble local functions:
+	//
 	
 	virtual void assemble_local_error(
 		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
@@ -291,9 +292,17 @@ protected:
 		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata
 	);
 	
+	////////////////////////////////////////////////////////////////////////////
+	// copy local error: NOTE: try to avoid this function here (e.g. with Lambda)
+	//
+	
 	virtual void copy_local_error(
 		const Assembly::CopyData::ErrorEstimates<dim> &copydata
 	);
+	
+	////////////////////////////////////////////////////////////////////////////
+	// internal data structures:
+	//
 	
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	
@@ -314,7 +323,6 @@ protected:
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
 	} error_estimator;
-	
 	
 	struct {
 		std::shared_ptr< dealii::Function<dim> > epsilon;
@@ -341,7 +349,6 @@ protected:
 	
 	std::map< typename dealii::DoFHandler<dim>::cell_iterator, double > cell_integrals;
 	std::map< typename dealii::DoFHandler<dim>::face_iterator, double > face_integrals;
-	
 };
 
 }} // namespace
