@@ -4,7 +4,8 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  *
- * @date 2018-03-13, ErrorEstimator class for heat, UK, MPB
+ * @date 2018-03-16, ErrorEstimator class for heat (final), UK, MPB
+ * @date 2018-03-13, ErrorEstimator class for heat (begin), UK, MPB
  * @date 2017-11-08, ErrorEstimator class, UK, MPB
  */
 
@@ -36,7 +37,6 @@
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
-#include <deal.II/base/tensor_function.h>
 
 #include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_values.h>
@@ -46,7 +46,7 @@
 
 // C++ includes
 #include <memory>
-#include <string>
+#include <vector>
 
 namespace heat {
 namespace dwr {
@@ -66,27 +66,27 @@ struct ErrorEstimateOnCell {
 	
 	ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch);
 	
-	dealii::FEValues<dim> fe_values;
+	// data structures of current cell
+	dealii::FEValues<dim>               fe_values;
 	
 	std::vector< dealii::types::global_dof_index > local_dof_indices;
 	
 	// shape fun scratch:
-	std::vector<double>   phi;
+	std::vector<double>                 phi;
 	std::vector<dealii::Tensor<1,dim> > grad_phi;
-	dealii::Tensor<2,dim> hessian_phi;
-	std::vector<double>   laplace_phi;
+	dealii::Tensor<2,dim>               hessian_phi;
+	std::vector<double>                 laplace_phi;
 	
 	// local dof scratch:
-	std::vector<double> local_u0;
-	std::vector<double> local_z0;
-	std::vector<double> local_Rz0;
+	std::vector<double>                 local_u0;
+	std::vector<double>                 local_z0;
+	std::vector<double>                 local_Rz0;
 	
-	std::vector<double> local_um; // u^-(t_m)
-	std::vector<double> local_up; // u^+(t_m)
+	std::vector<double>                 local_um; // u^-(t_m)
+	std::vector<double>                 local_up; // u^+(t_m)
 	
-	std::vector<double> local_zm;
-	std::vector<double> local_Rzm;
-	
+	std::vector<double>                 local_zm;
+	std::vector<double>                 local_Rzm;
 	
 	// function eval scratch:
 	double value_f;
@@ -131,14 +131,11 @@ struct ErrorEstimateOnFace {
 	
 	std::vector< dealii::types::global_dof_index > neighbor_local_dof_indices;
 	
-	std::vector<double>                  neighbor_phi;
 	std::vector<dealii::Tensor<1,dim> >  neighbor_grad_phi;
 	
 	std::vector<double>                  neighbor_local_u0;
-	std::vector<double>                  neighbor_local_z0;
-	std::vector<double>                  neighbor_local_Rz0;
 	
-	// function eval
+	// function eval scratch:
 	double value_epsilon;
 	double value_u_D;
 	

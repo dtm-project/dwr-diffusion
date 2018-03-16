@@ -4,7 +4,8 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  *
- * @date 2018-03-13, ErrorEstimator class for heat, UK, MPB
+ * @date 2018-03-16, ErrorEstimator class for heat (final), UK, MPB
+ * @date 2018-03-13, ErrorEstimator class for heat (begin), UK, MPB
  * @date 2017-11-08, ErrorEstimator class, UK, MPB
  */
 
@@ -26,26 +27,19 @@
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
 // PROJECT includes
-#include <DTM++/base/LogStream.hh>
-
 #include <heat/ErrorEstimator/DWR_ErrorEstimator.tpl.hh>
 
+// DTM++ includes
+#include <DTM++/base/LogStream.hh>
 
 // DEAL.II includes
-#include <deal.II/base/function.h>
 #include <deal.II/base/quadrature.h>
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/base/work_stream.h>
 
 #include <deal.II/fe/fe_tools.h>
-#include <deal.II/fe/fe_values.h>
-
-#include <deal.II/grid/grid_refinement.h>
 
 // C++ includes
-#include <cmath>
-#include <fstream>
-#include <vector>
 
 namespace heat {
 namespace dwr {
@@ -111,7 +105,7 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
 	const dealii::UpdateFlags &uflags) :
 	// data structures of current face on cell (+)
 	fe_values_face(mapping, fe, quad, uflags),
-	fe_values_subface(mapping, fe, quad, dealii::UpdateFlags::update_gradients),
+	fe_values_subface(mapping, fe, quad, uflags),
 	local_dof_indices(fe.dofs_per_cell),
 	phi(fe.dofs_per_cell),
 	grad_phi(fe.dofs_per_cell),
@@ -119,13 +113,10 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
 	local_z0(fe.dofs_per_cell),
 	local_Rz0(fe.dofs_per_cell),
 	// data structures of neighboring face of cell (-)
-	neighbor_fe_values_face(mapping, fe, quad, uflags),
+	neighbor_fe_values_face(mapping, fe, quad, dealii::UpdateFlags::update_gradients),
 	neighbor_local_dof_indices(fe.dofs_per_cell),
-	neighbor_phi(fe.dofs_per_cell),
 	neighbor_grad_phi(fe.dofs_per_cell),
-	neighbor_local_u0(fe.dofs_per_cell),
-	neighbor_local_z0(fe.dofs_per_cell),
-	neighbor_local_Rz0(fe.dofs_per_cell) {
+	neighbor_local_u0(fe.dofs_per_cell) {
 }
 
 
@@ -160,11 +151,8 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 		scratch.neighbor_fe_values_face.get_update_flags()
 	),
 	neighbor_local_dof_indices(scratch.neighbor_local_dof_indices),
-	neighbor_phi(scratch.neighbor_phi),
 	neighbor_grad_phi(scratch.neighbor_grad_phi),
 	neighbor_local_u0(scratch.neighbor_local_u0),
-	neighbor_local_z0(scratch.neighbor_local_z0),
-	neighbor_local_Rz0(scratch.neighbor_local_Rz0),
 	// other
 	value_epsilon(scratch.value_epsilon),
 	value_u_D(scratch.value_u_D),
@@ -1001,18 +989,6 @@ assemble_error_on_regular_face(
 			(*dual_u_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
 	}
 	
-	for (unsigned int j{0};
-		j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
-		scratch.neighbor_local_z0[j] =
-			(*dual_z_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
-	}
-	
-	for (unsigned int j{0};
-		j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
-		scratch.neighbor_local_Rz0[j] =
-			(*dual_Rz_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
-	}
-	
 	// initialize copydata
 	copydata.face = cell->face(face_no);
 	copydata.value = 0.;
@@ -1034,12 +1010,6 @@ assemble_error_on_regular_face(
 		}
 		
 		// loop over all basis functions to get the shape values (K^-)
-		for (unsigned int k{0};
-			k < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++k) {
-			scratch.neighbor_phi[k] =
-				scratch.neighbor_fe_values_face.shape_value_component(k,q,0);
-		}
-		
 		for (unsigned int k{0};
 			k < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++k) {
 			scratch.neighbor_grad_phi[k] =
@@ -1147,18 +1117,6 @@ assemble_error_on_irregular_face(
 				(*dual_u_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
 		}
 		
-		for (unsigned int j{0};
-			j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
-			scratch.neighbor_local_z0[j] =
-				(*dual_z_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
-		}
-		
-		for (unsigned int j{0};
-			j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
-			scratch.neighbor_local_Rz0[j] =
-				(*dual_Rz_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
-		}
-		
 		// initialize copydata
 		copydata.face = cell->face(face_no)->child(subface_no);
 		copydata.value = 0.;
@@ -1180,12 +1138,6 @@ assemble_error_on_irregular_face(
 			}
 			
 			// loop over all basis functions to get the shape values (K^-)
-			for (unsigned int k{0};
-				k < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++k) {
-				scratch.neighbor_phi[k] =
-					scratch.neighbor_fe_values_face.shape_value_component(k,q,0);
-			}
-			
 			for (unsigned int k{0};
 				k < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++k) {
 				scratch.neighbor_grad_phi[k] =
