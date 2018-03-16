@@ -1,5 +1,5 @@
 /**
- * @file DWR_ErrorEstimator.tpl.cc
+ * @file ErrorEstimator_DWR__cGp_dG0__cGq_cG1.tpl.cc
  *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
@@ -27,7 +27,7 @@
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
 // PROJECT includes
-#include <heat/ErrorEstimator/DWR_ErrorEstimator.tpl.hh>
+#include <heat/ErrorEstimator/ErrorEstimator_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 // DTM++ includes
 #include <DTM++/base/LogStream.hh>
@@ -43,6 +43,9 @@
 
 namespace heat {
 namespace dwr {
+
+namespace cGp_dG0 { // primal
+namespace cGq_cG1 { // dual
 
 namespace Assembly {
 namespace Scratch {
@@ -1225,6 +1228,6 @@ ErrorEstimator<dim>::copy_local_error(
 }
 
 
-}} // namespace
+}}}} // namespace
 
-#include "DWR_ErrorEstimator.inst.in"
+#include "ErrorEstimator_DWR__cGp_dG0__cGq_cG1.inst.in"

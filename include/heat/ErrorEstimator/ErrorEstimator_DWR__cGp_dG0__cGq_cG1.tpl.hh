@@ -1,5 +1,5 @@
 /**
- * @file DWR_ErrorEstimator.tpl.hh
+ * @file ErrorEstimator_DWR__cGp_dG0__cGq_cG1.tpl.hh
  *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
@@ -26,8 +26,8 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __DWR_ErrorEstimator_tpl_hh
-#define __DWR_ErrorEstimator_tpl_hh
+#ifndef __ErrorEstimator_DWR__cGp_dG0__cGq_cG1_tpl_hh
+#define __ErrorEstimator_DWR__cGp_dG0__cGq_cG1_tpl_hh
 
 // PROJECT includes
 #include <heat/grid/Grid_DWR.tpl.hh>
@@ -50,6 +50,9 @@
 
 namespace heat {
 namespace dwr {
+
+namespace cGp_dG0 { // primal
+namespace cGq_cG1 { // dual
 
 namespace Assembly {
 namespace Scratch {
@@ -351,6 +354,6 @@ protected:
 	std::map< typename dealii::DoFHandler<dim>::face_iterator, double > face_integrals;
 };
 
-}} // namespace
+}}}} // namespace
 
 #endif

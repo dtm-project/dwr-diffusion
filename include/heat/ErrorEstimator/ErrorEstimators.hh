@@ -29,6 +29,6 @@
 #define __ErrorEstimators_hh
 
 // Project includes
-#include <heat/ErrorEstimator/DWR_ErrorEstimator.tpl.hh>
+#include <heat/ErrorEstimator/ErrorEstimator_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 #endif
