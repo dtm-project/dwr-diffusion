@@ -5,8 +5,12 @@
  * @author Marius Paul Bruchhaeuser (MPB)
  *
  * @date 2018-03-16, ErrorEstimator class for heat (final), UK, MPB
- * @date 2018-03-13, ErrorEstimator class for heat (begin), UK, MPB
- * @date 2017-11-08, ErrorEstimator class, UK, MPB
+ * @date 2018-03-13, new development ErrorEstimator class for heat (begin), UK, MPB
+ * @date 2018-03-13, fork from DTM++/dwr-poisson, UK
+ *
+ * @date 2017-11-08, ErrorEstimator class (Poisson), UK, MPB
+ * @date 2016-08-16, ErrorEstimator class (Poisson), UK
+ * @date 2016-08-11, Poisson / DWR from deal.II/step-14 and DTM++, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -55,6 +59,7 @@ namespace cGp_dG0 { // primal
 namespace cGq_cG1 { // dual
 
 namespace Assembly {
+
 namespace Scratch {
 
 /// Struct for scratch on local error estimate on cell
@@ -147,7 +152,6 @@ struct ErrorEstimateOnFace {
 };
 
 
-/// Collect 
 template<int dim>
 struct ErrorEstimates {
 	ErrorEstimates(
@@ -167,8 +171,8 @@ struct ErrorEstimates {
 
 
 } // namespace Scratch
-namespace CopyData {
 
+namespace CopyData {
 
 /// Struct for copydata on local cell matrix.
 template<int dim>
@@ -202,10 +206,10 @@ struct ErrorEstimates {
 };
 
 } // namespace CopyData
+
 } // namespace Assembly
+
 ////////////////////////////////////////////////////////////////////////////////
-
-
 
 template<int dim>
 class ErrorEstimator {
