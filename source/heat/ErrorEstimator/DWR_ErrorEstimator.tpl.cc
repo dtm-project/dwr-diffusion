@@ -860,6 +860,10 @@ assemble_error_on_cell(
 		} // for j
 	} // for q
 	
+	Assert(
+		std::isnan(cell_integrals[copydata.cell]),
+		dealii::ExcMessage("ErrorEstimator: you access the same cell at least two times")
+	);
 	cell_integrals[copydata.cell] = copydata.value;
 }
 
@@ -877,38 +881,42 @@ assemble_error_on_boundary_face(
 		dealii::ExcInternalError()
 	);
 	
-// 	scratch.fe_face_values.reinit(cell, face_no);
+// 	scratch.fe_values_face.reinit(cell, face_no);
 // 	
-// 	function.BoundaryValues->value_list(scratch.fe_face_values.get_quadrature_points(),
+// 	function.BoundaryValues->value_list(scratch.fe_values_face.get_quadrature_points(),
 // 							   scratch.boundary_values);
 // 	
-// 	scratch.fe_face_values.get_function_gradients(
+// 	scratch.fe_values_face.get_function_gradients(
 // 	*dual.z,
 // 	scratch.dual_solution_gradients
 // 	);
 // 	
-// 	scratch.fe_face_values.get_function_values(
+// 	scratch.fe_values_face.get_function_values(
 // 		g_interpolated,
 // 		scratch.g_h
 // 	);
 // 	
-// 	for (unsigned int q=0;q<scratch.fe_face_values.n_quadrature_points; ++q) {
+// 	for (unsigned int q=0;q<scratch.fe_values_face.n_quadrature_points; ++q) {
 // 		scratch.inhom_dirichlet_difference[q] = (scratch.boundary_values[q] - scratch.g_h[q]);
 // 	}
 // 	
 // 	copydata.face  = cell->face(face_no);
 // 	copydata.value = 0;
 // 	
-// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) { // (g-g_h, epsilon*grad(z_h)*n)_dOmega
+// 	for (unsigned int q=0; q < scratch.fe_values_face.n_quadrature_points; ++q) { // (g-g_h, epsilon*grad(z_h)*n)_dOmega
 // 		copydata.value +=
 // 			2.*(													//multiplied with 2, because within the estimate() function
 // 			(scratch.inhom_dirichlet_difference[q] *						//the whole faces contribution will be subtracted  by the factor
-// 			(scratch.fe_face_values.normal_vector(q)*
-// 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 			(scratch.fe_values_face.normal_vector(q)*
+// 			(function.epsilon->value(scratch.fe_values_face.quadrature_point(q), 0)*
 // 			scratch.dual_solution_gradients[q])))*
-// 			scratch.fe_face_values.JxW(q));
+// 			scratch.fe_values_face.JxW(q));
 // 	}
 
+	Assert(
+		std::isnan(face_integrals[copydata.face]),
+		dealii::ExcMessage("ErrorEstimator: you access the same boundary face at least two times")
+	);
 	face_integrals[copydata.face] = copydata.value;
 }
 
@@ -921,51 +929,110 @@ assemble_error_on_regular_face(
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
 		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata) {
+	
 	Assert(
 		(cell->neighbor(face_no).state() == dealii::IteratorState::valid),
 		dealii::ExcInternalError()
 	);
 	
-// 	scratch.fe_face_values.reinit(cell, face_no);
-// 	
-// 	scratch.fe_face_values_neighbor.reinit(
-// 		cell->neighbor(face_no),
-// 		cell->neighbor_of_neighbor(face_no)
-// 	);
-// 	
-// 	scratch.fe_face_values.get_function_gradients(
+	scratch.fe_values_face.reinit(cell, face_no);
+	
+	scratch.neighbor_fe_values_face.reinit(
+		cell->neighbor(face_no),
+		cell->neighbor_of_neighbor(face_no)
+	);
+	
+	// fetch local dof data ( K^+ / F^+ )
+	cell->get_dof_indices(scratch.local_dof_indices);
+	
+	for (unsigned int j{0}; j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.local_u0[j] =
+			(*dual_u_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.local_z0[j] =
+			(*dual_z_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.local_Rz0[j] =
+			(*dual_Rz_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	// fetch local dof data ( K^- / F^- )
+	cell->neighbor(face_no)->get_dof_indices(scratch.neighbor_local_dof_indices);
+	
+	for (unsigned int j{0};
+		j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.neighbor_local_u0[j] =
+			(*dual_u_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0};
+		j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.neighbor_local_z0[j] =
+			(*dual_z_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0};
+		j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.neighbor_local_Rz0[j] =
+			(*dual_Rz_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
+	}
+	
+	
+	
+	
+	
+	
+// 	// TODO:
+// 	scratch.fe_values_face.get_function_gradients(
 // 		*dual.u,
 // 		scratch.cell_grads
 // 	);
 // 	
-// 	scratch.fe_face_values_neighbor.get_function_gradients(
+// 	
+// 	// TODO:
+// 	scratch.neighbor_fe_values_face.get_function_gradients(
 // 		*dual.u,
 // 		scratch.neighbor_grads
 // 	);
 // 	
-// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 	
+// 	// TODO:
+// 	for (unsigned int q=0; q < scratch.fe_values_face.n_quadrature_points; ++q) {
 // 		scratch.jump_residuals[q] = (
-// 			(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 			(function.epsilon->value(scratch.fe_values_face.quadrature_point(q), 0)*
 // 			(scratch.cell_grads[q] - scratch.neighbor_grads[q])) *
-// 			scratch.fe_face_values.normal_vector(q)
+// 			scratch.fe_values_face.normal_vector(q)
 // 		);
 // 	}
 // 	
-// 	scratch.fe_face_values.get_function_values(
+// 	// TODO:
+// 	scratch.fe_values_face.get_function_values(
 // 		dual_weights,
 // 		scratch.dual_weights
 // 	);
 // 	
+// 	
+// 	// TODO:
 // 	copydata.face  = cell->face(face_no);
 // 	copydata.value = 0;
 // 	
-// 	for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 	for (unsigned int q=0; q < scratch.fe_values_face.n_quadrature_points; ++q) {
 // 		copydata.value += (
 // 			scratch.jump_residuals[q] * scratch.dual_weights[q] *
-// 			scratch.fe_face_values.JxW(q)
+// 			scratch.fe_values_face.JxW(q)
 // 		);
 // 	}
+// 	
 	
+	
+	Assert(
+		std::isnan(face_integrals[copydata.face]),
+		dealii::ExcMessage("ErrorEstimator: you access the same regular face at least two times")
+	);
 	face_integrals[copydata.face] = copydata.value;
 }
 
@@ -978,16 +1045,17 @@ assemble_error_on_irregular_face(
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
 		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata) {
-	Assert(
-		(cell->neighbor(face_no).state() == dealii::IteratorState::valid),
-		dealii::ExcInternalError()
-	);
 	
-	Assert(
-		(cell->neighbor(face_no)->has_children()),
-		dealii::ExcInternalError()
-	);
-	
+// 	Assert(
+// 		(cell->neighbor(face_no).state() == dealii::IteratorState::valid),
+// 		dealii::ExcInternalError()
+// 	);
+// 	
+// 	Assert(
+// 		(cell->neighbor(face_no)->has_children()),
+// 		dealii::ExcInternalError()
+// 	);
+// 	
 // 	for (unsigned int subface_no=0; subface_no < cell->face(face_no)->n_children();
 // 		++subface_no) {
 // 		Assert(
@@ -997,32 +1065,32 @@ assemble_error_on_irregular_face(
 // 			dealii::ExcInternalError()
 // 		);
 // 		
-// 		scratch.fe_subface_values.reinit(cell, face_no, subface_no);
+// 		scratch.fe_values_subface.reinit(cell, face_no, subface_no);
 // 		
-// 		scratch.fe_face_values_neighbor.reinit(
+// 		scratch.neighbor_fe_values_face.reinit(
 // 			cell->neighbor_child_on_subface(face_no, subface_no),
 // 			cell->neighbor_of_neighbor(face_no)
 // 		);
 // 		
-// 		scratch.fe_subface_values.get_function_gradients(
+// 		scratch.fe_values_subface.get_function_gradients(
 // 			*dual.u,
 // 			scratch.cell_grads
 // 		);
 // 		
-// 		scratch.fe_face_values_neighbor.get_function_gradients(
+// 		scratch.neighbor_fe_values_face.get_function_gradients(
 // 			*dual.u,
 // 			scratch.neighbor_grads
 // 		);
 // 		
-// 		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		for (unsigned int q=0; q < scratch.fe_values_face.n_quadrature_points; ++q) {
 // 			scratch.jump_residuals[q] = (
-// 				(function.epsilon->value(scratch.fe_face_values.quadrature_point(q), 0)*
+// 				(function.epsilon->value(scratch.fe_values_face.quadrature_point(q), 0)*
 // 				(scratch.neighbor_grads[q] - scratch.cell_grads[q])) *
-// 				scratch.fe_face_values_neighbor.normal_vector(q)
+// 				scratch.neighbor_fe_values_face.normal_vector(q)
 // 			);
 // 		}
 // 		
-// 		scratch.fe_face_values_neighbor.get_function_values(
+// 		scratch.neighbor_fe_values_face.get_function_values(
 // 			dual_weights,
 // 			scratch.dual_weights
 // 		);
@@ -1030,10 +1098,10 @@ assemble_error_on_irregular_face(
 // 		copydata.face  = cell->face(face_no)->child(subface_no);
 // 		copydata.value = 0;
 // 		
-// 		for (unsigned int q=0; q < scratch.fe_face_values.n_quadrature_points; ++q) {
+// 		for (unsigned int q=0; q < scratch.fe_values_face.n_quadrature_points; ++q) {
 // 			copydata.value += (
 // 				scratch.jump_residuals[q] * scratch.dual_weights[q] *
-// 				scratch.fe_face_values_neighbor.JxW(q)
+// 				scratch.neighbor_fe_values_face.JxW(q)
 // 			);
 // 		}
 // 		
@@ -1049,6 +1117,10 @@ assemble_error_on_irregular_face(
 // 		copydata.value += face_integrals[cell->face(face_no)->child(subface_no)];
 // 	}
 	
+	Assert(
+		std::isnan(face_integrals[cell->face(face_no)]),
+		dealii::ExcMessage("ErrorEstimator: you access the same irregular face at least two times")
+	);
 	face_integrals[cell->face(face_no)] = copydata.value;
 }
 
