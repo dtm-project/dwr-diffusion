@@ -138,9 +138,6 @@ struct ErrorEstimateOnFace {
 	std::vector<double>                  neighbor_local_z0;
 	std::vector<double>                  neighbor_local_Rz0;
 	
-	// data structures of boundary face (-)
-// 	std::vector<double> local_uD0; // interpolated boundary values: use neighbor_local_u0
-	
 	// function eval
 	double value_epsilon;
 	double value_u_D;
@@ -348,8 +345,6 @@ protected:
 	std::map< typename dealii::DoFHandler<dim>::cell_iterator, double > cell_integrals;
 	std::map< typename dealii::DoFHandler<dim>::face_iterator, double > face_integrals;
 	
-	dealii::Vector<double> dual_weights;
-	dealii::Vector<double> g_interpolated;
 };
 
 }} // namespace

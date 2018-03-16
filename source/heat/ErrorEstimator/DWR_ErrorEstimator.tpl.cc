@@ -877,43 +877,74 @@ assemble_error_on_boundary_face(
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
 		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata) {
+	
 	Assert(
 		(cell->face(face_no).state() == dealii::IteratorState::valid),
 		dealii::ExcInternalError()
 	);
 	
-// 	scratch.fe_values_face.reinit(cell, face_no);
-// 	
-// 	function.BoundaryValues->value_list(scratch.fe_values_face.get_quadrature_points(),
-// 							   scratch.boundary_values);
-// 	
-// 	scratch.fe_values_face.get_function_gradients(
-// 	*dual.z,
-// 	scratch.dual_solution_gradients
-// 	);
-// 	
-// 	scratch.fe_values_face.get_function_values(
-// 		g_interpolated,
-// 		scratch.g_h
-// 	);
-// 	
-// 	for (unsigned int q=0;q<scratch.fe_values_face.n_quadrature_points; ++q) {
-// 		scratch.inhom_dirichlet_difference[q] = (scratch.boundary_values[q] - scratch.g_h[q]);
-// 	}
-// 	
-// 	copydata.face  = cell->face(face_no);
-// 	copydata.value = 0;
-// 	
-// 	for (unsigned int q=0; q < scratch.fe_values_face.n_quadrature_points; ++q) { // (g-g_h, epsilon*grad(z_h)*n)_dOmega
-// 		copydata.value +=
-// 			2.*(													//multiplied with 2, because within the estimate() function
-// 			(scratch.inhom_dirichlet_difference[q] *						//the whole faces contribution will be subtracted  by the factor
-// 			(scratch.fe_values_face.normal_vector(q)*
-// 			(function.epsilon->value(scratch.fe_values_face.quadrature_point(q), 0)*
-// 			scratch.dual_solution_gradients[q])))*
-// 			scratch.fe_values_face.JxW(q));
-// 	}
-
+	scratch.fe_values_face.reinit(cell, face_no);
+	
+	// fetch local dof data ( K^+ / F^+ )
+	cell->get_dof_indices(scratch.local_dof_indices);
+	
+	for (unsigned int j{0}; j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+		// fetch interpolated u_D local dof data into ( K^+ / F^+ )-structure
+		scratch.local_u0[j] =
+			(*dual_uD_on_t0)[ scratch.neighbor_local_dof_indices[j] ];
+	}
+	
+	for (unsigned int j{0}; j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+		scratch.local_z0[j] =
+			(*dual_z_on_t0)[ scratch.local_dof_indices[j] ];
+	}
+	
+	// initialize copydata
+	copydata.face = cell->face(face_no);
+	copydata.value = 0.;
+	
+	// assemble cell terms
+	for (unsigned int q{0}; q < scratch.fe_values_face.n_quadrature_points; ++q) {
+		scratch.JxW = scratch.fe_values_face.JxW(q);
+		scratch.normal_vector = scratch.fe_values_face.normal_vector(q);
+		
+		// loop over all basis functions to get the shape values (K^+)
+		for (unsigned int k{0}; k < scratch.fe_values_face.get_fe().dofs_per_cell; ++k) {
+			scratch.phi[k] =
+				scratch.fe_values_face.shape_value_component(k,q,0);
+		}
+		
+		for (unsigned int k{0}; k < scratch.fe_values_face.get_fe().dofs_per_cell; ++k) {
+			scratch.grad_phi[k] =
+				scratch.fe_values_face.shape_grad(k,q);
+		}
+		
+		// fetch function value(s)
+		scratch.value_epsilon =
+			function.epsilon->value(scratch.fe_values_face.quadrature_point(q), 0);
+		
+		scratch.value_u_D =
+			function.u_D->value(scratch.fe_values_face.quadrature_point(q), 0);
+		
+		// loop over all basis function combinitions to get the assembly
+		for (unsigned int j{0};
+			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+			// \int_{I_n} ... :
+			copydata.value += (
+				// finally we use 1/2 of all face values (interior and boundary faces!),
+				// thus we need to double the value in the assembly here
+				2.0
+				// u_D - I^dual(I^primal u_D)
+				* (scratch.value_u_D - scratch.local_u0[j]*scratch.phi[j])
+				// epsilon(x_q) * grad z_h * n
+				* scratch.value_epsilon
+				* scratch.local_z0[j] * (scratch.grad_phi[j] * scratch.normal_vector)
+				* tau_n
+				* scratch.JxW
+			);
+		} // for j
+	}
+	
 	Assert(
 		std::isnan(face_integrals[copydata.face]),
 		dealii::ExcMessage("ErrorEstimator: you access the same boundary face at least two times")
