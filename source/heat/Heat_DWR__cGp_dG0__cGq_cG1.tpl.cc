@@ -950,14 +950,34 @@ dual_assemble_rhs(
 		u0_on_primal = nullptr;
 	}
 	else {
-		// n == 1: interpolate initial value function u_0 to dual space
+		// n == 1: interpolate initial value function u_0
+		// firstly to primal space and finally from that into the dual space
+		// to keep the original error of the jump u^m(t_0) of the primal problem
+		// NOTE: dual.u0(t_0) corresponds to primal.u^-(t_0)
+		
+		auto primal_um_on_t0 = std::make_shared< dealii::Vector<double> > ();
+		primal_um_on_t0->reinit( slab->primal.dof->n_dofs() );
+		
 		function.u_0->set_time(t0);
+		
 		dealii::VectorTools::interpolate(
-			*slab->dual.mapping,
-			*slab->dual.dof,
+			*slab->primal.mapping,
+			*slab->primal.dof,
 			*function.u_0,
+			*primal_um_on_t0
+		);
+		
+		dealii::FETools::interpolate(
+			// primal solution
+			*slab->primal.dof,
+			*primal_um_on_t0,
+			// dual solution
+			*slab->dual.dof,
+			*slab->dual.constraints,
 			*dual.u0
 		);
+		
+		primal_um_on_t0 = nullptr;
 	}
 	
 	// init vector and run assemble J(v)(e) = (v,e)
