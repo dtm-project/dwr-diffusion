@@ -169,7 +169,6 @@ struct ErrorEstimates {
 	ErrorEstimateOnFace<dim> face;
 };
 
-
 } // namespace Scratch
 
 namespace CopyData {
@@ -208,8 +207,8 @@ struct ErrorEstimates {
 } // namespace CopyData
 
 } // namespace Assembly
-
 ////////////////////////////////////////////////////////////////////////////////
+
 
 template<int dim>
 class ErrorEstimator {
@@ -298,10 +297,6 @@ protected:
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
 		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata
 	);
-	
-	////////////////////////////////////////////////////////////////////////////
-	// copy local error: NOTE: try to avoid this function here (e.g. with Lambda)
-	//
 	
 	virtual void copy_local_error(
 		const Assembly::CopyData::ErrorEstimates<dim> &copydata

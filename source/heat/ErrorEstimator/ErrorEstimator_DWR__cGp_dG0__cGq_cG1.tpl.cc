@@ -52,6 +52,7 @@ namespace cGp_dG0 { // primal
 namespace cGq_cG1 { // dual
 
 namespace Assembly {
+
 namespace Scratch {
 
 /// (Struct-) Constructor.
@@ -214,8 +215,8 @@ ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &copydata) :
 	face(copydata.face) {
 }
 
-
 } // namespace CopyData
+
 } // namespace Assembly
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -466,40 +467,58 @@ estimate(
 		// copy data
 		Assert(eta->x[0].use_count(), dealii::ExcNotInitialized());
 		Assert(eta->x[0]->size(), dealii::ExcNotInitialized());
-		*eta->x[0] = 0;
+		
+		#ifdef DEBUG
+		// init *eta->x[0] with quiet_NaN (only for debugging)
+		for (unsigned int cell_no{0}; cell_no < eta->x[0]->size(); ++cell_no) {
+			(*eta->x[0])[cell_no] = std::numeric_limits<double>::quiet_NaN;
+		}
+		#endif
+		
 		{
+			// copy the cell and face data assembled
+			// from the internal map<> data structure of ErrorEstimator
+			// to a dealii::Vector for further usage with deal.II functions
 			auto cell = slab->dual.dof->begin_active();
 			auto endc = slab->dual.dof->end();
 			
 			for (unsigned int cell_no{0}; cell != endc; ++cell, ++cell_no) {
+				// initialize with the volume integrals
 				(*eta->x[0])[cell_no] = cell_integrals[cell];
 				
+				// add the contributions from the spatial face assemblies
 				for (unsigned int face_no{0};
 					face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no) {
 					Assert(
 						(face_integrals.find(cell->face(face_no)) != face_integrals.end()),
-						dealii::ExcMessage("Your face iterator does not exist in your map(face_it,double). \
-						Please check if you have assembled this error integral.")
+						dealii::ExcMessage(
+							"Your face iterator does not exist in your map(face_it,double). \
+							Please check if you have assembled this error integral."
+						)
 					);
 					
-					(*eta->x[0])[cell_no] -= 0.5 * face_integrals[cell->face(face_no)];
+					// NOTE: Here, we can not distingush between a interior face
+					//       and boundary face for performance reasons.
+					//
+					//       Thus, we need to substract 1/2 of the assembly for
+					//       all face assemblies, such that the contributions on
+					//       boundary faces must be weighted with a factor of 2.0
+					//       during the assembly in assemble_error_on_boundary_face() .
+					(*eta->x[0])[cell_no] -= (1./2.) * face_integrals[cell->face(face_no)];
 				}
 			}
 		}
 		
-		// check if error_indicators vector has valid entries only
-		{
-			#ifdef DEBUG
-			for (unsigned int cell_no{0}; cell_no < eta->x[0]->size(); ++cell_no) {
-				Assert(
-					!std::isnan((*eta->x[0])[cell_no]),
-					dealii::ExcMessage("Your error indicator has quiet_NaN entries. \
-					Please check if you have assembled cell_integrals and face_integrals correctly.")
-				);
-			}
-			#endif
+		#ifdef DEBUG
+		// check if error_indicators vector has only valid entries
+		for (unsigned int cell_no{0}; cell_no < eta->x[0]->size(); ++cell_no) {
+			Assert(
+				!std::isnan((*eta->x[0])[cell_no]),
+				dealii::ExcMessage("Your error indicator has quiet_NaN entries. \
+				Please check if you have assembled cell_integrals and face_integrals correctly.")
+			);
 		}
-		
+		#endif
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -1229,8 +1248,13 @@ template<int dim>
 void
 ErrorEstimator<dim>::copy_local_error(
 	const Assembly::CopyData::ErrorEstimates<dim> &) {
+	// NOTE: This function is intended to be empty, since this ErrorEstimator
+	// stores the assembly uniquely in special map<cell, double> and map<face, double>
+	// data structures without summation.
+	//
+	// The final copy data from the internal data structures into a
+	// dealii::Vector<double> eta_K must be done after the WorkStream completion.
 }
-
 
 }}}} // namespace
 
