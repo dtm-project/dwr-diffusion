@@ -176,7 +176,7 @@ namespace CopyData {
 /// Struct for copydata on local cell matrix.
 template<int dim>
 struct ErrorEstimateOnCell{
-	ErrorEstimateOnCell();
+	ErrorEstimateOnCell() = default;
 	ErrorEstimateOnCell(const ErrorEstimateOnCell &copydata);
 
 	typename dealii::DoFHandler<dim>::cell_iterator cell;
@@ -187,7 +187,7 @@ struct ErrorEstimateOnCell{
 /// Struct for copydata on local cell matrix.
 template<int dim>
 struct ErrorEstimateOnFace{
-	ErrorEstimateOnFace();
+	ErrorEstimateOnFace() = default;
 	ErrorEstimateOnFace(const ErrorEstimateOnFace &copydata);
 
 	typename dealii::DoFHandler<dim>::face_iterator face;
@@ -197,7 +197,7 @@ struct ErrorEstimateOnFace{
 
 template<int dim>
 struct ErrorEstimates {
-	ErrorEstimates();
+	ErrorEstimates() = default;
 	ErrorEstimates(const ErrorEstimates &copydata);
 	
 	ErrorEstimateOnCell<dim> cell;

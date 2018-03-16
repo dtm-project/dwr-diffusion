@@ -125,8 +125,7 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(
 	neighbor_grad_phi(fe.dofs_per_cell),
 	neighbor_local_u0(fe.dofs_per_cell),
 	neighbor_local_z0(fe.dofs_per_cell),
-	neighbor_local_Rz0(fe.dofs_per_cell)
-	{
+	neighbor_local_Rz0(fe.dofs_per_cell) {
 }
 
 
@@ -198,23 +197,11 @@ ErrorEstimates<dim>::ErrorEstimates(const ErrorEstimates &scratch) :
 
 namespace CopyData {
 
-/// (Struct-) Constructor.
-template<int dim>
-ErrorEstimateOnCell<dim>::ErrorEstimateOnCell() {
-}
-
-
 /// (Struct-) Copy constructor.
 template<int dim>
 ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &copydata) :
 	cell(copydata.cell),
 	value(copydata.value) {
-}
-
-
-/// (Struct-) Constructor.
-template<int dim>
-ErrorEstimateOnFace<dim>::ErrorEstimateOnFace() {
 }
 
 
@@ -224,12 +211,6 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &copydat
 	face(copydata.face),
 	value(copydata.value) {
 }
-
-/// (Struct-) Constructor.
-template<int dim>
-ErrorEstimates<dim>::ErrorEstimates() {
-}
-
 
 /// (Struct-) Copy constructor.
 template<int dim>
