@@ -873,16 +873,19 @@ assemble_error_on_cell(
 		scratch.grad_epsilon =
 			function.epsilon->gradient(scratch.fe_values.quadrature_point(q), 0);
 		
+		double val_R_u_kh_j{0.};
+		for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+			// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
+			val_R_u_kh_j += scratch.local_u0[j] * (scratch.grad_phi[j] * scratch.grad_epsilon)
+				+ scratch.value_epsilon * scratch.local_u0[j] * scratch.laplace_phi[j];
+		}
+		
 		// loop over all basis function combinitions to get the assembly
 		for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
 			// \int_{I_n} ... :
 			copydata.value += (
 				// R(u_kh):
-				(	scratch.value_f
-					// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
-					+ scratch.local_u0[j] * (scratch.grad_phi[j] * scratch.grad_epsilon)
-					+ scratch.value_epsilon * scratch.local_u0[j] * scratch.laplace_phi[j]
-				)
+				( scratch.value_f + val_R_u_kh_j )
 				// z_h - Rz_h:
 				* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
 				* tau_n
