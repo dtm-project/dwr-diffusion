@@ -1146,6 +1146,7 @@ assemble_error_on_irregular_face(
 		);
 		
 		// fetch local dof data ( K^+ / subface F^+ )
+		Assert(cell->active(), dealii::ExcInternalError());
 		cell->get_dof_indices(scratch.local_dof_indices);
 		
 		for (unsigned int j{0};
@@ -1167,7 +1168,14 @@ assemble_error_on_irregular_face(
 		}
 		
 		// fetch local dof data ( K^- / F^- )
-		cell->neighbor(face_no)->get_dof_indices(scratch.neighbor_local_dof_indices);
+// 		cell->neighbor_child_on_subface(face_no,subface_no)
+		Assert(cell->neighbor_child_on_subface(face_no,subface_no)->active(), dealii::ExcInternalError());
+		cell->neighbor_child_on_subface(face_no,subface_no)->get_dof_indices(
+			scratch.neighbor_local_dof_indices
+		);
+		
+// 		Assert(cell->neighbor(face_no)->active(), dealii::ExcInternalError());
+// 		cell->neighbor(face_no)->get_dof_indices(scratch.neighbor_local_dof_indices);
 		
 		for (unsigned int j{0};
 			j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell; ++j) {
