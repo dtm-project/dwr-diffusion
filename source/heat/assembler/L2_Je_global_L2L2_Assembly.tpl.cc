@@ -217,13 +217,12 @@ void Assembler<dim>::local_assemble_cell(
 			
 			// loop over all basis function combinitions to get the assembly
 			for (unsigned int i{0}; i < scratch.fe_values.get_fe().dofs_per_cell; ++i) {
-			for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
 				copydata.vi_Jei_vector[i] += (
 					scratch.phi[i] *
 					(scratch.u_E - scratch.u_h) *
 					scratch.JxW
 				);
-			}} // for i,j
+			} // for i
 		} // for component
 	} // for q
 }
