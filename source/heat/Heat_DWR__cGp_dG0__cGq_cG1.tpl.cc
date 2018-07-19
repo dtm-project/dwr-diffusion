@@ -127,6 +127,22 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	// TODO: read those from parameter input file
+#if DEAL_II_VERSION_MAJOR>8
+	// dealii 9.0 and above (dealii::Functions:: )
+	
+	function.u_D = std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
+	function.u_0 = std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
+	
+// 	function.f = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
+	function.f = std::make_shared< heat::force::Test0<dim> > ();
+	
+	function.epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
+	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
+	
+	// exact solution (if any)
+	function.u_E = std::make_shared< heat::ExactSolution::Test0<dim> > ();
+#else
+	// dealii 8.5
 	function.u_D = std::make_shared< dealii::ZeroFunction<dim> > (1);
 	function.u_0 = std::make_shared< dealii::ZeroFunction<dim> > (1);
 	
@@ -134,11 +150,11 @@ init_functions() {
 	function.f = std::make_shared< heat::force::Test0<dim> > ();
 	
 	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
-	
 	function.density = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
 	
 	// exact solution (if any)
 	function.u_E = std::make_shared< heat::ExactSolution::Test0<dim> > ();
+#endif
 }
 
 
