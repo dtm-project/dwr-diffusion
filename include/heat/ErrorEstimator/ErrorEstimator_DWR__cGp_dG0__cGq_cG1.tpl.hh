@@ -102,6 +102,7 @@ struct ErrorEstimateOnCell {
 	dealii::Tensor<1,dim> grad_epsilon;
 	
 	double val_R_u_kh_j;
+	double val_u_kh_j;
 	
 	// other:
 	double JxW;

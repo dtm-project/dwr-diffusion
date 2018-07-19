@@ -101,6 +101,7 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	value_epsilon(scratch.value_epsilon),
 	grad_epsilon(scratch.grad_epsilon),
 	val_R_u_kh_j(scratch.val_R_u_kh_j),
+	val_u_kh_j(scratch.val_u_kh_j),
 	JxW(scratch.JxW) {
 }
 
@@ -669,7 +670,8 @@ dual_get_z_t_on_slab_after_restriction_to_primal_space(
 		);
 		
 		// _t = t0 = 0.5 <=> time dof of dG(0)-Q_G(1) on \hat I = (0,1)
-		const double _t{ 1./2. };
+// 		const double _t{ 1./2. };
+		const double _t{ (t - slab->t_m) / slab->tau_n() };
 		
 		// evaluate dual trial functions in time on _t
 		const double xi0{ 1.-_t };
@@ -879,11 +881,15 @@ assemble_error_on_cell(
 		scratch.grad_epsilon =
 			function.epsilon->gradient(scratch.fe_values.quadrature_point(q), 0);
 		
-		scratch.val_R_u_kh_j{0.};
+		scratch.val_R_u_kh_j = 0.;
+		scratch.val_u_kh_j = 0.;
 		for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
 			// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
 			scratch.val_R_u_kh_j += scratch.local_u0[j] * (scratch.grad_phi[j] * scratch.grad_epsilon)
 				+ scratch.value_epsilon * scratch.local_u0[j] * scratch.laplace_phi[j];
+			
+			scratch.val_u_kh_j +=
+				(scratch.local_up[j] - scratch.local_um[j]) * scratch.phi[j];
 		}
 		
 		// loop over all basis function combinitions to get the assembly
@@ -900,7 +906,7 @@ assemble_error_on_cell(
 			
 			// - [ u_kh(t_m) ] * ( z_h(t_m) - I(R(z_h(t_m))) )
 			copydata.value += (
-				- (scratch.local_up[j] - scratch.local_um[j]) * scratch.phi[j]
+				- scratch.val_u_kh_j
 				* (scratch.local_zm[j] - scratch.local_Rzm[j]) * scratch.phi[j]
 				* scratch.JxW
 			);
@@ -972,10 +978,10 @@ assemble_error_on_boundary_face(
 		scratch.value_u_D =
 			function.u_D->value(scratch.fe_values_face.quadrature_point(q), 0);
 		
-		scratch.val_uh{0.};
+		scratch.val_uh = 0.;
 		for (unsigned int j{0};
 			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
-			scratch.val_uh = scratch.local_u0[j]*scratch.phi[j];
+			scratch.val_uh += scratch.local_u0[j]*scratch.phi[j];
 		}
 		
 		// loop over all basis function combinitions to get the assembly
@@ -1091,11 +1097,13 @@ assemble_error_on_regular_face(
 			dealii::ExcMessage("different fe.p between neighboring cells is not allowed here")
 		);
 		
-		scratch.val_face_jump_grad_u{0.};
+		scratch.val_face_jump_grad_u = 0.;
 		for (unsigned int j{0};
 			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
-				scratch.val_face_jump_grad_u += (scratch.local_u0[j] * scratch.grad_phi[j]
-				- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j]);
+				scratch.val_face_jump_grad_u += (
+					scratch.local_u0[j] * scratch.grad_phi[j]
+					- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j]
+					) * scratch.normal_vector;
 		}
 		
 		for (unsigned int j{0};
@@ -1104,7 +1112,6 @@ assemble_error_on_regular_face(
 			copydata.value += (
 				scratch.value_epsilon
 				* scratch.val_face_jump_grad_u
-				* scratch.normal_vector
 				// z_h - Rz_h:
 				* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
 				* tau_n
@@ -1225,11 +1232,13 @@ assemble_error_on_irregular_face(
 				dealii::ExcMessage("different fe.p between neighboring cells is not allowed here")
 			);
 			
-			scratch.val_face_jump_grad_u{0.};
+			scratch.val_face_jump_grad_u = 0.;
 			for (unsigned int j{0};
 				j < scratch.fe_values_subface.get_fe().dofs_per_cell; ++j) {
-					scratch.val_face_jump_grad_u += (scratch.local_u0[j] * scratch.grad_phi[j]
-					- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j]);
+					scratch.val_face_jump_grad_u += (
+						scratch.local_u0[j] * scratch.grad_phi[j]
+						- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j]
+						) * scratch.normal_vector;
 			}
 			
 			for (unsigned int j{0};
@@ -1237,8 +1246,7 @@ assemble_error_on_irregular_face(
 				// \int_{I_n} ... :
 				copydata.value += (
 					scratch.value_epsilon
-					* val_face_jump_grad_u
-					* scratch.normal_vector
+					* scratch.val_face_jump_grad_u
 					// z_h - Rz_h:
 					* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
 					* tau_n

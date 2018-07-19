@@ -644,7 +644,7 @@ primal_do_error_L2(
 	double norm_sqr{-1};
 	
 	dealii::QGauss<dim> quad_cell(
-		slab->primal.fe->tensor_degree()+1
+		slab->primal.fe->tensor_degree()+2
 	);
 	
 	dealii::Vector<double> difference_per_cell(
