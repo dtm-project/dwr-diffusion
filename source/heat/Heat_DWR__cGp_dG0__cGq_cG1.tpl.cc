@@ -115,6 +115,11 @@ run() {
 	dual_reinit_storage();
 	dual_init_data_output();
 	dual_do_backward_TMS();
+	
+	// error estimation
+	eta_reinit_storage();
+	compute_error_indicators();
+	compute_effectivity_index();
 }
 
 
@@ -706,6 +711,7 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_finish_error_computations() {
 	primal_L2_L2_error_u = std::sqrt(primal_L2_L2_error_u);
+	DTM::pout << "primal_L2_L2_error_u = " << primal_L2_L2_error_u << std::endl;
 }
 
 
@@ -1078,22 +1084,6 @@ dual_solve_slab_problem(
 	const typename DTM::types::storage_data_vectors<2>::iterator &z
 ) {
 	////////////////////////////////////////////////////////////////////////////
-	// construct system matrix K = M + tau A
-	//
-	
-	DTM::pout << "dwr-heat: construct system matrix K = M + tau A...";
-	
-	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
-	dual.K->reinit(*slab->dual.sp);
-	
-	*dual.K = 0;
-	dual.K->add(slab->tau_n(), *dual.A);
-	dual.K->add(1.0, *dual.M);
-	
-	DTM::pout << " (done)" << std::endl;
-	
-	
-	////////////////////////////////////////////////////////////////////////////
 	// apply homog. Dirichlet boundary and homg. Neumann boundary condition on
 	// respective parts of the boundary
 	//
@@ -1268,8 +1258,6 @@ dual_do_backward_TMS() {
 		<< "*******************************************************************"
 		<< "*************" << std::endl
 		<< std::endl;
-	
-	
 }
 
 
@@ -1300,9 +1288,6 @@ dual_get_z_t_on_slab(
 	z_result->equ(xi0, *z->x[0]);
 	z_result->add(xi1, *z->x[1]);
 }
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1369,6 +1354,107 @@ dual_do_data_output(
 ////////////////////////////////////////////////////////////////////////////////
 // error estimation
 //
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+eta_reinit_storage() {
+	////////////////////////////////////////////////////////////////////////////
+	// init storage containers for vector data
+	//
+	
+	////////////////////////////////////////////////////////////////////////////
+	// get number of time steps
+	//
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+	
+	////////////////////////////////////////////////////////////////////////////
+	// error indicators vector eta = sum of eta_K
+	//
+	
+	error_estimator.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
+	error_estimator.storage.eta->resize(N);
+	
+	{
+		auto slab = grid->slabs.begin();
+		for (auto &element : *error_estimator.storage.eta) {
+			for (unsigned int j{0}; j < element.x.size(); ++j) {
+				// create shared_ptr to Vector<double>
+				element.x[j] = std::make_shared< dealii::Vector<double> > ();
+				
+				// init. Vector<double> with n_dofs components
+				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
+				Assert(slab->tria.use_count(), dealii::ExcNotInitialized());
+				Assert(
+					slab->tria->n_active_cells(),
+					dealii::ExcMessage("Error: slab->tria->n_active_cells() == 0")
+				);
+				
+				element.x[j]->reinit(
+					slab->tria->n_active_cells()
+				);
+			}
+			++slab;
+		}
+	}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+compute_error_indicators() {
+	//Initialize shared_ptr for ErrorEstimator class
+	error_estimator.dwr = 
+		std::make_shared< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > ();
+		
+	error_estimator.dwr->estimate(function.epsilon,
+								  function.f,
+							      function.u_D,
+							      function.u_0,
+							      grid,
+							      primal.storage.u,
+							      dual.storage.z,
+							      error_estimator.storage.eta);
+	
+	std::cout << "eta gr = " << error_estimator.storage.eta->size() << std::endl;
+// 	std::cout << "eta_1 = " << *error_estimator.storage.eta->front().x[0] << std::endl;
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+compute_effectivity_index() {
+	double eta{std::numeric_limits<double>::quiet_NaN()};
+	double eta_K{std::numeric_limits<double>::quiet_NaN()};
+	double I_eff{std::numeric_limits<double>::quiet_NaN()};
+	
+	/// Compute eta = sum of all error_indicators-entries over all time intervals
+	auto eta_it = error_estimator.storage.eta->begin();
+	auto end_eta_it = error_estimator.storage.eta->end();
+	eta = 0;
+	for (; eta_it != end_eta_it; ++eta_it) {
+// 		std::cout << "jej = " << *eta_it->x[0] << std::endl;
+// 		for (unsigned int j{0}; j < 1; ++j) {
+			eta_K = 0;
+			eta_K = std::accumulate (eta_it->x[0]->begin(),
+									 eta_it->x[0]->end(),
+									 0.);
+			std::cout << "eta_K = " << eta_K << std::endl;
+// 		}
+		eta += eta_K;
+// 		std::cout << "eta = " << eta << std::endl;
+	}
+// 	eta = std::fabs(eta);
+	std::cout << "eta = " << eta << std::endl;
+	std::cout << "primal_L2_L2_error_u = " << primal_L2_L2_error_u << std::endl;
+	
+	I_eff = 0;
+	I_eff = eta/primal_L2_L2_error_u;
+	std::cout << "I_eff = " << I_eff << std::endl;
+}
 
 
 // // TODO NOTE TEST remove the following:

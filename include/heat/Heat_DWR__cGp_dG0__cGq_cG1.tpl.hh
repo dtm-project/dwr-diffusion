@@ -36,12 +36,8 @@
 #include <heat/parameters/ParameterSet.hh>
 
 #include <heat/grid/Grid_DWR.tpl.hh>
-
-
-// #include <Heat/ErrorEstimator/ErrorEstimators.hh>
+#include <heat/ErrorEstimator/ErrorEstimators.hh>
 // #include <Heat/types/error_functional.hh>
-
-
 
 // DTM++ includes
 #include <DTM++/base/LogStream.hh>
@@ -239,8 +235,6 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > &dual_z_result
 	);
 	
-	
-	
 	// post-processing functions for data output
 	virtual void dual_init_data_output();
 	
@@ -262,10 +256,12 @@ protected:
 		
 		
 		// error estimator
-// 		std::shared_ptr< heat::dwr::ErrorEstimator<dim> > dwr;
+		std::shared_ptr< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > dwr;
 	} error_estimator;
 	
-	
+	virtual void eta_reinit_storage();
+	virtual void compute_error_indicators();
+	virtual void compute_effectivity_index();
 	
 	
 	////////////////////////////////////////////////////////////////////////////
