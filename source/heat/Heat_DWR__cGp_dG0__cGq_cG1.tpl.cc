@@ -1405,21 +1405,19 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 compute_error_indicators() {
-	//Initialize shared_ptr for ErrorEstimator class
-	error_estimator.dwr = 
+	error_estimator.dwr =
 		std::make_shared< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > ();
-		
-	error_estimator.dwr->estimate(function.epsilon,
-								  function.f,
-							      function.u_D,
-							      function.u_0,
-							      grid,
-							      primal.storage.u,
-							      dual.storage.z,
-							      error_estimator.storage.eta);
 	
-	std::cout << "eta gr = " << error_estimator.storage.eta->size() << std::endl;
-// 	std::cout << "eta_1 = " << *error_estimator.storage.eta->front().x[0] << std::endl;
+	error_estimator.dwr->estimate(
+		function.epsilon,
+		function.f,
+		function.u_D,
+		function.u_0,
+		grid,
+		primal.storage.u,
+		dual.storage.z,
+		error_estimator.storage.eta
+	);
 }
 
 
@@ -1427,33 +1425,16 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 compute_effectivity_index() {
-	double eta{std::numeric_limits<double>::quiet_NaN()};
-	double eta_K{std::numeric_limits<double>::quiet_NaN()};
-	double I_eff{std::numeric_limits<double>::quiet_NaN()};
-	
-	/// Compute eta = sum of all error_indicators-entries over all time intervals
-	auto eta_it = error_estimator.storage.eta->begin();
-	auto end_eta_it = error_estimator.storage.eta->end();
-	eta = 0;
-	for (; eta_it != end_eta_it; ++eta_it) {
-// 		std::cout << "jej = " << *eta_it->x[0] << std::endl;
-// 		for (unsigned int j{0}; j < 1; ++j) {
-			eta_K = 0;
-			eta_K = std::accumulate (eta_it->x[0]->begin(),
-									 eta_it->x[0]->end(),
-									 0.);
-			std::cout << "eta_K = " << eta_K << std::endl;
-// 		}
-		eta += eta_K;
-// 		std::cout << "eta = " << eta << std::endl;
+	double eta{0.};
+	for ( const auto &eta_it : *error_estimator.storage.eta ) {
+		eta += std::accumulate(eta_it.x[0]->begin(), eta_it.x[0]->end(), 0.);
 	}
-// 	eta = std::fabs(eta);
-	std::cout << "eta = " << eta << std::endl;
-	std::cout << "primal_L2_L2_error_u = " << primal_L2_L2_error_u << std::endl;
 	
-	I_eff = 0;
-	I_eff = eta/primal_L2_L2_error_u;
-	std::cout << "I_eff = " << I_eff << std::endl;
+	DTM::pout << "eta = " << eta << std::endl;
+	DTM::pout << "primal_L2_L2_error_u = " << primal_L2_L2_error_u << std::endl;
+	
+	const double I_eff{std::fabs(eta/primal_L2_L2_error_u)};
+	DTM::pout << "I_eff = " << I_eff << std::endl;
 }
 
 

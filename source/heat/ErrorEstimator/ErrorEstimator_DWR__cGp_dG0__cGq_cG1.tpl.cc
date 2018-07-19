@@ -273,13 +273,6 @@ estimate(
 	// do TMS loop
 	//
 	
-	DTM::pout
-		<< std::endl
-		<< "*******************************************************************"
-		<< "*************" << std::endl
-		<< "error estimator: assemble eta ..." << std::endl
-		<< std::endl;
-	
 	unsigned int n{1};
 	while (slab != grid->slabs.end()) {
 		// local time variables
@@ -288,10 +281,6 @@ estimate(
 		
 		// set tau_n in error_estimator
 		tau_n = slab->tau_n();
-
-		DTM::pout
-			<< "error estimator: assemble on " << "I_" << n
-			<< std::endl;
 		
 		// interpolate primal solution u^-(t_m) to dual solution space
 		dual_um_on_tm = std::make_shared< dealii::Vector<double> > ();
@@ -538,12 +527,6 @@ estimate(
 		++slab;
 		++u; ++z; ++eta;
 	}
-	
-	DTM::pout
-		<< "error estimator: assemble eta_K done" << std::endl
-		<< "*******************************************************************"
-		<< "*************" << std::endl
-		<< std::endl;
 }
 
 
@@ -669,8 +652,6 @@ dual_get_z_t_on_slab_after_restriction_to_primal_space(
 			slab->dual.dof->n_dofs()
 		);
 		
-		// _t = t0 = 0.5 <=> time dof of dG(0)-Q_G(1) on \hat I = (0,1)
-// 		const double _t{ 1./2. };
 		const double _t{ (t - slab->t_m) / slab->tau_n() };
 		
 		// evaluate dual trial functions in time on _t
