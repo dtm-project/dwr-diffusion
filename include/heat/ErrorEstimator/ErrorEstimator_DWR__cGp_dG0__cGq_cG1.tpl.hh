@@ -101,6 +101,8 @@ struct ErrorEstimateOnCell {
 	double value_epsilon;
 	dealii::Tensor<1,dim> grad_epsilon;
 	
+	double val_R_u_kh_j;
+	
 	// other:
 	double JxW;
 };
@@ -146,6 +148,8 @@ struct ErrorEstimateOnFace {
 	// function eval scratch:
 	double value_epsilon;
 	double value_u_D;
+	double val_uh;
+	double val_face_jump_grad_u;
 	
 	// other
 	double JxW;

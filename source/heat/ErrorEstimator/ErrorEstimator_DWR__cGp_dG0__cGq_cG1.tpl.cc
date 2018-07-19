@@ -100,6 +100,7 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	value_f(scratch.value_f),
 	value_epsilon(scratch.value_epsilon),
 	grad_epsilon(scratch.grad_epsilon),
+	val_R_u_kh_j(scratch.val_R_u_kh_j),
 	JxW(scratch.JxW) {
 }
 
@@ -164,6 +165,8 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 	// other
 	value_epsilon(scratch.value_epsilon),
 	value_u_D(scratch.value_u_D),
+	val_uh(scratch.val_uh),
+	val_face_jump_grad_u(scratch.val_face_jump_grad_u),
 	JxW(scratch.JxW) {
 }
 
@@ -284,7 +287,7 @@ estimate(
 		
 		// set tau_n in error_estimator
 		tau_n = slab->tau_n();
-		
+
 		DTM::pout
 			<< "error estimator: assemble on " << "I_" << n
 			<< std::endl;
@@ -429,6 +432,9 @@ estimate(
 		dealii::QGauss<dim> quad_cell(slab->dual.fe->tensor_degree()+1);
 		dealii::QGauss<dim-1> quad_face(slab->dual.fe->tensor_degree()+1);
 		
+		// set time variable for force function f
+		function.f->set_time(t0);
+		
 		dealii::WorkStream::run(
 			slab->dual.dof->begin_active(),
 			slab->dual.dof->end(),
@@ -497,7 +503,7 @@ estimate(
 						)
 					);
 					
-					// NOTE: Here, we can not distingush between a interior face
+					// NOTE: Here, we can not distingush between an interior face
 					//       and boundary face for performance reasons.
 					//
 					//       Thus, we need to substract 1/2 of the assembly for
@@ -864,19 +870,19 @@ assemble_error_on_cell(
 				scratch.laplace_phi[k] += scratch.hessian_phi[d][d];
 			}
 		}
-		
+
 		scratch.value_f = function.f->value(scratch.fe_values.quadrature_point(q), 0);
-		
+
 		scratch.value_epsilon =
 			function.epsilon->value(scratch.fe_values.quadrature_point(q), 0);
 		
 		scratch.grad_epsilon =
 			function.epsilon->gradient(scratch.fe_values.quadrature_point(q), 0);
 		
-		double val_R_u_kh_j{0.};
+		scratch.val_R_u_kh_j{0.};
 		for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
 			// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
-			val_R_u_kh_j += scratch.local_u0[j] * (scratch.grad_phi[j] * scratch.grad_epsilon)
+			scratch.val_R_u_kh_j += scratch.local_u0[j] * (scratch.grad_phi[j] * scratch.grad_epsilon)
 				+ scratch.value_epsilon * scratch.local_u0[j] * scratch.laplace_phi[j];
 		}
 		
@@ -885,7 +891,7 @@ assemble_error_on_cell(
 			// \int_{I_n} ... :
 			copydata.value += (
 				// R(u_kh):
-				( scratch.value_f + val_R_u_kh_j )
+				( scratch.value_f + scratch.val_R_u_kh_j )
 				// z_h - Rz_h:
 				* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
 				* tau_n
@@ -966,6 +972,12 @@ assemble_error_on_boundary_face(
 		scratch.value_u_D =
 			function.u_D->value(scratch.fe_values_face.quadrature_point(q), 0);
 		
+		scratch.val_uh{0.};
+		for (unsigned int j{0};
+			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+			scratch.val_uh = scratch.local_u0[j]*scratch.phi[j];
+		}
+		
 		// loop over all basis function combinitions to get the assembly
 		for (unsigned int j{0};
 			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
@@ -975,7 +987,7 @@ assemble_error_on_boundary_face(
 				// thus we need to double the value in the assembly here
 				2.0
 				// u_D - I^dual(I^primal u_D)
-				* (scratch.value_u_D - scratch.local_u0[j]*scratch.phi[j])
+				* (scratch.value_u_D - scratch.val_uh)
 				// epsilon(x_q) * grad z_h * n
 				* scratch.value_epsilon
 				* scratch.local_z0[j] * (scratch.grad_phi[j] * scratch.normal_vector)
@@ -1079,13 +1091,19 @@ assemble_error_on_regular_face(
 			dealii::ExcMessage("different fe.p between neighboring cells is not allowed here")
 		);
 		
+		scratch.val_face_jump_grad_u{0.};
+		for (unsigned int j{0};
+			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
+				scratch.val_face_jump_grad_u += (scratch.local_u0[j] * scratch.grad_phi[j]
+				- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j]);
+		}
+		
 		for (unsigned int j{0};
 			j < scratch.fe_values_face.get_fe().dofs_per_cell; ++j) {
 			// \int_{I_n} ... :
 			copydata.value += (
 				scratch.value_epsilon
-				* (scratch.local_u0[j] * scratch.grad_phi[j]
-				- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j])
+				* scratch.val_face_jump_grad_u
 				* scratch.normal_vector
 				// z_h - Rz_h:
 				* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
@@ -1207,13 +1225,19 @@ assemble_error_on_irregular_face(
 				dealii::ExcMessage("different fe.p between neighboring cells is not allowed here")
 			);
 			
+			scratch.val_face_jump_grad_u{0.};
+			for (unsigned int j{0};
+				j < scratch.fe_values_subface.get_fe().dofs_per_cell; ++j) {
+					scratch.val_face_jump_grad_u += (scratch.local_u0[j] * scratch.grad_phi[j]
+					- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j]);
+			}
+			
 			for (unsigned int j{0};
 				j < scratch.fe_values_subface.get_fe().dofs_per_cell; ++j) {
 				// \int_{I_n} ... :
 				copydata.value += (
 					scratch.value_epsilon
-					* (scratch.local_u0[j] * scratch.grad_phi[j]
-					- scratch.neighbor_local_u0[j] * scratch.neighbor_grad_phi[j])
+					* val_face_jump_grad_u
 					* scratch.normal_vector
 					// z_h - Rz_h:
 					* (scratch.local_z0[j] - scratch.local_Rz0[j]) * scratch.phi[j]
