@@ -28,6 +28,13 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
+
+#include <deal.II/lac/solver.h>
+#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_control.h>
+#include <deal.II/lac/precondition.h>
+
+
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
@@ -98,28 +105,31 @@ run() {
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	
 	init_functions();
-	
 	init_grid();
 	
 	// DWR loop:
-	grid->set_boundary_indicators();
-	grid->distribute();
-	
-	
-	// primal problem:
-	primal_reinit_storage();
-	primal_init_data_output();
-	primal_do_forward_TMS();
-	
-	// dual problem
-	dual_reinit_storage();
-	dual_init_data_output();
-	dual_do_backward_TMS();
-	
-	// error estimation
-	eta_reinit_storage();
-	compute_error_indicators();
-	compute_effectivity_index();
+	for (unsigned int dwr_loop{0}; dwr_loop < 3; ++dwr_loop) {
+		grid->set_boundary_indicators();
+		grid->distribute();
+		
+		// primal problem:
+		primal_reinit_storage();
+		primal_init_data_output();
+		primal_do_forward_TMS(dwr_loop);
+		
+		// dual problem
+		dual_reinit_storage();
+		dual_init_data_output();
+		dual_do_backward_TMS(dwr_loop);
+		
+		// error estimation
+		eta_reinit_storage();
+		compute_error_indicators();
+		compute_effectivity_index();
+		
+		// if another dwr loop do:
+		refine_and_coarsen_space_time_grid();
+	}
 }
 
 
@@ -407,9 +417,13 @@ primal_solve_slab_problem(
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
 	
-	dealii::SparseDirectUMFPACK iA;
-	iA.initialize(*primal.K);
-	iA.vmult(*u->x[0], *primal.b);
+// 	dealii::SparseDirectUMFPACK iA;
+// 	iA.initialize(*primal.K);
+// 	iA.vmult(*u->x[0], *primal.b);
+	
+	dealii::SolverControl sc(10000, 1e-14);
+	dealii::SolverCG<> lss(sc);
+	lss.solve(*primal.K, *u->x[0], *primal.b, dealii::PreconditionIdentity());
 	
 	DTM::pout << " (done)" << std::endl;
 	
@@ -428,7 +442,8 @@ primal_solve_slab_problem(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_do_forward_TMS() {
+primal_do_forward_TMS(
+	const unsigned int dwr_loop) {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare TMS loop
 	//
@@ -473,7 +488,7 @@ primal_do_forward_TMS() {
 	);
 	
 	// output "initial value solution" at initial time t0
-	primal_do_data_output(slab,primal.um,slab->t_m);
+	primal_do_data_output(slab,primal.um,slab->t_m,dwr_loop);
 	
 	// init error computations (for global L2(L2) goal functional)
 	primal_init_error_computations();
@@ -540,7 +555,7 @@ primal_do_forward_TMS() {
 		primal.un->add(zeta0, *u->x[0]);
 		
 		// output solution at t_n
-		primal_do_data_output(slab,primal.un,tn);
+		primal_do_data_output(slab,primal.un,tn,dwr_loop);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -737,13 +752,14 @@ primal_init_data_output() {
 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
 	
-	primal.data_output.set_data_field_names(data_field_names);
-	primal.data_output.set_data_component_interpretation_field(dci_field);
+	primal.data_output = std::make_shared< DTM::DataOutput<dim> >();
+	primal.data_output->set_data_field_names(data_field_names);
+	primal.data_output->set_data_component_interpretation_field(dci_field);
 	
 	// TODO:
-	primal.data_output.set_data_output_patches(
+	primal.data_output->set_data_output_patches(
 		parameter_set->fe.p // auto mode = cG in space: take p patches per K
-// 		parameter_set->data_output.patches
+// 		parameter_set->data_output->patches
 	);
 }
 
@@ -754,9 +770,10 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_do_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	std::shared_ptr< dealii::Vector<double> > u_trigger,
-	const double &t_trigger) {
+	const double &t_trigger,
+	const unsigned int dwr_loop) {
 	
-	primal.data_output.set_DoF_data(
+	primal.data_output->set_DoF_data(
 		slab->primal.dof
 	);
 	
@@ -767,8 +784,12 @@ primal_do_data_output(
 	//u_trigger.add(zeta0, *u->x[0])
 	
 	// TODO
-	primal.data_output.write_data(
-		"solution",
+	
+	std::ostringstream filename;
+	filename << "solution-dwr_loop-" << dwr_loop;
+	
+	primal.data_output->write_data(
+		filename.str(),
 		u_trigger,
 		t_trigger
 	);
@@ -1115,9 +1136,13 @@ dual_solve_slab_problem(
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
 	
-	dealii::SparseDirectUMFPACK iA;
-	iA.initialize(*dual.K);
-	iA.vmult(*z->x[0], *dual.b);
+// 	dealii::SparseDirectUMFPACK iA;
+// 	iA.initialize(*dual.K);
+// 	iA.vmult(*z->x[0], *dual.b);
+	
+	dealii::SolverControl sc(10000, 1e-14);
+	dealii::SolverCG<> lss(sc);
+	lss.solve(*dual.K, *z->x[0], *dual.b, dealii::PreconditionIdentity());
 	
 	DTM::pout << " (done)" << std::endl;
 	
@@ -1136,7 +1161,8 @@ dual_solve_slab_problem(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_do_backward_TMS() {
+dual_do_backward_TMS(
+	const unsigned int dwr_loop) {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare TMS loop
 	//
@@ -1170,7 +1196,7 @@ dual_do_backward_TMS() {
 	*z->x[1] = 0;
 	
 	// output "final value solution" at final time T
-	dual_do_data_output(slab,z->x[1],slab->t_n);
+	dual_do_data_output(slab,z->x[1],slab->t_n,dwr_loop);
 	
 	////////////////////////////////////////////////////////////////////////////
 	// do TMS loop
@@ -1225,7 +1251,7 @@ dual_do_backward_TMS() {
 		//
 		
 		// output "final value solution" at final time "t_m=t0"
-		dual_do_data_output(slab,z->x[0],t0);
+		dual_do_data_output(slab,z->x[0],t0,dwr_loop);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -1303,7 +1329,7 @@ dual_init_data_output() {
 	DTM::pout
 		<< "dual solution data output: patches = "
 		<< parameter_set->fe.q // auto mode = cG in space: take q patches per K
-// 		<< parameter_set->data_output.patches
+// 		<< parameter_set->data_output->patches
 		<< std::endl;
 	
 	std::vector<std::string> data_field_names;
@@ -1312,11 +1338,12 @@ dual_init_data_output() {
 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
 	
-	dual.data_output.set_data_field_names(data_field_names);
-	dual.data_output.set_data_component_interpretation_field(dci_field);
+	dual.data_output = std::make_shared< DTM::DataOutput<dim> >();
+	dual.data_output->set_data_field_names(data_field_names);
+	dual.data_output->set_data_component_interpretation_field(dci_field);
 	
 	// TODO:
-	dual.data_output.set_data_output_patches(
+	dual.data_output->set_data_output_patches(
 		parameter_set->fe.q // auto mode = cG in space: take q patches per K
 // 		parameter_set->data_output.patches
 	);
@@ -1329,9 +1356,10 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_do_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	std::shared_ptr< dealii::Vector<double> > z_trigger,
-	const double &t_trigger) {
+	const double &t_trigger,
+	const unsigned int dwr_loop) {
 	
-	dual.data_output.set_DoF_data(
+	dual.data_output->set_DoF_data(
 		slab->dual.dof
 	);
 	
@@ -1342,9 +1370,11 @@ dual_do_data_output(
 	//u_trigger.add(xi0, *z->x[0])
 	//u_trigger.add(xi1, *z->x[1])
 	
-	// TODO
-	dual.data_output.write_data(
-		"dual",
+	std::ostringstream filename;
+	filename << "dual-dwr_loop-" << dwr_loop;
+	
+	dual.data_output->write_data(
+		filename.str(),
 		z_trigger,
 		t_trigger
 	);
@@ -1433,8 +1463,74 @@ compute_effectivity_index() {
 	DTM::pout << "eta = " << eta << std::endl;
 	DTM::pout << "primal_L2_L2_error_u = " << primal_L2_L2_error_u << std::endl;
 	
-	const double I_eff{std::fabs(eta/primal_L2_L2_error_u)};
+	const double I_eff{std::abs(eta/primal_L2_L2_error_u)};
 	DTM::pout << "I_eff = " << I_eff << std::endl;
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+refine_and_coarsen_space_time_grid() {
+	// use only absolute values for eta_K entries
+	for (auto &eta_In : *error_estimator.storage.eta) {
+		for (auto &eta_K : *eta_In.x[0] ) {
+			eta_K = std::abs(eta_K);
+		}
+	}
+	
+	Assert(
+		error_estimator.storage.eta->size()==grid->slabs.size(),
+		dealii::ExcInternalError()
+	);
+	auto eta_it{error_estimator.storage.eta->begin()};
+	
+	for (auto &slab : grid->slabs) {
+		////////////////////////////////////////////////////////////////////////
+		// Schwegeler mesh-refinement strategy
+		//
+		
+		// TODO: read in from parameter input
+		const double theta = 1.2; //theta aus (0.25,5).
+		Assert(
+			((theta > .25) && (theta < 5)),
+			dealii::ExcMessage("theta must be in (0.25, 5)")
+		);
+		
+		double eta_max{0.};
+		for (const auto &eta_K : *eta_it->x[0]) {
+			eta_max = eta_max > eta_K ? eta_max : eta_K;
+		}
+		DTM::pout << "   eta_max = " << eta_max << std::endl;
+		
+		double eta{0.};
+		eta += std::accumulate(eta_it->x[0]->begin(), eta_it->x[0]->end(), 0.);
+		
+		const auto n_active_cells_on_slab{slab.tria->n_active_cells()};
+		
+		double mu{theta * eta / n_active_cells_on_slab};
+		DTM::pout << "   mu = " << mu << std::endl;
+		
+		while (mu > eta_max) {
+			mu /= 2.;
+		}
+		DTM::pout << "   mu = " << mu << std::endl;
+		
+		auto cell{slab.tria->begin_active()};
+		auto endc{slab.tria->end()};
+		for ( ; cell != endc; ++cell) {
+			if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
+				cell->set_refine_flag(
+					dealii::RefinementCase<dim>::isotropic_refinement
+				);
+			}
+		}
+		
+		slab.tria->execute_coarsening_and_refinement();
+		
+		// prepare next loop
+		++eta_it;
+	}
 }
 
 

@@ -124,7 +124,7 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > b;
 		
 		// Data Output
-		DTM::DataOutput<dim> data_output;
+		std::shared_ptr< DTM::DataOutput<dim> > data_output;
 	} primal;
 	
 	virtual void primal_reinit_storage();
@@ -144,7 +144,9 @@ protected:
 	);
 	
 	/// do the forward time marching process of the primal problem
-	virtual void primal_do_forward_TMS();
+	virtual void primal_do_forward_TMS(
+		const unsigned int dwr_loop
+	);
 	
 	
 	/// evaluate solution dof vector u^primal(t) on primal solution space
@@ -172,7 +174,8 @@ protected:
 	virtual void primal_do_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		std::shared_ptr< dealii::Vector<double> > u_trigger,
-		const double &t_trigger
+		const double &t_trigger,
+		const unsigned int dwr_loop
 	);
 	
 	
@@ -200,7 +203,7 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > b;
 		
 		// Data Output
-		DTM::DataOutput<dim> data_output;
+		std::shared_ptr< DTM::DataOutput<dim> > data_output;
 	} dual;
 	
 	virtual void dual_reinit_storage();
@@ -224,8 +227,9 @@ protected:
 	);
 	
 	/// do the backward time marching process of the dual problem
-	virtual void dual_do_backward_TMS();
-	
+	virtual void dual_do_backward_TMS(
+		const unsigned int dwr_loop
+	);
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
 	virtual void dual_get_z_t_on_slab(
@@ -241,19 +245,19 @@ protected:
 	virtual void dual_do_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		std::shared_ptr< dealii::Vector<double> > z_trigger,
-		const double &t_trigger
+		const double &t_trigger,
+		const unsigned int dwr_loop
 	);
 	
 	
 	////////////////////////////////////////////////////////////////////////////
-	// error estimation and grid adaption
+	// error estimation and space-time grid adaption
 	//
 	
 	struct {
 		struct {
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
-		
 		
 		// error estimator
 		std::shared_ptr< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > dwr;
@@ -263,24 +267,7 @@ protected:
 	virtual void compute_error_indicators();
 	virtual void compute_effectivity_index();
 	
-	
-	////////////////////////////////////////////////////////////////////////////
-	// old functions:
-	
-// 	// dual problem
-// 	
-// 	virtual void refine_grids_dwr();
-// 	
-// 	// Compute I_effs
-// 	virtual void compute_Ieff();
-// 	virtual void compute_Ieff_L2global();
-// 	
-// 		// TODO:
-// 		Heat::types::error_functional Je_type;		 ///< target functional type for rhs of dual problem
-// 	
-// 	struct {
-// 	} error_estimator;
-	
+	virtual void refine_and_coarsen_space_time_grid();
 };
 
 } // namespace
