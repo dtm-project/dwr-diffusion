@@ -79,6 +79,12 @@ struct LaplaceAssembly {
 	unsigned int                        dofs_per_cell;
 	double                              JxW;
 	double                              epsilon;
+	
+	// other
+	unsigned int q;
+	unsigned int k;
+	unsigned int i;
+	unsigned int j;
 };
 
 } // namespace Scratch

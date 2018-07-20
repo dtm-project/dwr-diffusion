@@ -80,7 +80,11 @@ LaplaceAssembly<dim>::LaplaceAssembly(const LaplaceAssembly &scratch) :
 	grad_phi(scratch.grad_phi),
 	dofs_per_cell(scratch.dofs_per_cell),
 	JxW(scratch.JxW),
-	epsilon(scratch.epsilon) {
+	epsilon(scratch.epsilon),
+	q(scratch.q),
+	k(scratch.k),
+	i(scratch.i),
+	j(scratch.j) {
 }
 
 }
@@ -206,24 +210,28 @@ void Assembler<dim>::local_assemble_cell(
 	copydata.vi_ui_matrix = 0;
 	
 	// assemble cell terms
-	for (unsigned int q{0}; q < scratch.fe_values.n_quadrature_points; ++q) {
+	for (scratch.q=0; scratch.q < scratch.fe_values.n_quadrature_points;
+		++scratch.q) {
 		scratch.epsilon = function.epsilon->value(
-			scratch.fe_values.quadrature_point(q),0
+			scratch.fe_values.quadrature_point(scratch.q),0
 		);
-		scratch.JxW = scratch.fe_values.JxW(q);
+		scratch.JxW = scratch.fe_values.JxW(scratch.q);
 		
 		// loop over all basis functions to get the shape gradient
-		for (unsigned int n{0}; n < scratch.dofs_per_cell; ++n) {
-			scratch.grad_phi[n] = scratch.fe_values.shape_grad(n,q);
+		for (scratch.k=0; scratch.k < scratch.dofs_per_cell; ++scratch.k) {
+			scratch.grad_phi[scratch.k] = scratch.fe_values.shape_grad(
+				scratch.k,
+				scratch.q
+			);
 		}
 		
-		// loop over all trial & test function combinitions to get the assembly
-		for (unsigned int i{0}; i < scratch.dofs_per_cell; ++i) {
-		for (unsigned int j{0}; j < scratch.dofs_per_cell; ++j) {
-			copydata.vi_ui_matrix(i,j) +=
-				scratch.grad_phi[i] *
+		// loop over all test & trial function combinitions to get the assembly
+		for (scratch.i=0; scratch.i < scratch.dofs_per_cell; ++scratch.i) {
+		for (scratch.j=0; scratch.j < scratch.dofs_per_cell; ++scratch.j) {
+			copydata.vi_ui_matrix(scratch.i,scratch.j) +=
+				scratch.grad_phi[scratch.i] *
 				scratch.epsilon *
-				scratch.grad_phi[j] *
+				scratch.grad_phi[scratch.j] *
 				scratch.JxW;
 		}}
 	} // for q
