@@ -1531,68 +1531,7 @@ refine_and_coarsen_space_time_grid() {
 	auto ends{grid->slabs.end()};
 	
 	for ( ; slab != ends; ++slab ) {
-		
-		// TODO: move the following lines into Grid_DWR as "refine_slab_in_time"
-		grid->slabs.emplace(
-			slab
-		);
-		
-		// init new slab
-		std::prev(slab)->t_m=slab->t_m;
-		std::prev(slab)->t_n=slab->t_m + slab->tau_n()/2.;
-		slab->t_m=std::prev(slab)->t_n;
-		
-		std::prev(slab)->tria = std::make_shared< dealii::Triangulation<dim> > (
-			typename dealii::Triangulation<dim>::MeshSmoothing(
-				dealii::Triangulation<dim>::smoothing_on_refinement
-			)
-		);
-		std::prev(slab)->tria->copy_triangulation(*slab->tria);
-		
-		// init primal grid of new slab
-		std::prev(slab)->primal.dof = std::make_shared< dealii::DoFHandler<dim> > (
-			*std::prev(slab)->tria
-		);
-		
-		std::prev(slab)->primal.fe = std::make_shared< dealii::FE_Q<dim> > (
-			slab->primal.fe->degree
-		);
-		
-		std::prev(slab)->primal.constraints = std::make_shared< dealii::ConstraintMatrix > ();
-		
-		std::prev(slab)->primal.sp = std::make_shared< dealii::SparsityPattern >();
-		
-		std::prev(slab)->primal.mapping = std::make_shared< dealii::MappingQ<dim> > (
-			std::prev(slab)->primal.fe->degree
-		);
-		
-		// init dual grid of new slab
-		std::prev(slab)->dual.dof = std::make_shared< dealii::DoFHandler<dim> > (
-			*std::prev(slab)->tria
-		);
-		
-		std::prev(slab)->dual.fe = std::make_shared< dealii::FE_Q<dim> > (
-			slab->dual.fe->degree
-		);
-		
-		std::prev(slab)->dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
-		
-		std::prev(slab)->dual.sp = std::make_shared< dealii::SparsityPattern >();
-		
-		std::prev(slab)->dual.mapping = std::make_shared< dealii::MappingQ<dim> > (
-			std::prev(slab)->dual.fe->degree
-		);
-		
-		std::cout << std::prev(slab)->t_m << std::endl;
-		std::cout << std::prev(slab)->t_n << std::endl;
-		std::cout << std::next(std::prev(slab))->t_m << std::endl;
-		
-// 		std::cout << std::prev(slab)->tria->n_active_cells() << std::endl;
-// 		std::cout << std::next(std::prev(slab))->tria->n_active_cells() << std::endl;
-		std::cout << "primal.fe.p=" <<std::prev(slab)->primal.fe->degree << std::endl;
-		std::cout << "dual.fe.q=" <<std::prev(slab)->dual.fe->degree << std::endl;
-		
-		std::cout << grid->slabs.size() << std::endl;
+		grid->refine_slab_in_time(slab);
 	}
 }
 

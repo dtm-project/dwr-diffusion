@@ -88,6 +88,10 @@ public:
 		const double &tau_n
 	);
 	
+	virtual void refine_slab_in_time(
+		typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab
+	);
+	
 	virtual void generate();
 	virtual void refine_global(const unsigned int n = 1);
 	virtual void set_boundary_indicators();
