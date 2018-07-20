@@ -1530,7 +1530,7 @@ refine_and_coarsen_space_time_grid() {
 	auto slab{grid->slabs.begin()};
 	auto ends{grid->slabs.end()};
 	
-	for ( ; slab != ends; ++slab ) {
+	for ( ; slab != ends; ++slab) {
 		grid->refine_slab_in_time(slab);
 	}
 }

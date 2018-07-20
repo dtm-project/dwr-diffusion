@@ -3,6 +3,7 @@
  * 
  * @author Uwe Koecher (UK)
  * 
+ * @date 2018-07-20, refine_slab_in_time, UK
  * @date 2018-03-07, included in dwr-heat, UK
  * @date 2018-03-05, work on the data structures, UK
  * @date 2017-08-01, Heat/DWR, UK
@@ -169,12 +170,29 @@ void
 Grid_DWR<dim,spacedim>::
 refine_slab_in_time(
 	typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab) {
+#ifdef DEBUG
+	// check if iterator slab is in the container slabs of this object
+	auto _slab{slabs.begin()};
+	auto _ends{slabs.end()};
+	bool check{false};
+	for ( ; _slab != _ends; ++_slab ) {
+		if (slab == _slab) {
+			check=true;
+			break;
+		}
+	}
+	Assert(
+		check,
+		dealii::ExcMessage("your given iterator slab to be refined could not be found in this->slabs object")
+	);
+#endif
+	
 	// emplace a new slab element in front of the iterator
 	slabs.emplace(
 		slab
 	);
 	
-	// init new slab
+	// init new slab ("space-time" tria)
 	std::prev(slab)->t_m=slab->t_m;
 	std::prev(slab)->t_n=slab->t_m + slab->tau_n()/2.;
 	slab->t_m=std::prev(slab)->t_n;
@@ -186,7 +204,7 @@ refine_slab_in_time(
 	);
 	std::prev(slab)->tria->copy_triangulation(*slab->tria);
 	
-	// init primal grid of new slab
+	// init primal grid components of new slab
 	std::prev(slab)->primal.dof = std::make_shared< dealii::DoFHandler<dim> > (
 		*std::prev(slab)->tria
 	);
@@ -203,7 +221,7 @@ refine_slab_in_time(
 		std::prev(slab)->primal.fe->degree
 	);
 	
-	// init dual grid of new slab
+	// init dual grid components of new slab
 	std::prev(slab)->dual.dof = std::make_shared< dealii::DoFHandler<dim> > (
 		*std::prev(slab)->tria
 	);
@@ -219,17 +237,6 @@ refine_slab_in_time(
 	std::prev(slab)->dual.mapping = std::make_shared< dealii::MappingQ<dim> > (
 		std::prev(slab)->dual.fe->degree
 	);
-	
-	std::cout << std::prev(slab)->t_m << std::endl;
-	std::cout << std::prev(slab)->t_n << std::endl;
-	std::cout << std::next(std::prev(slab))->t_m << std::endl;
-	
-// 		std::cout << std::prev(slab)->tria->n_active_cells() << std::endl;
-// 		std::cout << std::next(std::prev(slab))->tria->n_active_cells() << std::endl;
-	std::cout << "primal.fe.p=" <<std::prev(slab)->primal.fe->degree << std::endl;
-	std::cout << "dual.fe.q=" <<std::prev(slab)->dual.fe->degree << std::endl;
-	
-	std::cout << slabs.size() << std::endl;
 }
 
 
