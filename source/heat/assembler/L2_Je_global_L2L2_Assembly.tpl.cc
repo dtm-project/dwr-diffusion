@@ -67,7 +67,12 @@ Je_global_L2L2Assembly<dim>::Je_global_L2L2Assembly(
 	phi(scratch.phi),
 	JxW(scratch.JxW),
 	u_E(scratch.u_E),
-	u_h(scratch.u_h) {
+	u_h(scratch.u_h),
+	q(scratch.q),
+	component(scratch.component),
+	k(scratch.k),
+	i(scratch.i),
+	j(scratch.j) {
 }
 
 }
@@ -188,37 +193,44 @@ void Assembler<dim>::local_assemble_cell(
 	copydata.vi_Jei_vector = 0;
 	
 	// assemble cell terms
-	for (unsigned int q{0}; q < scratch.fe_values.n_quadrature_points; ++q) {
-		scratch.JxW = scratch.fe_values.JxW(q);
+	for (scratch.q=0; scratch.q < scratch.fe_values.n_quadrature_points;
+		++scratch.q) {
+		scratch.JxW = scratch.fe_values.JxW(scratch.q);
 		
 		// loop over all components of this finite element
-		for (unsigned int component{0};
-			component < scratch.fe_values.get_fe().n_components();
-			++component) {
+		for (scratch.component=0;
+			scratch.component < scratch.fe_values.get_fe().n_components();
+			++scratch.component) {
 			// loop over all basis functions to get the shape values
-			for (unsigned int k{0}; k < scratch.fe_values.get_fe().dofs_per_cell; ++k) {
-				scratch.phi[k] =
-					scratch.fe_values.shape_value_component(k,q,component);
+			for (scratch.k=0; scratch.k < scratch.fe_values.get_fe().dofs_per_cell;
+				++scratch.k) {
+				scratch.phi[scratch.k] =
+					scratch.fe_values.shape_value_component(
+						scratch.k,
+						scratch.q,
+						scratch.component
+					);
 			}
 			
 			scratch.u_E = function.u_E->value(
-				scratch.fe_values.quadrature_point(q),
-				component
+				scratch.fe_values.quadrature_point(scratch.q),
+				scratch.component
 			);
 			
 			// loop over all basis functions to get u_h
 			scratch.u_h = 0;
-			for (unsigned int j{0}; j < scratch.fe_values.get_fe().dofs_per_cell; ++j) {
+			for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
+				++scratch.j) {
 				scratch.u_h +=
-					(*u_h)[ copydata.local_dof_indices[j] ] *
-					scratch.phi[j];
+					(*u_h)[ copydata.local_dof_indices[scratch.j] ] *
+					scratch.phi[scratch.j];
 			}
 			
-			
 			// loop over all basis function combinitions to get the assembly
-			for (unsigned int i{0}; i < scratch.fe_values.get_fe().dofs_per_cell; ++i) {
-				copydata.vi_Jei_vector[i] += (
-					scratch.phi[i] *
+			for (scratch.i=0; scratch.i < scratch.fe_values.get_fe().dofs_per_cell;
+				 ++scratch.i) {
+				copydata.vi_Jei_vector[scratch.i] += (
+					scratch.phi[scratch.i] *
 					(scratch.u_E - scratch.u_h) *
 					scratch.JxW
 				);

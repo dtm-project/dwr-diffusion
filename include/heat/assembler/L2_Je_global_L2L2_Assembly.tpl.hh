@@ -86,6 +86,13 @@ struct Je_global_L2L2Assembly {
 	double                JxW;
 	double                u_E;
 	double                u_h;
+	
+	// other
+	unsigned int q;
+	unsigned int component;
+	unsigned int k;
+	unsigned int i;
+	unsigned int j;
 };
 
 } // namespace Scratch
