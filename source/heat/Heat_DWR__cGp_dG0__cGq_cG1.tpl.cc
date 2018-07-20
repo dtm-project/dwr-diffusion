@@ -58,6 +58,7 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 
 // #include <deal.II/grid/grid_refinement.h>
 
+#include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/sparse_direct.h>
 
 #include <deal.II/fe/fe_tools.h>
@@ -108,7 +109,7 @@ run() {
 	init_grid();
 	
 	// DWR loop:
-	for (unsigned int dwr_loop{0}; dwr_loop < 3; ++dwr_loop) {
+	for (unsigned int dwr_loop{0}; dwr_loop < 6; ++dwr_loop) {
 		grid->set_boundary_indicators();
 		grid->distribute();
 		
@@ -145,30 +146,30 @@ init_functions() {
 #if DEAL_II_VERSION_MAJOR>8
 	// dealii 9.0 and above (dealii::Functions:: )
 	
-	function.u_D = std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
-	function.u_0 = std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
-	
-// 	function.f = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
-	function.f = std::make_shared< heat::force::Test0<dim> > ();
+	// Hartmann Sec. 1.4.2 Test problem:
+	const double a{50.};
+	function.u_D = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
+	function.u_0 = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
 	
 	function.epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
+	function.f = std::make_shared< heat::force::Hartmann142<dim> > (a,function.epsilon);
 	
 	// exact solution (if any)
-	function.u_E = std::make_shared< heat::ExactSolution::Test0<dim> > ();
+	function.u_E = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
 #else
 	// dealii 8.5
-	function.u_D = std::make_shared< dealii::ZeroFunction<dim> > (1);
-	function.u_0 = std::make_shared< dealii::ZeroFunction<dim> > (1);
-	
-// 	function.f = std::make_shared< dealii::ConstantFunction<dim> > (M_PI);
-	function.f = std::make_shared< heat::force::Test0<dim> > ();
+	// Hartmann Sec. 1.4.2 Test problem:
+	const double a{50.};
+	function.u_D = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
+	function.u_0 = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
 	
 	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
 	function.density = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
+	function.f = std::make_shared< heat::force::Hartmann142<dim> > (a,function.epsilon);
 	
 	// exact solution (if any)
-	function.u_E = std::make_shared< heat::ExactSolution::Test0<dim> > ();
+	function.u_E = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
 #endif
 }
 
@@ -367,7 +368,8 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_solve_slab_problem(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const typename DTM::types::storage_data_vectors<1>::iterator &u
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	const double t0
 ) {
 	////////////////////////////////////////////////////////////////////////////
 	// construct system matrix K = M + tau A
@@ -393,6 +395,7 @@ primal_solve_slab_problem(
 	std::map<dealii::types::global_dof_index, double> boundary_values;
 	
 	Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
+	function.u_D->set_time(t0);
 	dealii::VectorTools::interpolate_boundary_values(
 		*slab->primal.dof,
 		static_cast< dealii::types::boundary_id > (
@@ -538,7 +541,7 @@ primal_do_forward_TMS(
 		primal_assemble_rhs(slab,t0);
 		
 		// solve slab problem (i.e. apply boundary values and solve for u0)
-		primal_solve_slab_problem(slab,u);
+		primal_solve_slab_problem(slab,u,t0);
 		
 		////////////////////////////////////////////////////////////////////////
 		// do postprocessing on the solution
@@ -1530,6 +1533,75 @@ refine_and_coarsen_space_time_grid() {
 		
 		// prepare next loop
 		++eta_it;
+	}
+	
+	// refine time grid by factor of 2
+	auto slab{grid->slabs.begin()};
+	auto ends{grid->slabs.end()};
+	
+	for ( ; slab != ends; ++slab ) {
+		
+		// TODO: move the following lines into Grid_DWR as "refine_slab_in_time"
+		grid->slabs.emplace(
+			slab
+		);
+		
+		// init new slab
+		std::prev(slab)->t_m=slab->t_m;
+		std::prev(slab)->t_n=slab->t_m + slab->tau_n()/2.;
+		slab->t_m=std::prev(slab)->t_n;
+		
+		std::prev(slab)->tria = std::make_shared< dealii::Triangulation<dim> > (
+			typename dealii::Triangulation<dim>::MeshSmoothing(
+				dealii::Triangulation<dim>::smoothing_on_refinement
+			)
+		);
+		std::prev(slab)->tria->copy_triangulation(*slab->tria);
+		
+		// init primal grid of new slab
+		std::prev(slab)->primal.dof = std::make_shared< dealii::DoFHandler<dim> > (
+			*std::prev(slab)->tria
+		);
+		
+		std::prev(slab)->primal.fe = std::make_shared< dealii::FE_Q<dim> > (
+			slab->primal.fe->degree
+		);
+		
+		std::prev(slab)->primal.constraints = std::make_shared< dealii::ConstraintMatrix > ();
+		
+		std::prev(slab)->primal.sp = std::make_shared< dealii::SparsityPattern >();
+		
+		std::prev(slab)->primal.mapping = std::make_shared< dealii::MappingQ<dim> > (
+			std::prev(slab)->primal.fe->degree
+		);
+		
+		// init dual grid of new slab
+		std::prev(slab)->dual.dof = std::make_shared< dealii::DoFHandler<dim> > (
+			*std::prev(slab)->tria
+		);
+		
+		std::prev(slab)->dual.fe = std::make_shared< dealii::FE_Q<dim> > (
+			slab->dual.fe->degree
+		);
+		
+		std::prev(slab)->dual.constraints = std::make_shared< dealii::ConstraintMatrix > ();
+		
+		std::prev(slab)->dual.sp = std::make_shared< dealii::SparsityPattern >();
+		
+		std::prev(slab)->dual.mapping = std::make_shared< dealii::MappingQ<dim> > (
+			std::prev(slab)->dual.fe->degree
+		);
+		
+		std::cout << std::prev(slab)->t_m << std::endl;
+		std::cout << std::prev(slab)->t_n << std::endl;
+		std::cout << std::next(std::prev(slab))->t_m << std::endl;
+		
+// 		std::cout << std::prev(slab)->tria->n_active_cells() << std::endl;
+// 		std::cout << std::next(std::prev(slab))->tria->n_active_cells() << std::endl;
+		std::cout << "primal.fe.p=" <<std::prev(slab)->primal.fe->degree << std::endl;
+		std::cout << "dual.fe.q=" <<std::prev(slab)->dual.fe->degree << std::endl;
+		
+		std::cout << grid->slabs.size() << std::endl;
 	}
 }
 

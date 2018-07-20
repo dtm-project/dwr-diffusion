@@ -1,13 +1,12 @@
 /**
- * @file Forces.hh
+ * @file ExactSolution_Hartmann142.tpl.cc
  * @author Uwe Koecher (UK)
  * 
+ * @date 2018-07-20, Hartmann142, MPB, UK
+ * @date 2018-03-09, UK
  * @date 2018-03-08, included from ewave, UK
  * @date 2017-10-25, UK
- * @date 2017-02-10, xwave, UK
- * @date 2016-05-30, biot, UK
- * 
- * @brief Collects all Force functions.
+ * @date 2013-08-15, DTM++ v1, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -27,10 +26,35 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Forces_hh
-#define __Forces_hh
+#include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
 
-#include <heat/Force/Force_Test0.tpl.hh>
-#include <heat/Force/Force_Hartmann142.tpl.hh>
+// DEAL.II includes
 
-#endif
+// C++ includes
+
+namespace heat {
+namespace ExactSolution {
+
+template<int dim>
+double
+Hartmann142<dim>::
+value(
+	const dealii::Point<dim> &x,
+	[[maybe_unused]]const unsigned int c
+) const {
+	Assert(c==0, dealii::ExcMessage("you want to get component value which is not implemented"));
+	Assert(dim==2, dealii::ExcNotImplemented());
+	
+	const double t{this->get_time()};
+	
+	const double x0 = 0.5+0.25*std::cos(2.*M_PI*t);
+	const double x1 = 0.5+0.25*std::sin(2.*M_PI*t);
+	
+	return 1. / (
+		1. + a*( (x[0]-x0)*(x[0]-x0) + (x[1]-x1)*(x[1]-x1) )
+	);
+}
+
+}} //namespaces
+
+#include "ExactSolution_Hartmann142.inst.in"

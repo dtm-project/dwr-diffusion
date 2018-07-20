@@ -36,75 +36,75 @@
 
 namespace DTM {
 
-template<int dim, int n_components>
-double
-Function<dim,n_components>::
-value(
-	const dealii::Point<dim> &x,
-	const unsigned int c
-) const {
-	Assert((c < n_components), dealii::ExcIndexRange(c,0,n_components));
-	
-	dealii::Vector<double> y(n_components); y=0;
-	vector_value(x, y);
-	
-	return y(c);
-}
+// template<int dim, int n_components>
+// double
+// Function<dim,n_components>::
+// value(
+// 	const dealii::Point<dim> &x,
+// 	const unsigned int c
+// ) const {
+// 	Assert((c < n_components), dealii::ExcIndexRange(c,0,n_components));
+// 	
+// 	dealii::Vector<double> y(n_components); y=0;
+// 	vector_value(x, y);
+// 	
+// 	return y(c);
+// }
 
 
-template<int dim, int n_components>
-void
-Function<dim,n_components>::
-value_list(
-	const std::vector< dealii::Point<dim> > &xs,
-	std::vector<double> &ys,
-	const unsigned int c
-) const {
-	Assert((c < n_components), dealii::ExcIndexRange(c,0,n_components));
-	
-	// check input and output data
-	Assert(
-		xs.size() == ys.size(),
-		dealii::ExcDimensionMismatch(xs.size(), ys.size())
-	);
-	
-	// create iterators on input and output data structures
-	typename std::vector<
-		dealii::Point<dim>, std::allocator<dealii::Point<dim> >
-	>::const_iterator x(xs.begin());
-	
-	typename std::vector<double>::iterator y(ys.begin());
-	
-	for ( ; x != xs.end(); ++x, ++y) {
-		*y = value(*x, c);
-	}
-}
+// template<int dim, int n_components>
+// void
+// Function<dim,n_components>::
+// value_list(
+// 	const std::vector< dealii::Point<dim> > &xs,
+// 	std::vector<double> &ys,
+// 	const unsigned int c
+// ) const {
+// 	Assert((c < n_components), dealii::ExcIndexRange(c,0,n_components));
+// 	
+// 	// check input and output data
+// 	Assert(
+// 		xs.size() == ys.size(),
+// 		dealii::ExcDimensionMismatch(xs.size(), ys.size())
+// 	);
+// 	
+// 	// create iterators on input and output data structures
+// 	typename std::vector<
+// 		dealii::Point<dim>, std::allocator<dealii::Point<dim> >
+// 	>::const_iterator x(xs.begin());
+// 	
+// 	typename std::vector<double>::iterator y(ys.begin());
+// 	
+// 	for ( ; x != xs.end(); ++x, ++y) {
+// 		*y = value(*x, c);
+// 	}
+// }
 
 
-template<int dim, int n_components>
-void
-Function<dim,n_components>::
-vector_value_list(
-	const std::vector< dealii::Point<dim> > &xs,
-	std::vector< dealii::Vector<double> > &ys
-) const {
-	// check input and output data
-	Assert(
-		xs.size() == ys.size(),
-		dealii::ExcDimensionMismatch(xs.size(), ys.size())
-	);
-	
-	// create iterators on input and output data structures
-	typename std::vector<
-		dealii::Point<dim>, std::allocator<dealii::Point<dim> >
-	>::const_iterator x(xs.begin());
-	
-	typename std::vector< dealii::Vector<double> >::iterator y(ys.begin());
-
-	for ( ; x != xs.end(); ++x, ++y) {
-		vector_value(*x, *y);
-	}
-}
+// template<int dim, int n_components>
+// void
+// Function<dim,n_components>::
+// vector_value_list(
+// 	const std::vector< dealii::Point<dim> > &xs,
+// 	std::vector< dealii::Vector<double> > &ys
+// ) const {
+// 	// check input and output data
+// 	Assert(
+// 		xs.size() == ys.size(),
+// 		dealii::ExcDimensionMismatch(xs.size(), ys.size())
+// 	);
+// 	
+// 	// create iterators on input and output data structures
+// 	typename std::vector<
+// 		dealii::Point<dim>, std::allocator<dealii::Point<dim> >
+// 	>::const_iterator x(xs.begin());
+// 	
+// 	typename std::vector< dealii::Vector<double> >::iterator y(ys.begin());
+// 
+// 	for ( ; x != xs.end(); ++x, ++y) {
+// 		vector_value(*x, *y);
+// 	}
+// }
 
 } // namespace
 

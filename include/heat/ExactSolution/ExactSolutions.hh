@@ -2,7 +2,7 @@
  * @file ExactSolutions.hh
  * @author Uwe Koecher (UK)
  * 
- * @date 2018-03-09, UK
+ * @date 2018-07-20, UK
  * 
  * @brief Collects all ExactSolution functions.
  */
@@ -28,5 +28,6 @@
 #define __ExactSolutions_hh
 
 #include <heat/ExactSolution/ExactSolution_Test0.tpl.hh>
+#include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
 
 #endif

@@ -46,40 +46,40 @@ public:
 	
 	virtual ~Function() = default;
 	
-	/// get value (of a specific component) from a function evaluation
-	virtual
-	double
-	value(
-		const dealii::Point<dim> &x,
-		const unsigned int c = 0
-	) const;
+// 	/// get value (of a specific component) from a function evaluation
+// 	virtual
+// 	double
+// 	value(
+// 		const dealii::Point<dim> &x,
+// 		const unsigned int c = 0
+// 	) const;
 	
-	/// get values (of a specific component) from multiple function evaluations
-	virtual
-	void
-	value_list(
-		const std::vector<dealii::Point<dim> > &,
-		std::vector<double> &,
-		const unsigned int c
-	) const;
+// 	/// get values (of a specific component) from multiple function evaluations
+// 	virtual
+// 	void
+// 	value_list(
+// 		const std::vector<dealii::Point<dim> > &,
+// 		std::vector<double> &,
+// 		const unsigned int c
+// 	) const;
 	
-	/// get vector-value (of all components) from a function evaluation
-	virtual
-	void
-	vector_value(
-		const dealii::Point<dim> &,
-		dealii::Vector<double> &
-	) const {
-		Assert(false, dealii::ExcNotImplemented());
-	}
+// 	/// get vector-value (of all components) from a function evaluation
+// 	virtual
+// 	void
+// 	vector_value(
+// 		const dealii::Point<dim> &,
+// 		dealii::Vector<double> &
+// 	) const {
+// 		Assert(false, dealii::ExcNotImplemented());
+// 	}
 	
-	/// get vector-values (of all components) from multiple function evaluations
-	virtual
-	void
-	vector_value_list(
-		const std::vector< dealii::Point<dim> > &,
-		std::vector< dealii::Vector<double> > &
-	) const;
+// 	/// get vector-values (of all components) from multiple function evaluations
+// 	virtual
+// 	void
+// 	vector_value_list(
+// 		const std::vector< dealii::Point<dim> > &,
+// 		std::vector< dealii::Vector<double> > &
+// 	) const;
 };
 
 

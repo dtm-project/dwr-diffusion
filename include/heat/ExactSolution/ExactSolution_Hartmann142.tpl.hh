@@ -1,13 +1,12 @@
 /**
- * @file Forces.hh
+ * @file ExactSolution_Hartmann142.tpl.hh
  * @author Uwe Koecher (UK)
  * 
+ * @date 2018-07-20, Hartmann142, MPB, UK
+ * @date 2018-03-09, UK
  * @date 2018-03-08, included from ewave, UK
  * @date 2017-10-25, UK
- * @date 2017-02-10, xwave, UK
- * @date 2016-05-30, biot, UK
- * 
- * @brief Collects all Force functions.
+ * @date 2013-08-15, DTM++ v1, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -27,10 +26,38 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Forces_hh
-#define __Forces_hh
+#ifndef __ExactSolution_Hartmann142_tpl_hh
+#define __ExactSolution_Hartmann142_tpl_hh
 
-#include <heat/Force/Force_Test0.tpl.hh>
-#include <heat/Force/Force_Hartmann142.tpl.hh>
+#include <DTM++/base/Function.tpl.hh>
+
+// DEAL.II includes
+#include <deal.II/base/point.h>
+
+// C++ includes
+
+namespace heat {
+namespace ExactSolution {
+
+template<int dim>
+class Hartmann142 : public DTM::Function<dim,1> {
+public:
+	Hartmann142(const double &a) : a(a) {};
+	
+	virtual ~Hartmann142() = default;
+	
+	/// get value (of a specific component) from a function evaluation
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
+
+private:
+	const double a;
+};
+
+}}
 
 #endif
