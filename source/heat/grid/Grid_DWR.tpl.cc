@@ -154,6 +154,8 @@ initialize_slabs(
 			slab.t_m = (n-1)*tau_n+t0;
 			slab.t_n = n*tau_n + t0;
 			++n;
+			
+			slab.refine_in_time=false;
 		}
 		
 		auto &last_slab = slabs.back();
@@ -196,6 +198,8 @@ refine_slab_in_time(
 	std::prev(slab)->t_m=slab->t_m;
 	std::prev(slab)->t_n=slab->t_m + slab->tau_n()/2.;
 	slab->t_m=std::prev(slab)->t_n;
+	
+	std::prev(slab)->refine_in_time=false;
 	
 	std::prev(slab)->tria = std::make_shared< dealii::Triangulation<dim> > (
 		typename dealii::Triangulation<dim>::MeshSmoothing(

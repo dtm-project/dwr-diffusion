@@ -1477,19 +1477,83 @@ refine_and_coarsen_space_time_grid() {
 		error_estimator.storage.eta->size()==grid->slabs.size(),
 		dealii::ExcInternalError()
 	);
-	auto eta_it{error_estimator.storage.eta->begin()};
 	
-	for (auto &slab : grid->slabs) {
-		////////////////////////////////////////////////////////////////////////
-		// Schwegeler mesh-refinement strategy
-		//
+	////////////////////////////////////////////////////////////////////////////
+	// Schwegeler space-time refinement strategy
+	//
+	
+	// 1st loop: compute eta on I_n
+	std::vector<double> eta(grid->slabs.size());
+	const unsigned int N{static_cast<unsigned int>(eta.size())};
+	auto eta_it{error_estimator.storage.eta->begin()};
+	for (unsigned n{0}; n < N; ++n) {
+		eta[n] = std::accumulate(eta_it->x[0]->begin(), eta_it->x[0]->end(), 0.);
+		
+		// prepare next iteration
+		++eta_it;
+	}
+	
+	// 2nd loop: mark for time refinement
+	std::vector<double> eta_sort(eta);
+	std::sort(eta_sort.begin(), eta_sort.end());
+	
+	const double theta_t{0.2}; // TODO: read from parameter input
+	const unsigned int idx{
+		static_cast<unsigned int>(std::floor(static_cast<double>(N)*theta_t))
+	};
+	
+	Assert( (static_cast<int>(N) - static_cast<int>(idx)) >= 0,
+		dealii::ExcMessage("uups")
+	);
+	
+	auto slab{grid->slabs.begin()};
+	auto ends{grid->slabs.end()};
+	
+	unsigned int n{0};
+	for ( ; slab != ends; ++slab) {
+		if (eta[n] >= eta_sort[N-idx])
+			slab->set_refine_in_time_flag();
+		
+		// prepare next loop
+		++n;
+	}
+	
+	// 3rd loop execute_coarsening_and_refinement
+	slab = grid->slabs.begin();
+	ends = grid->slabs.end();
+	eta_it = error_estimator.storage.eta->begin();
+	
+	n = 0;
+	
+	for ( ; slab != ends; ++slab) {
+		const auto n_active_cells_on_slab{slab->tria->n_active_cells()};
 		
 		// TODO: read in from parameter input
-		const double theta = 1.2; //theta aus (0.25,5).
+		const double theta1 = 1.2; //theta aus (0.25,5).
+		const double theta2 = 1.2; //theta aus (0.25,5).
 		Assert(
-			((theta > .25) && (theta < 5)),
-			dealii::ExcMessage("theta must be in (0.25, 5)")
+			((theta1 > 1.) && (theta1 < 5.)),
+			dealii::ExcMessage("theta1 must be in (1, 5)")
 		);
+		
+		Assert(
+			((theta2 > 1.) && (theta2 < 5.)),
+			dealii::ExcMessage("theta2 must be in (1, 5)")
+		);
+		
+		Assert(
+			(theta2 >= theta1),
+			dealii::ExcMessage("(theta2 >= theta1)")
+		);
+		
+		double mu;
+		if (slab->refine_in_time) {
+			mu = theta1 * eta[n] / n_active_cells_on_slab;
+		}
+		else {
+			mu = theta2 * eta[n] / n_active_cells_on_slab;
+		}
+		DTM::pout << "   mu = " << mu << std::endl;
 		
 		double eta_max{0.};
 		for (const auto &eta_K : *eta_it->x[0]) {
@@ -1497,21 +1561,13 @@ refine_and_coarsen_space_time_grid() {
 		}
 		DTM::pout << "   eta_max = " << eta_max << std::endl;
 		
-		double eta{0.};
-		eta += std::accumulate(eta_it->x[0]->begin(), eta_it->x[0]->end(), 0.);
-		
-		const auto n_active_cells_on_slab{slab.tria->n_active_cells()};
-		
-		double mu{theta * eta / n_active_cells_on_slab};
-		DTM::pout << "   mu = " << mu << std::endl;
-		
 		while (mu > eta_max) {
 			mu /= 2.;
 		}
 		DTM::pout << "   mu = " << mu << std::endl;
 		
-		auto cell{slab.tria->begin_active()};
-		auto endc{slab.tria->end()};
+		auto cell{slab->tria->begin_active()};
+		auto endc{slab->tria->end()};
 		for ( ; cell != endc; ++cell) {
 			if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
 				cell->set_refine_flag(
@@ -1520,19 +1576,25 @@ refine_and_coarsen_space_time_grid() {
 			}
 		}
 		
-		slab.tria->execute_coarsening_and_refinement();
+		slab->tria->execute_coarsening_and_refinement();
+		
+		if (slab->refine_in_time) {
+			grid->refine_slab_in_time(slab);
+			slab->refine_in_time = false;
+		}
 		
 		// prepare next loop
 		++eta_it;
+		++n;
 	}
 	
-	// refine time grid by factor of 2
-	auto slab{grid->slabs.begin()};
-	auto ends{grid->slabs.end()};
-	
-	for ( ; slab != ends; ++slab) {
-		grid->refine_slab_in_time(slab);
-	}
+// 	// refine time grid by factor of 2
+// 	auto slab{grid->slabs.begin()};
+// 	auto ends{grid->slabs.end()};
+// 	
+// 	for ( ; slab != ends; ++slab) {
+// 		grid->refine_slab_in_time(slab);
+// 	}
 }
 
 } // namespace
