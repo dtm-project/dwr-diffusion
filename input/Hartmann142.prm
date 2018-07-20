@@ -38,7 +38,6 @@ end
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
-#    set time step size = 0.0625
-    set time step size = 0.001
+    set time step size = 0.0625
 end
 
