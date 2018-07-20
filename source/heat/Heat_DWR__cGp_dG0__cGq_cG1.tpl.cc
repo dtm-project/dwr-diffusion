@@ -30,11 +30,6 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#include <deal.II/lac/solver.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/solver_control.h>
-#include <deal.II/lac/precondition.h>
-
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
@@ -409,19 +404,22 @@ primal_solve_slab_problem(
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
 	
-// 	TODO: resolve issue with direct solver here:
-// 	dealii::SparseDirectUMFPACK iA;
-// 	iA.initialize(*primal.K);
-// 	iA.vmult(*u->x[0], *primal.b);
+	slab->primal.constraints->condense(*primal.K);
 	
-	dealii::SolverControl sc(10000, 1e-14);
-	dealii::SolverCG<> lss(sc);
-	lss.solve(*primal.K, *u->x[0], *primal.b, dealii::PreconditionIdentity());
+#ifdef DEBUG
+	std::ofstream out_K("primalK.gpl");
+	primal.K->print(out_K);
+	out_K.close();
+#endif
+	
+	dealii::SparseDirectUMFPACK iA;
+	iA.initialize(*primal.K);
+	iA.vmult(*u->x[0], *primal.b);
 	
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// distribute hanging node constraints on solution
+	// distribute constraints on solution
 	//
 	
 	DTM::pout << "dwr-heat: primal.constraints->distribute...";
@@ -1130,13 +1128,17 @@ dual_solve_slab_problem(
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
 	
 // 	TODO: resolve issue with direct solver here:
-// 	dealii::SparseDirectUMFPACK iA;
-// 	iA.initialize(*dual.K);
-// 	iA.vmult(*z->x[0], *dual.b);
+	slab->dual.constraints->condense(*dual.K);
 	
-	dealii::SolverControl sc(10000, 1e-14);
-	dealii::SolverCG<> lss(sc);
-	lss.solve(*dual.K, *z->x[0], *dual.b, dealii::PreconditionIdentity());
+#ifdef DEBUG
+	std::ofstream out_K("dualK.gpl");
+	dual.K->print(out_K);
+	out_K.close();
+#endif
+	
+	dealii::SparseDirectUMFPACK iA;
+	iA.initialize(*dual.K);
+	iA.vmult(*z->x[0], *dual.b);
 	
 	DTM::pout << " (done)" << std::endl;
 	
