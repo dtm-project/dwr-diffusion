@@ -1500,7 +1500,8 @@ refine_and_coarsen_space_time_grid() {
 	
 	// TODO: read in from parameter input
 	const double theta1 = 1.2;
-	const double theta2 = std::max(theta1*2., 4.999);
+	const double theta2 = 1.2;
+// 	const double theta2 = std::max(theta1*2., 4.999);
 	
 	Assert(
 		((theta_t >= 0.) && (theta_t <= 1.)),
