@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  * 
+ * @date 2018-07-19, finialised dwr-loop, UK
  * @date 2018-03-08, primal problem, UK
  * @date 2018-03-06, new implementation, UK
  * @date 2018-03-05, UK

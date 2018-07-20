@@ -4,11 +4,13 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  * 
+ * @date 2018-07-19, finialised dwr-loop, UK
  * @date 2018-03-08, primal problem, UK
  * @date 2018-03-06, new implementation, UK
+ * @date 2018-03-05, UK
  * @date 2017-08-01, Heat/DWR, MPB, UK
  *
- * @brief Heat/DWR Problem
+ * @brief Heat/DWR Problem with primal solver: cG(p)-dG(0) and dual solver: cG(q)-cG(1)
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -28,12 +30,10 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-
 #include <deal.II/lac/solver.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/precondition.h>
-
 
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
@@ -53,11 +53,7 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 
 #include <heat/assembler/L2_Je_global_L2L2_Assembly.tpl.hh>
 
-
 // DEAL.II includes
-
-// #include <deal.II/grid/grid_refinement.h>
-
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/sparse_direct.h>
 
@@ -67,13 +63,6 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 #include <deal.II/numerics/vector_tools.h>
 
 // // C++ includes
-// #include <fstream>
-// #include <vector>
-// #include <algorithm>
-// #include <list>
-// #include <iterator>
-// 
-// #include <iomanip>
 
 namespace heat {
 
@@ -420,6 +409,7 @@ primal_solve_slab_problem(
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
 	
+// 	TODO: resolve issue with direct solver here:
 // 	dealii::SparseDirectUMFPACK iA;
 // 	iA.initialize(*primal.K);
 // 	iA.vmult(*u->x[0], *primal.b);
@@ -1139,6 +1129,7 @@ dual_solve_slab_problem(
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
 	
+// 	TODO: resolve issue with direct solver here:
 // 	dealii::SparseDirectUMFPACK iA;
 // 	iA.initialize(*dual.K);
 // 	iA.vmult(*z->x[0], *dual.b);
@@ -1604,558 +1595,6 @@ refine_and_coarsen_space_time_grid() {
 		std::cout << grid->slabs.size() << std::endl;
 	}
 }
-
-
-// // TODO NOTE TEST remove the following:
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// solve_dual_problem() {
-
-// // NOTE (UK): the following comment is misleading: t_N = 0.5??
-// 	// Compute dual.Je at timepoint t_N = 0.5 (within dual_assemble_je())
-// 	// and store it in dual.Je_old.
-// 	dual_assemble_Je_L2global();
-// 	
-// 	for (unsigned int n = ((data.T-data.t0)/data.tau_n); n >= 0 ; --n) {
-// 			// Compute z_N-1 at time point t_N-1
-// 			
-// 			dual_assemble_system();
-
-// 			volatile const double ttt{n*data.tau_n};
-// 			dual_set_time(ttt);
-// 			dual_assemble_rhs_at_t_Nminus1();
-// 
-// 			dual_solve();
-// 
-// 			// Save current solution (dual.z) in list dual.storage.z;
-// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(In_zth->x) = *(dual.z);
-// 			
-// 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
-// 			// next time step in dual.z_old and dual.Je_old
-// 			// (needed within dual_assemble_rhs() of next time step) 
-// 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 			dual.z_old->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(dual.z_old) = *(dual.z);
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je_old = dual.Je;
-// 			
-// 			++Inth_dual_prev;
-// 		}
-// 		else if (n == 0) {
-// 			// Compute z_0 at time point t_0
-// 
-// 			// Output of time_step N+1 at time-point t_0
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			++In_uth_test;
-// 			rit_In_uback = In_uth_test;
-// 			++In_zth; // increase iterator of list dual.storage.z, points now on first element of list In-Z
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			dual_reinit();
-// 			dual_assemble_system();
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			dual_set_time(ttt);
-// 			__sync_synchronize();
-// 			
-// 			dual_assemble_rhs();
-// 			
-// 			dual_solve();
-// 			
-// 			// Store z_0 (dual.z) in the first element of list dual.storage.z.
-// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(In_zth->x) = *(dual.z);
-// 			
-// 			break;
-// 		}
-// 		else {
-// 			// Compute z_N-2,...,z_1
-// 			
-// 			// Output of time_steps 2,...,N at time-points t_N-1,...,t_1
-// 			data.dual_time = n*data.tau_n;
-// 			++data.dual_timestep_number;
-// 			std::cout << "Time step " << data.dual_timestep_number << " at t = "
-// 						<< data.dual_time << std::endl;
-// 			// Increase and set iterator for primal solution u_kh (needed only for global L2-Error)
-// 			++In_uth_test;
-// 			rit_In_uback = In_uth_test;
-// 
-// 			++In_zth; // "increase" iterator of list dual.storage.z. (running backward from last to first element)
-// 			++Inth_dual; // "increase" iterator of list In (grids).
-// 			// Set iterators
-// 			dual.iterator.slab = Inth_dual;
-// 			dual.iterator.slab_previous = Inth_dual_prev;
-// 			
-// 			std::cout << "Zellen it = " << dual.iterator.slab->tria->n_active_cells() << std::endl;
-// 			std::cout << "Zellen it_prev = " << dual.iterator.slab_previous->tria->n_active_cells() << std::endl;
-// 			
-// 			dual_reinit();
-// 			dual_assemble_system();
-// 			
-// 			__sync_synchronize();
-// 			volatile const double ttt{n*data.tau_n};
-// 			dual_set_time(ttt);
-// 			__sync_synchronize();
-// 			dual_assemble_rhs();
-// 			
-// 			dual_solve();
-// 			
-// 			// Save current solution (dual.z) in list dual.storage.z
-// 			In_zth->x->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(In_zth->x) = *(dual.z);
-// 			
-// 			// Save current solution (dual.z) and rhs_value (dual.Je) for 
-// 			// next time step in dual.z_old and dual.Je_old
-// 			// (needed within dual_assemble_rhs() of next time step) 
-// 			dual.z_old = std::make_shared< dealii::Vector<double> > ();
-// 			dual.z_old->reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			*(dual.z_old) = *(dual.z);
-// 			dual.Je_old.reinit(dual.iterator.slab->dual.dof->n_dofs());
-// 			dual.Je_old = dual.Je;
-// 			
-// 			++Inth_dual_prev;
-// 		}
-// 	} //end for-loop n dual
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_assemble_rhs_at_t_Nminus1() {
-// 	switch (dual.Je_type) {
-// 		
-// 		case Heat::types::error_functional::L2_final:
-// 			dual_assemble_Je_L2final();
-// 			// Compute special RHS on last Interval I_N 
-// 			dual.system_rhs = 0;
-// 			(dual.system_rhs).add(1.,dual.Je);
-// 			// End of computation of RHS
-// 			break;
-// 			
-// 		case Heat::types::error_functional::L2_global:
-// 			dual_assemble_Je_L2global();
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_L2global();
-// 			break;
-// 			
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_assemble_rhs() {
-// 	switch (dual.Je_type) {
-
-// 		case Heat::types::error_functional::L2_final:
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_L2final();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::L2_global:
-// 			dual_assemble_Je_L2global();
-// 			dual_interpolate_to_next_grid();
-// 			dual_assemble_rhs_L2global();
-// 			break;
-// 	}
-// }
-
-
-
-// ////////////////////////////////////////////////////////////////////////////////
-// //////////  L2Error_global-Evaluation (J(phi)=1/(L2-Norm(e))*(e,phi)) //////////////////
-// ////////////////////////////////////////////////////////////////////////////////
-// 
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_assemble_Je_L2global() {
-// 	
-// 	for ( ; cell != endc; ++cell) {
-// 		// Set up the exact solution vector
-// 		function.BoundaryValues_dual->value_list(fe_values.get_quadrature_points(),
-// 								   exact_solution_values);
-// 		// Set up the computed solution vector
-// 		fe_values.get_function_values(*(rit_In_uback->x),
-// 									  u_h_values);
-// 		
-// 		// Now loop over all shape function combinations and quadrature points
-// 		// to get the assembly.
-// 		for (unsigned int i(0); i < dual.iterator.slab->dual.fe->dofs_per_cell; ++i)
-// 		for (unsigned int q(0); q < quad.size(); ++q) {
-// 			local_dual_Je(i) +=
-// 				(1./L2Error_global) *
-// 				(((exact_solution_values[q]-u_h_values[q]) *
-// 				fe_values.shape_value(i,q))* 
-// 				fe_values.JxW(q));
-// 		}
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_assemble_rhs_L2global() {
-// 	dual.system_rhs = 0;
-// 	(dual.A).vmult(dual.system_rhs,*(dual.z_old_interpolated));
-// 	dual.system_rhs *= (-((data.tau_n)/2.));
-// 	(dual.M).vmult_add(dual.system_rhs,*(dual.z_old_interpolated));
-// 	(dual.system_rhs).add(((data.tau_n)/2.),dual.Je_old_interpolated);
-// 	(dual.system_rhs).add(((data.tau_n)/2.),dual.Je);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_solve() {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// apply Dirichlet boundary values
-// 	std::map<dealii::types::global_dof_index, double> boundary_values;
-// 	dealii::VectorTools::interpolate_boundary_values(
-// 		*(dual.iterator.slab->dual.dof),
-// 		static_cast< dealii::types::boundary_id > (
-// 			Heat::types::boundary_id::Dirichlet
-// 		),
-// 		dealii::ZeroFunction<dim> (),
-// 		boundary_values
-// 	);
-// 	
-// 	dealii::MatrixTools::apply_boundary_values(
-// 		boundary_values,
-// 		dual.system_matrix,
-// 		*(dual.z),
-// 		dual.system_rhs
-// 	);
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// solve linear system
-// 	dealii::SparseDirectUMFPACK iA;
-// 	iA.initialize(dual.system_matrix);
-// 	iA.vmult(*(dual.z), dual.system_rhs);
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// distribute hanging node constraints on solution
-// 	dual.iterator.slab->dual.constraints->distribute(*(dual.z));
-// }
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// old
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// interpolate_primal_to_dual() {
-// 	dealii::FETools::interpolate(
-// 		*(primal.iterator.slab->primal.dof),
-// 		*(primal.slab.u),
-// 		*(primal.iterator.slab->dual.dof),
-// 		*(primal.iterator.slab->dual.constraints),
-// 		*(dual.u)
-// 	);
-// }
-
-
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// init error estimator
-// 	//
-// 	error_estimator.DWR = std::make_shared<Heat::DWR::ErrorEstimator<dim> > ();
-// 	
-// 	error_estimator.DWR->set_objects(
-// 		grid,
-// 		function.epsilon,
-// 		function.BoundaryValues,
-// 		function.BoundaryValues_dual, // TODO
-// 		function.f,
-// 		function.f // TODO
-// 	);
-
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_init_data_output() {
-// 	////////////////////////////////////////////////////////////////////////////
-// 	// INIT DATA OUTPUT
-// 	//
-// 	Assert(dual.iterator.slab->dual.dof.use_count(), dealii::ExcNotInitialized());
-// 	
-// 	DTM::pout << "Heat DWR: dual solution   data output: patches = " << dual.data_output_patches << std::endl;
-// 	
-// 	std::vector<std::string> data_field_names;
-// // 	data_field_names.push_back("u");
-// 	data_field_names.push_back("z");
-// 	
-// 	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
-// // 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-// 	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
-// 	
-// // 	dual.data_output.set_DoF_data(
-// // 		dual.iterator.slab->dual.dof
-// // 	);
-// 	dual.data_output.set_DoF_data(
-// 		primal.iterator.slab->dual.dof
-// 	);
-// 	
-// 	dual.data_output.set_data_field_names(data_field_names);
-// 	dual.data_output.set_data_component_interpretation_field(dci_field);
-// 	dual.data_output.set_data_output_patches(dual.data_output_patches);
-// }
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// dual_interpolate_to_next_grid() {
-// 	dealii::VectorTools::interpolate_to_different_mesh(
-// 		*(dual.iterator.slab_previous->dual.dof),
-// 		*(dual.z_old),
-// 		*(dual.iterator.slab->dual.dof),
-// 		*(dual.iterator.slab->dual.constraints),
-// 		*(dual.z_old_interpolated)
-// 	);
-// 	
-// 	// Only needed if within dual_assemble_Je has to be sth computed because of 
-// 	// the used error functional, for exmpl L^2error at final timepoint dual.Je 
-// 	// is always 0.
-// 	dealii::VectorTools::interpolate_to_different_mesh(
-// 		*(dual.iterator.slab_previous->dual.dof),
-// 		dual.Je_old,
-// 		*(dual.iterator.slab->dual.dof),
-// 		*(dual.iterator.slab->dual.constraints),
-// 		dual.Je_old_interpolated
-// 	);
-// }
-
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// compute_Ieff() {
-// 	switch (dual.Je_type) {
-// 		case Heat::types::error_functional::forbidden:
-// 			AssertThrow(false, dealii::ExcMessage("You need to initialise dual.Je_type."));
-// 			break;
-// 		
-// 		case Heat::types::error_functional::L2_final:
-// 			compute_Ieff_L2final();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::L2_global:
-// 			compute_Ieff_L2global();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::mean_final:
-// 			compute_Ieff_mean_final();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::mean_global:
-// 			compute_Ieff_mean_global();
-// 			break;
-// 			
-// 		case Heat::types::error_functional::point:
-// 			compute_Ieff_point_final();
-// 			break;
-// 		
-// 		default:
-// 			AssertThrow(false, dealii::ExcMessage("Your dual.Je_type is unknown, please check your inputs."));
-// 	}	
-// }
-
-
-
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// compute_Ieff_L2global() {
-// 	// Compute eta_K^n within fct. estimate() of class DWR_ErrorEstimator ans store
-// 	// the local contributions of one time-interval I_n within the vector erroro_indicators
-// 	// and all these vectors within the list dual.storage.eta.
-// 	error_estimator.DWR->estimate(
-// 		dual.storage.u,
-// 		dual.storage.z,
-// 		dual.storage.eta
-// 	);
-// 
-// 	////////////////////////////////////////////////////////////////////////////
-// 	////// Computaion of I_eff  ////////////////////////////////////////////////
-// 	////////////////////////////////////////////////////////////////////////////
-// 	
-// 	// Sum up the local contributions of all cells within one time-interval of the 
-// 	// local vector error_indicators (sum_(K in T_h)n_K^n). Then sum up all these
-// 	// added values and store it within the double eta (=sum_(n=1)^N (sum_(K in T_h)n_K^n))
-// 	auto In_eta_test(dual.storage.eta->begin());
-// 	auto endIn_eta_test(dual.storage.eta->end());
-// 	// Variable for estimated error eta
-// 	double eta;
-// 	eta = 0;
-// 	for (; In_eta_test != endIn_eta_test; ++In_eta_test) {
-// // 		for (unsigned int i=0; i < In_etat_test->x->size(); ++i) {
-// // 			(*(In_etat_test->x))[i] = std::fabs((*(In_etat_test->x))[i]);
-// // 		}
-// 
-// 		std::cout << "Groesse eta = " << In_eta_test->x->size() << std::endl;
-// 		std::cout << "Summe eta_K = "<< std::accumulate (In_eta_test->x->begin(),
-//                                 In_eta_test->x->end(), 0.) << std::endl;
-// 		// local sum for each time-interval I_n
-// 		double eta_k;
-// 		eta_k = 0;
-// 		eta_k = std::accumulate (In_eta_test->x->begin(),
-//                                 In_eta_test->x->end(), 0.);
-// 		// Add the local contribution of one time-interval I_n to the global eta.
-// 		eta += eta_k;
-// 	} // end of loop In_eta_test
-// 	
-// // 	// Computation of the exact error J(e) = J(u)-J(u_kh):
-// 	// In now done within the function compute_global_STL2_error() (see below)
-// 	
-// // 	// Variable for effectivity index I_eff
-// 	double I_eff;
-// 	I_eff = 0.;
-// 	// Computaion of effectivity index:
-// 	I_eff = eta/L2Error_global;
-// 	// Output of estimated error eta, exact error J(e) and effectivity index I_eff:
-// 	std::cout << "eta = " << eta << std::endl;
-// 	std::cout << "gl Fehler = " << L2Error_global << std::endl;
-// 	std::cout << "I_eff = " << eta/L2Error_global << std::endl;
-// 	
-// 	// Add value of I_eff to table
-// 	primal.convergence_table.add_value("J(e)",L2Error_global);
-// 	primal.convergence_table.add_value("Eta",eta);
-// 	primal.convergence_table.add_value("I_eff", I_eff);
-// 
-// }
-
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// refine_grids_dwr() {
-// 	
-// 	// Build up a loop over all grids:
-// 	auto Inth(grid->slabs.begin());
-// 	auto endInth(grid->slabs.end());
-// 	auto In_etath(dual.storage.eta->begin());
-// 	
-// 	for (; Inth != endInth; ++Inth) {
-// 	
-// 		for (unsigned int i=0; i < In_etath->x->size(); ++i) {
-// 			(*(In_etath->x))[i] = std::fabs((*(In_etath->x))[i]);
-// 		}
-// 		
-// 		////////////////////////////////////////////////////////////////////////////
-// 		/// Schwegeler mesh-refinement strategy
-// 		const double theta = 1.2; 										//theta aus (0.25,5).
-// 		double eta_max = 0.;
-// 		for (unsigned int i=0; i < In_etath->x->size(); ++i) {		//gives back the max. entry of error_indicators.
-// 			if((*(In_etath->x))[i] > eta_max) {
-// 				eta_max = (*(In_etath->x))[i];
-// 			}
-// 		}
-// 		std::cout << "   eta_max = " << eta_max << std::endl;
-// 		double eta_ks = std::accumulate (In_etath->x->begin(),
-// 										 In_etath->x->end(), 0.);
-// 		double Zellen = Inth->tria->n_active_cells();					//Number of active cells.
-// 
-// 		double mu = theta*(eta_ks/Zellen);								//mu.
-// 		std::cout << "   mu = " << mu << std::endl;
-// 		if(mu > eta_max) {mu=mu/2.;}									//while mu > eta_max: mu:=mu/2.
-// 		int Anz_ZuVerfZellen = 0;
-// 		for (unsigned int i=0; i < In_etath->x->size(); ++i) {		//determines how many cells schould be refined
-// 			if((*(In_etath->x))[i] > mu) {							//(those cells, whose related error_indicators entry
-// 				Anz_ZuVerfZellen = Anz_ZuVerfZellen + 1.;				//is > than mu).
-// 			}
-// 		}
-// 		std::cout << "Anz_ZuVerfZellen=" << Anz_ZuVerfZellen << std::endl;
-// 		double topfractioncells = Anz_ZuVerfZellen/Zellen; 				//percentage of to be refined cells.
-// 		std::cout << "topfractioncells=" << topfractioncells << std::endl;
-// 		dealii::GridRefinement::refine_and_coarsen_fixed_number (*(Inth->tria),	//mark cells, which schould be refined
-// 																*(In_etath->x),
-// 																topfractioncells, 0.0);
-// 		
-// 		Inth->tria->refine_global();
-// 	
-// 	++In_etath;
-// 	} // end for-loop Inth (over all grids)
-// }
-
-
-
-// template<int dim>
-// void
-// Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-// run() {
-// 	
-// ////////////////////////////////////////////////////////////////////////////////
-// /////////////// DWR-loop ///////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////
-// 
-// 	// Start DWR-loop cycle =^ one DWR-step
-// 	const int endcycle = 2;
-// 	for (unsigned int cycle = 0; cycle < endcycle /*true*/; ++cycle) {
-// 		std::cout << "======================" << std::endl;
-// 		std::cout << "Refinement Cycle: " << cycle << std::endl;
-// 		std::cout << "======================" << std::endl;
-// 		
-// 		// Set time and running variables new at the beginning of every DWR-step
-// 		data.primal_time = 0.;
-// 		data.dual_time = data.T;
-// 		data.primal_timestep_number = 0;
-// 		data.dual_timestep_number = 0;
-// 		
-// 		// Prepare grids and dofs
-// 		grid->set_boundary_indicators();
-// 		grid->distribute();
-// 		
-// 		/////////////// begin primal ///////////////////////////////////////////
-// 		// solve complete forward TMS
-// 		solve_primal_problem();
-// 		
-// 		///////////////////////// begin dual ///////////////////////////////////
-// 		solve_dual_problem();
-// 		
-
-// 		// Compute I_eff:
-// 		std::cout << "dual.storage.eta hat Groesse = " << dual.storage.eta->size() << std::endl;
-// 	
-// 		compute_Ieff();
-// 
-// 		// Solution Output
-// 		if (cycle == endcycle-1) {
-// 			primal_and_dual_solution_output();
-// 		} // end if Soltion Output (cycle == endcycle-1)
-// 		
-// 		// Refine Grids
-// 		refine_grids_dwr();
-// 	
-// 	} // end DWR-loop
-// 	
-// 	////////////////////////////////////////////////////////////////////////////
-// 	//////////////// end DWR-loop "cycle" //////////////////////////////////////
-// 	////////////////////////////////////////////////////////////////////////////
-
 
 } // namespace
 
