@@ -48,6 +48,8 @@ struct s_slab {
 	double t_m; ///< left endpoint of \f$ I_n=(t_m, t_n) \f$
 	double t_n; ///< right endpoint of \f$ I_n=(t_m, t_n) \f$
 	
+	bool refine_in_time;
+	
 	struct {
 		std::shared_ptr< dealii::DoFHandler<dim> > dof;
 		std::shared_ptr< dealii::FiniteElement<dim> > fe;
@@ -67,6 +69,7 @@ struct s_slab {
 	} dual;
 	
 	double tau_n() const { return (t_n-t_m); };
+	void set_refine_in_time_flag() { refine_in_time=true; };
 };
 
 template <int dim>
