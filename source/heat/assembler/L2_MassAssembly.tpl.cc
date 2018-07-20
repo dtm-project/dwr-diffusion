@@ -68,7 +68,12 @@ MassAssembly<dim>::MassAssembly(const MassAssembly &scratch) :
 	density(scratch.density),
 	JxW(scratch.JxW),
 	dofs_per_cell(scratch.dofs_per_cell),
-	n_components(scratch.n_components) {
+	n_components(scratch.n_components),
+	q(scratch.q),
+	component(scratch.component),
+	k(scratch.k),
+	i(scratch.i),
+	j(scratch.j) {
 }
 
 } // namespace Scratch
@@ -179,28 +184,33 @@ void Assembler<dim>::local_assemble_cell(
 	copydata.ui_vi_matrix = 0;
 	
 	// assemble cell terms
-	for (unsigned int q{0}; q < scratch.fe_values.n_quadrature_points; ++q) {
+	for (scratch.q=0; scratch.q < scratch.fe_values.n_quadrature_points;
+		++scratch.q) {
 		scratch.density = function.density->value(
-			scratch.fe_values.quadrature_point(q),0
+			scratch.fe_values.quadrature_point(scratch.q),0
 		);
-		scratch.JxW = scratch.fe_values.JxW(q);
+		scratch.JxW = scratch.fe_values.JxW(scratch.q);
 		
 		// loop over all components of this finite element
-		for (unsigned int component{0}; component < scratch.n_components;
-			++component) {
+		for (scratch.component=0; scratch.component < scratch.n_components;
+			++scratch.component) {
 		
 		// loop over all basis functions to get the shape values
-		for (unsigned int k{0}; k < scratch.dofs_per_cell; ++k) {
-			scratch.phi[k] =
-				scratch.fe_values.shape_value_component(k,q,component);
+		for (scratch.k=0; scratch.k < scratch.dofs_per_cell; ++scratch.k) {
+			scratch.phi[scratch.k] =
+				scratch.fe_values.shape_value_component(
+					scratch.k,
+					scratch.q,
+					scratch.component
+				);
 		}
 		
 		// loop over all test & trial function combinitions to get the assembly
-		for (unsigned int i{0}; i < scratch.dofs_per_cell; ++i)
-		for (unsigned int j{0}; j < scratch.dofs_per_cell; ++j) {
-			copydata.ui_vi_matrix(i,j) += (
+		for (scratch.i=0; scratch.i < scratch.dofs_per_cell; ++scratch.i)
+		for (scratch.j=0; scratch.j < scratch.dofs_per_cell; ++scratch.j) {
+			copydata.ui_vi_matrix(scratch.i,scratch.j) += (
 				scratch.density *
-				(scratch.phi[i] * scratch.phi[j]) *
+				(scratch.phi[scratch.i] * scratch.phi[scratch.j]) *
 				scratch.JxW
 			);
 		} // for ij

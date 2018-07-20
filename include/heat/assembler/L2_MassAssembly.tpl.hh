@@ -85,6 +85,13 @@ struct MassAssembly {
 	double                      JxW;
 	unsigned int                dofs_per_cell;
 	unsigned int                n_components;
+	
+	// other
+	unsigned int q;
+	unsigned int component;
+	unsigned int k;
+	unsigned int i;
+	unsigned int j;
 };
 
 
