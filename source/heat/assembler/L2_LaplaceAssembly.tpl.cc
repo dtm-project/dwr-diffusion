@@ -237,7 +237,8 @@ void Assembler<dim>::copy_local_to_global_cell(
 	constraints->distribute_local_to_global(
 		copydata.vi_ui_matrix,
 		copydata.local_dof_indices, copydata.local_dof_indices,
-		*A);
+		*A
+	);
 }
 
 
