@@ -407,9 +407,11 @@ primal_solve_slab_problem(
 	slab->primal.constraints->condense(*primal.K);
 	
 #ifdef DEBUG
-	std::ofstream out_K("primalK.gpl");
-	primal.K->print(out_K);
-	out_K.close();
+	{
+		std::ofstream out_K("primalK.gpl");
+		primal.K->print(out_K);
+		out_K.close();
+	}
 #endif
 	
 	dealii::SparseDirectUMFPACK iA;
@@ -1131,9 +1133,11 @@ dual_solve_slab_problem(
 	slab->dual.constraints->condense(*dual.K);
 	
 #ifdef DEBUG
-	std::ofstream out_K("dualK.gpl");
-	dual.K->print(out_K);
-	out_K.close();
+	{
+		std::ofstream out_K("dualK.gpl");
+		dual.K->print(out_K);
+		out_K.close();
+	}
 #endif
 	
 	dealii::SparseDirectUMFPACK iA;

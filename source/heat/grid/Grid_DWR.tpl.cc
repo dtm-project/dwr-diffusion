@@ -174,19 +174,21 @@ refine_slab_in_time(
 	typename DTM::types::spacetime::dwr::slabs<dim>::iterator slab) {
 #ifdef DEBUG
 	// check if iterator slab is in the container slabs of this object
-	auto _slab{slabs.begin()};
-	auto _ends{slabs.end()};
-	bool check{false};
-	for ( ; _slab != _ends; ++_slab ) {
-		if (slab == _slab) {
-			check=true;
-			break;
+	{
+		auto _slab{slabs.begin()};
+		auto _ends{slabs.end()};
+		bool check{false};
+		for ( ; _slab != _ends; ++_slab ) {
+			if (slab == _slab) {
+				check=true;
+				break;
+			}
 		}
+		Assert(
+			check,
+			dealii::ExcMessage("your given iterator slab to be refined could not be found in this->slabs object")
+		);
 	}
-	Assert(
-		check,
-		dealii::ExcMessage("your given iterator slab to be refined could not be found in this->slabs object")
-	);
 #endif
 	
 	// emplace a new slab element in front of the iterator
