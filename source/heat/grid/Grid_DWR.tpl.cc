@@ -375,7 +375,7 @@ distribute() {
 				*slab->dual.dof,
 				dsp,
 				*slab->dual.constraints,
-				false
+				true //false // keep constrained dofs?
 			);
 			
 			Assert(slab->dual.sp.use_count(), dealii::ExcNotInitialized());
