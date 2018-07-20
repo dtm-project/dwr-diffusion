@@ -57,7 +57,8 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
-// // C++ includes
+// C++ includes
+#include <algorithm>
 
 namespace heat {
 
@@ -1472,11 +1473,19 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 refine_and_coarsen_space_time_grid() {
-	// use only absolute values for eta_K entries
+	// set eta_K = | eta_K |
 	for (auto &eta_In : *error_estimator.storage.eta) {
 		for (auto &eta_K : *eta_In.x[0] ) {
 			eta_K = std::abs(eta_K);
+			
+			Assert(eta_K >= 0., dealii::ExcInternalError());
 		}
+		
+#ifdef DEBUG
+		for (auto &eta_K : *eta_In.x[0] ) {
+			Assert(eta_K >= 0., dealii::ExcInternalError());
+		}
+#endif
 	}
 	
 	Assert(
@@ -1487,120 +1496,135 @@ refine_and_coarsen_space_time_grid() {
 	////////////////////////////////////////////////////////////////////////////
 	// Schwegeler space-time refinement strategy
 	//
+	const double theta_t{0.2}; // TODO: read from parameter input
 	
-	// 1st loop: compute eta on I_n
-	std::vector<double> eta(grid->slabs.size());
-	const unsigned int N{static_cast<unsigned int>(eta.size())};
-	auto eta_it{error_estimator.storage.eta->begin()};
-	for (unsigned n{0}; n < N; ++n) {
-		eta[n] = std::accumulate(eta_it->x[0]->begin(), eta_it->x[0]->end(), 0.);
-		
-		// prepare next iteration
-		++eta_it;
+	// TODO: read in from parameter input
+	const double theta1 = 1.2;
+	const double theta2 = std::max(theta1*2., 4.999);
+	
+	Assert(
+		((theta_t >= 0.) && (theta_t <= 1.)),
+		dealii::ExcMessage("theta_t must be in [0,1]")
+	);
+	
+	Assert(
+		((theta1 > 1.) && (theta1 < 5.)),
+		dealii::ExcMessage("theta1 must be in (1,5)")
+	);
+	
+	Assert(
+		((theta2 > 1.) && (theta2 < 5.)),
+		dealii::ExcMessage("theta2 must be in (1,5)")
+	);
+	
+	Assert(
+		(theta2 >= theta1),
+		dealii::ExcMessage("(theta2 >= theta1)")
+	);
+	
+	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
+	std::vector<double> eta(N);
+	
+	// 1st loop: compute eta^n on I_n for n=1..N
+	{
+		auto eta_it{error_estimator.storage.eta->begin()};
+		for (unsigned n{0}; n < N; ++n, ++eta_it) {
+			Assert(
+				(eta_it != error_estimator.storage.eta->end()),
+				dealii::ExcInternalError()
+			);
+			
+			eta[n] = std::accumulate(
+				eta_it->x[0]->begin(),
+				eta_it->x[0]->end(),
+				0.
+			);
+		}
 	}
 	
 	// 2nd loop: mark for time refinement
-	std::vector<double> eta_sort(eta);
-	std::sort(eta_sort.begin(), eta_sort.end());
-	
-	const double theta_t{0.2}; // TODO: read from parameter input
-	const unsigned int idx{
-		static_cast<unsigned int>(std::floor(static_cast<double>(N)*theta_t))
-	};
-	
-	Assert( (static_cast<int>(N) - static_cast<int>(idx)) >= 0,
-		dealii::ExcMessage("uups")
-	);
-	
-	auto slab{grid->slabs.begin()};
-	auto ends{grid->slabs.end()};
-	
-	unsigned int n{0};
-	for ( ; slab != ends; ++slab) {
-		if (eta[n] >= eta_sort[N-idx])
-			slab->set_refine_in_time_flag();
+	{
+		std::vector<double> eta_sorted(eta);
+		std::sort(eta_sorted.begin(), eta_sorted.end());
 		
-		// prepare next loop
-		++n;
+		// check if index for eta_criterium_for_mark_time_refinement is valid
+		Assert(
+			( static_cast<int>(N)
+			- static_cast<int>(std::floor(static_cast<double>(N)*theta_t)) ) >= 0,
+			dealii::ExcInternalError()
+		);
+		
+		const auto eta_criterium_for_mark_time_refinement{
+			eta_sorted[ static_cast<int>(N)
+				- static_cast<int>(std::floor(static_cast<double>(N)*theta_t)) ]
+		};
+		
+		auto slab{grid->slabs.begin()};
+		auto ends{grid->slabs.end()};
+		for (unsigned int n{0} ; slab != ends; ++slab, ++n) {
+			Assert((n < N), dealii::ExcInternalError());
+			
+			if (eta[n] >= eta_criterium_for_mark_time_refinement) {
+				slab->set_refine_in_time_flag();
+			}
+		}
 	}
 	
 	// 3rd loop execute_coarsening_and_refinement
-	slab = grid->slabs.begin();
-	ends = grid->slabs.end();
-	eta_it = error_estimator.storage.eta->begin();
-	
-	n = 0;
-	
-	for ( ; slab != ends; ++slab) {
-		const auto n_active_cells_on_slab{slab->tria->n_active_cells()};
-		
-		// TODO: read in from parameter input
-		const double theta1 = 1.2; //theta aus (0.25,5).
-		const double theta2 = 1.2; //theta aus (0.25,5).
-		Assert(
-			((theta1 > 1.) && (theta1 < 5.)),
-			dealii::ExcMessage("theta1 must be in (1, 5)")
-		);
-		
-		Assert(
-			((theta2 > 1.) && (theta2 < 5.)),
-			dealii::ExcMessage("theta2 must be in (1, 5)")
-		);
-		
-		Assert(
-			(theta2 >= theta1),
-			dealii::ExcMessage("(theta2 >= theta1)")
-		);
-		
-		double mu;
-		if (slab->refine_in_time) {
-			mu = theta1 * eta[n] / n_active_cells_on_slab;
-		}
-		else {
-			mu = theta2 * eta[n] / n_active_cells_on_slab;
-		}
-		DTM::pout << "   mu = " << mu << std::endl;
-		
-		double eta_max{0.};
-		for (const auto &eta_K : *eta_it->x[0]) {
-			eta_max = eta_max > eta_K ? eta_max : eta_K;
-		}
-		DTM::pout << "   eta_max = " << eta_max << std::endl;
-		
-		while (mu > eta_max) {
-			mu /= 2.;
-		}
-		DTM::pout << "   mu = " << mu << std::endl;
-		
-		auto cell{slab->tria->begin_active()};
-		auto endc{slab->tria->end()};
-		for ( ; cell != endc; ++cell) {
-			if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
-				cell->set_refine_flag(
-					dealii::RefinementCase<dim>::isotropic_refinement
-				);
+	{
+		auto slab{grid->slabs.begin()};
+		auto ends{grid->slabs.end()};
+		auto eta_it{error_estimator.storage.eta->begin()};
+		for (unsigned int n{0} ; slab != ends; ++slab, ++eta_it, ++n) {
+			Assert((n < N), dealii::ExcInternalError());
+			
+			Assert(
+				(eta_it != error_estimator.storage.eta->end()),
+				dealii::ExcInternalError()
+			);
+			
+			DTM::pout << "\tn = " << n << std::endl;
+			
+			const auto n_active_cells_on_slab{slab->tria->n_active_cells()};
+			DTM::pout << "\t#K = " << n_active_cells_on_slab << std::endl;
+			
+			const double theta{ slab->refine_in_time ? theta1 : theta2 };
+			DTM::pout << "\ttheta = " << theta << std::endl;
+			
+			double mu{theta * eta[n] / n_active_cells_on_slab};
+			DTM::pout << "\tmu = " << mu << std::endl;
+			
+			const auto eta_max{
+				*std::max_element(eta_it->x[0]->begin(), eta_it->x[0]->end())
+			};
+			DTM::pout << "\teta_max = " << eta_max << std::endl;
+			
+			while (mu > eta_max) {
+				mu /= 2.;
+			}
+			DTM::pout << "\tmu = " << mu << std::endl;
+			
+			// mark cells in space for refinement
+			auto cell{slab->tria->begin_active()};
+			auto endc{slab->tria->end()};
+			for ( ; cell != endc; ++cell) {
+				if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
+					cell->set_refine_flag(
+						dealii::RefinementCase<dim>::isotropic_refinement
+					);
+				}
+			}
+			
+			// execute refinement in space under the conditions of mesh smoothing
+			slab->tria->execute_coarsening_and_refinement();
+			
+			// refine in time
+			if (slab->refine_in_time) {
+				grid->refine_slab_in_time(slab);
+				slab->refine_in_time = false;
 			}
 		}
-		
-		slab->tria->execute_coarsening_and_refinement();
-		
-		if (slab->refine_in_time) {
-			grid->refine_slab_in_time(slab);
-			slab->refine_in_time = false;
-		}
-		
-		// prepare next loop
-		++eta_it;
-		++n;
 	}
-	
-// 	// refine time grid by factor of 2
-// 	auto slab{grid->slabs.begin()};
-// 	auto ends{grid->slabs.end()};
-// 	
-// 	for ( ; slab != ends; ++slab) {
-// 		grid->refine_slab_in_time(slab);
-// 	}
 }
 
 } // namespace
