@@ -82,6 +82,12 @@ struct ForceConstrainedAssembly {
 	std::vector<double>   phi;
 	double                JxW;
 	double                f;
+	
+	// other
+	unsigned int q;
+	unsigned int component;
+	unsigned int k;
+	unsigned int i;
 };
 
 } // namespace Scratch
