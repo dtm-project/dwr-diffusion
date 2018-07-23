@@ -386,6 +386,7 @@ estimate(
 			primal_uD_on_t0->reinit( slab->primal.dof->n_dofs() );
 			
 			function.u_D->set_time(t0);
+			// TODO: this also interpolates the interior of the domain, be careful!
 			dealii::VectorTools::interpolate(
 				*slab->primal.mapping,
 				*slab->primal.dof,
