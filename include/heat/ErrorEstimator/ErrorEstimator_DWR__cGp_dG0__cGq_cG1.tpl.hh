@@ -106,6 +106,11 @@ struct ErrorEstimateOnCell {
 	
 	// other:
 	double JxW;
+	
+	unsigned int q;
+	unsigned int d;
+	unsigned int k;
+	unsigned int j;
 };
 
 
@@ -154,6 +159,11 @@ struct ErrorEstimateOnFace {
 	
 	// other
 	double JxW;
+	
+	unsigned int q;
+	unsigned int k;
+	unsigned int j;
+	unsigned int subface_no;
 };
 
 
@@ -172,6 +182,9 @@ struct ErrorEstimates {
 	
 	ErrorEstimateOnCell<dim> cell;
 	ErrorEstimateOnFace<dim> face;
+	
+	// other
+	unsigned int face_no;
 };
 
 } // namespace Scratch
