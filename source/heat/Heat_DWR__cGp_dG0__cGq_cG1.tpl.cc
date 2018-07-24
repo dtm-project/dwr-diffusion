@@ -54,6 +54,7 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 #include <deal.II/lac/sparse_direct.h>
 
 #include <deal.II/fe/fe_tools.h>
+#include <deal.II/grid/grid_refinement.h>
 
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -512,6 +513,7 @@ primal_do_forward_TMS(
 			<< std::endl;
 		
 		if (slab != grid->slabs.begin()) {
+			Assert(primal.un.use_count(), dealii::ExcNotInitialized());
 			primal.um = std::make_shared< dealii::Vector<double> >();
 			primal.um->reinit( slab->primal.dof->n_dofs() );
 			
@@ -1497,32 +1499,32 @@ refine_and_coarsen_space_time_grid() {
 	////////////////////////////////////////////////////////////////////////////
 	// Schwegeler space-time refinement strategy
 	//
-	const double theta_t{0.2}; // TODO: read from parameter input
+	const double theta_t{0.5}; // TODO: read from parameter input
 	
-	// TODO: read in from parameter input
-	const double theta1 = 1.2;
-	const double theta2 = 1.2;
-// 	const double theta2 = std::max(theta1*2., 4.999);
-	
+// 	// TODO: read in from parameter input
+// 	const double theta1 = 1.2;
+// 	const double theta2 = 1.2;
+// // 	const double theta2 = std::max(theta1*2., 4.999);
+// 	
 	Assert(
 		((theta_t >= 0.) && (theta_t <= 1.)),
 		dealii::ExcMessage("theta_t must be in [0,1]")
 	);
 	
-	Assert(
-		((theta1 > 1.) && (theta1 < 5.)),
-		dealii::ExcMessage("theta1 must be in (1,5)")
-	);
-	
-	Assert(
-		((theta2 > 1.) && (theta2 < 5.)),
-		dealii::ExcMessage("theta2 must be in (1,5)")
-	);
-	
-	Assert(
-		(theta2 >= theta1),
-		dealii::ExcMessage("(theta2 >= theta1)")
-	);
+// 	Assert(
+// 		((theta1 > 1.) && (theta1 < 5.)),
+// 		dealii::ExcMessage("theta1 must be in (1,5)")
+// 	);
+// 	
+// 	Assert(
+// 		((theta2 > 1.) && (theta2 < 5.)),
+// 		dealii::ExcMessage("theta2 must be in (1,5)")
+// 	);
+// 	
+// 	Assert(
+// 		(theta2 >= theta1),
+// 		dealii::ExcMessage("(theta2 >= theta1)")
+// 	);
 	
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	std::vector<double> eta(N);
@@ -1574,6 +1576,7 @@ refine_and_coarsen_space_time_grid() {
 	
 	// 3rd loop execute_coarsening_and_refinement
 	{
+		unsigned int K_max{0};
 		auto slab{grid->slabs.begin()};
 		auto ends{grid->slabs.end()};
 		auto eta_it{error_estimator.storage.eta->begin()};
@@ -1589,6 +1592,7 @@ refine_and_coarsen_space_time_grid() {
 			
 			const auto n_active_cells_on_slab{slab->tria->n_active_cells()};
 			DTM::pout << "\t#K = " << n_active_cells_on_slab << std::endl;
+			K_max = (K_max > n_active_cells_on_slab) ? K_max : n_active_cells_on_slab;
 			
 			const double theta{ slab->refine_in_time ? theta1 : theta2 };
 			DTM::pout << "\ttheta = " << theta << std::endl;
@@ -1607,15 +1611,27 @@ refine_and_coarsen_space_time_grid() {
 			DTM::pout << "\tmu = " << mu << std::endl;
 			
 			// mark cells in space for refinement
-			auto cell{slab->tria->begin_active()};
-			auto endc{slab->tria->end()};
-			for ( ; cell != endc; ++cell) {
-				if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
-					cell->set_refine_flag(
-						dealii::RefinementCase<dim>::isotropic_refinement
-					);
-				}
-			}
+			
+// 			// K. Schwegeler
+// 			auto cell{slab->tria->begin_active()};
+// 			auto endc{slab->tria->end()};
+// 			for ( ; cell != endc; ++cell) {
+// 				if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
+// 					cell->set_refine_flag(
+// 						dealii::RefinementCase<dim>::isotropic_refinement
+// 					);
+// 				}
+// 			}
+			
+			// mark for refinement with fixed fraction
+			// (similar but not identical to Hartmann Ex. Sec. 1.4.2)
+			dealii::GridRefinement::refine_and_coarsen_fixed_fraction(
+				*slab->tria,
+				*eta_it->x[0],
+				.8, // top_fraction:    1 will refine every cell
+				.0, // bottom_fraction: 0 will coarsen no cells
+				slab->tria->n_active_cells()*3 // max elements restriction
+			);
 			
 			// execute refinement in space under the conditions of mesh smoothing
 			slab->tria->execute_coarsening_and_refinement();
@@ -1626,6 +1642,7 @@ refine_and_coarsen_space_time_grid() {
 				slab->refine_in_time = false;
 			}
 		}
+		DTM::pout << "\t#Kmax (before refinement) = " << K_max << std::endl;
 	}
 }
 
