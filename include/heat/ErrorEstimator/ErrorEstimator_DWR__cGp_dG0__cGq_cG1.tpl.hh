@@ -154,7 +154,9 @@ struct ErrorEstimateOnFace {
 	// function eval scratch:
 	double value_epsilon;
 	double value_u_D;
+	
 	double val_uh;
+	double val_grad_zh;
 	double val_face_jump_grad_u;
 	
 	// other

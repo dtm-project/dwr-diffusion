@@ -172,6 +172,7 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 	value_epsilon(scratch.value_epsilon),
 	value_u_D(scratch.value_u_D),
 	val_uh(scratch.val_uh),
+	val_grad_zh(scratch.val_grad_zh),
 	val_face_jump_grad_u(scratch.val_face_jump_grad_u),
 	JxW(scratch.JxW),
 	q(scratch.q),
@@ -967,9 +968,9 @@ assemble_error_on_boundary_face(
 	
 	for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
 		++scratch.j) {
-		// fetch interpolated u_D local dof data into ( K^+ / F^+ )-structure
+		// fetch interpolated u_D ("aka g_h") local dof data into ( K^+ / F^+ )-structure
 		scratch.local_u0[scratch.j] =
-			(*dual_uD_on_t0)[ scratch.neighbor_local_dof_indices[scratch.j] ];
+			(*dual_uD_on_t0)[ scratch.local_dof_indices[scratch.j] ];
 	}
 	
 	for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
@@ -988,17 +989,18 @@ assemble_error_on_boundary_face(
 		scratch.JxW = scratch.fe_values_face.JxW(scratch.q);
 		scratch.normal_vector = scratch.fe_values_face.normal_vector(scratch.q);
 		
-		// loop over all basis functions to get the shape values (K^+)
-		for (scratch.k=0; scratch.k < scratch.fe_values_face.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.phi[scratch.k] =
-				scratch.fe_values_face.shape_value_component(scratch.k,scratch.q,0);
-		}
-		
-		for (scratch.k=0; scratch.k < scratch.fe_values_face.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.grad_phi[scratch.k] =
-				scratch.fe_values_face.shape_grad(scratch.k,scratch.q);
+		// compute g_h(x_q) and grad z_h(x_q) * n:
+		scratch.val_uh=0.;
+		scratch.val_grad_zh=0.;
+		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			// NOTE: we assemble here "g_h", not u_h; cf. above.
+			scratch.val_uh += scratch.local_u0[scratch.j]
+				*scratch.fe_values_face.shape_value_component(scratch.j,scratch.q,0);
+			
+			scratch.val_grad_zh += scratch.local_z0[scratch.j]
+				* scratch.fe_values_face.shape_grad(scratch.j,scratch.q)
+				* scratch.normal_vector;
 		}
 		
 		// fetch function value(s)
@@ -1010,30 +1012,18 @@ assemble_error_on_boundary_face(
 			scratch.fe_values_face.quadrature_point(scratch.q), 0
 		);
 		
-		scratch.val_uh = 0.;
-		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
-			++scratch.j) {
-			scratch.val_uh += scratch.local_u0[scratch.j]*scratch.phi[scratch.j];
-		}
-		
-		// loop over all basis function combinitions to get the assembly
-		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
-			++scratch.j) {
-			// \int_{I_n} ... :
-			copydata.value += (
-				// finally we use 1/2 of all face values (interior and boundary faces!),
-				// thus we need to double the value in the assembly here
-				2.0
-				// u_D - I^dual(I^primal u_D)
-				* (scratch.value_u_D - scratch.val_uh)
-				// epsilon(x_q) * grad z_h * n
-				* scratch.value_epsilon
-				* scratch.local_z0[scratch.j]
-				* (scratch.grad_phi[scratch.j] * scratch.normal_vector)
-				* tau_n
-				* scratch.JxW
-			);
-		} // for j
+		// \int_{I_n} ... :
+		copydata.value += (
+			// finally we use 1/2 of all face values (interior and boundary faces!),
+			// thus we need to double the value in the assembly here
+			2.0
+			// u_D - I^dual(I^primal u_D)
+			* (scratch.value_u_D - scratch.val_uh)
+			// epsilon(x_q) * grad z_h * n
+			* scratch.value_epsilon * scratch.val_grad_zh 
+			* tau_n
+			* scratch.JxW
+		);
 	}
 	
 	Assert(
