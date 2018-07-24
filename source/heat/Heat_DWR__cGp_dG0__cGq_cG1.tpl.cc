@@ -1594,21 +1594,21 @@ refine_and_coarsen_space_time_grid() {
 			DTM::pout << "\t#K = " << n_active_cells_on_slab << std::endl;
 			K_max = (K_max > n_active_cells_on_slab) ? K_max : n_active_cells_on_slab;
 			
-			const double theta{ slab->refine_in_time ? theta1 : theta2 };
-			DTM::pout << "\ttheta = " << theta << std::endl;
+// 			const double theta{ slab->refine_in_time ? theta1 : theta2 };
+// 			DTM::pout << "\ttheta = " << theta << std::endl;
 			
-			double mu{theta * eta[n] / n_active_cells_on_slab};
-			DTM::pout << "\tmu = " << mu << std::endl;
+// 			double mu{theta * eta[n] / n_active_cells_on_slab};
+// 			DTM::pout << "\tmu = " << mu << std::endl;
 			
 			const auto eta_max{
 				*std::max_element(eta_it->x[0]->begin(), eta_it->x[0]->end())
 			};
 			DTM::pout << "\teta_max = " << eta_max << std::endl;
 			
-			while (mu > eta_max) {
-				mu /= 2.;
-			}
-			DTM::pout << "\tmu = " << mu << std::endl;
+// 			while (mu > eta_max) {
+// 				mu /= 2.;
+// 			}
+// 			DTM::pout << "\tmu = " << mu << std::endl;
 			
 			// mark cells in space for refinement
 			
