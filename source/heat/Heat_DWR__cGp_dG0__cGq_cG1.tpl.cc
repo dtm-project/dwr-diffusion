@@ -842,7 +842,7 @@ primal_do_data_output(
 	}
 	else {
 		for ( ; t <= slab->t_n; t += primal.data_output_trigger) {
-			[[maybe_unused]] double _t = (t - slab->t_m)/ slab->tau_n();
+			[[maybe_unused]] double _t = (t - slab->t_m) / slab->tau_n();
 			
 			double zeta0 = 1.;
 			
@@ -1263,9 +1263,6 @@ dual_do_backward_TMS(
 	// NOTE: for goal functional || u - u_kh ||_L2(L2) -> z(T) = 0
 	*z->x[1] = 0;
 	
-	// output "final value solution" at final time T
-	dual_do_data_output(slab,z->x[1],slab->t_n,dwr_loop);
-	
 	////////////////////////////////////////////////////////////////////////////
 	// do TMS loop
 	//
@@ -1318,8 +1315,7 @@ dual_do_backward_TMS(
 		// do postprocessing on the solution
 		//
 		
-		// output "final value solution" at final time "t_m=t0"
-		dual_do_data_output(slab,z->x[0],t0,dwr_loop);
+		dual_do_data_output(slab,z,dwr_loop);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -1431,6 +1427,31 @@ dual_init_data_output() {
 		<< "dual solution data output: dwr loop = "
 		<< dual.data_output_dwr_loop
 		<< std::endl;
+	
+	// check if we use a fixed trigger interval, or, do output once on a I_n
+	if ( !parameter_set->data_output.dual.trigger_type.compare("fixed") ) {
+		dual.data_output_trigger_type_fixed = true;
+	}
+	else {
+		dual.data_output_trigger_type_fixed = false;
+	}
+	
+	// only for fixed
+	dual.data_output_trigger = parameter_set->data_output.dual.trigger;
+	
+	if (dual.data_output_trigger_type_fixed) {
+		DTM::pout
+			<< "dual solution data output: using fixed mode with trigger = "
+			<< dual.data_output_trigger
+			<< std::endl;
+	}
+	else {
+		DTM::pout
+			<< "dual solution data output: using I_n mode (trigger adapts to I_n automatically)"
+			<< std::endl;
+	}
+	
+	dual.data_output_time_value = parameter_set->T;
 }
 
 
@@ -1439,33 +1460,55 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_do_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	std::shared_ptr< dealii::Vector<double> > z_trigger,
-	const double &t_trigger,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const unsigned int dwr_loop) {
 	
 	if (!( (dual.data_output_dwr_loop == -1) ||
 		(dual.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
 		return;
 	
+	if (dual.data_output_trigger <= 0) return;
+	
+	// adapt trigger value for I_n output mode
+	if (!dual.data_output_trigger_type_fixed) {
+		if (slab != grid->slabs.begin()) {
+			dual.data_output_trigger = std::prev(slab)->tau_n();
+		}
+		else {
+			dual.data_output_trigger = slab->tau_n();
+		}
+	}
+	
 	dual.data_output->set_DoF_data(
 		slab->dual.dof
 	);
 	
-	// TODO: construct solution at t_trigger
-	
-	//const double xi0 = ...; (xi0(t_trigger))
-	//const double xi1 = ...; (xi1(t_trigger))
-	//u_trigger.add(xi0, *z->x[0])
-	//u_trigger.add(xi1, *z->x[1])
+	auto z_trigger = std::make_shared< dealii::Vector<double> > ();
+	z_trigger->reinit(
+		slab->dual.dof->n_dofs()
+	);
 	
 	std::ostringstream filename;
 	filename << "dual-dwr_loop-" << dwr_loop;
 	
-	dual.data_output->write_data(
-		filename.str(),
-		z_trigger,
-		t_trigger
-	);
+	double &t{dual.data_output_time_value};
+	
+	for ( ; t >= slab->t_m; t -= dual.data_output_trigger) {
+		const double _t = (t - slab->t_m) / slab->tau_n();
+		
+		const double xi0{ 1. - _t };
+		const double xi1{ _t };
+		
+		// evalute space-time solution
+		z_trigger->equ(xi0, *z->x[0]);
+		z_trigger->add(xi1, *z->x[1]);
+		
+		dual.data_output->write_data(
+			filename.str(),
+			z_trigger,
+			t
+		);
+	}
 }
 
 

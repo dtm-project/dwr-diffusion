@@ -214,6 +214,7 @@ protected:
 		int data_output_dwr_loop;
 		double data_output_time_value;
 		double data_output_trigger;
+		bool data_output_trigger_type_fixed;
 	} dual;
 	
 	virtual void dual_reinit_storage();
@@ -254,8 +255,7 @@ protected:
 	
 	virtual void dual_do_data_output(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		std::shared_ptr< dealii::Vector<double> > z_trigger,
-		const double &t_trigger,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const unsigned int dwr_loop
 	);
 	
