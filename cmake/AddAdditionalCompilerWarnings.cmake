@@ -20,8 +20,7 @@
 ################################################################################
 # Add additional compiler options:
 # 
-ADD_DEFINITIONS(-std=c++1y)
-#ADD_DEFINITIONS(-std=c++17)
+ADD_DEFINITIONS(-std=c++17)
 
 ADD_DEFINITIONS(-Wall)
 ADD_DEFINITIONS(-Wextra)
