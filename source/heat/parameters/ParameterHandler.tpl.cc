@@ -226,24 +226,65 @@ ParameterHandler() {
 	
 	enter_subsection("Output Quantities"); {
 		declare_entry(
-			"data output trigger time",
-			"0.",
-			dealii::Patterns::Double(),
-			"data output trigger time"
+			"primal data output dwr loop",
+			"all",
+			dealii::Patterns::Anything()
 		);
 		
 		declare_entry(
-			"data output patches auto mode",
+			"primal data output trigger type",
+			"fixed",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal data output trigger time",
+			"-1.",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"primal data output patches auto mode",
 			"true",
 			dealii::Patterns::Bool(),
-			"data output patches auto mode => using p+1 data output patches"
+			"primal data output patches auto mode => using p data output patches"
 		);
 		
 		declare_entry(
-			"data output patches",
+			"primal data output patches",
 			"1",
-			dealii::Patterns::Integer(),
-			"data output patches"
+			dealii::Patterns::Integer()
+		);
+		
+		declare_entry(
+			"dual data output dwr loop",
+			"all",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual data output trigger type",
+			"fixed",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual data output trigger time",
+			"-1.",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"dual data output patches auto mode",
+			"true",
+			dealii::Patterns::Bool(),
+			"dual data output patches auto mode => using q data output patches"
+		);
+		
+		declare_entry(
+			"dual data output patches",
+			"1",
+			dealii::Patterns::Integer()
 		);
 	}
 	leave_subsection();

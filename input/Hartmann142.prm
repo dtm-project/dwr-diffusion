@@ -41,3 +41,17 @@ subsection Time Integration
     set time step size = 0.0625
 end
 
+subsection Output Quantities
+    set primal data output dwr loop = all       # use none, all, last or number
+    set primal data output trigger type = fixed # use fixed (fixed trigger time) or I_n (one output per I_n)
+    set primal data output trigger time      = 0.01
+    set primal data output patches auto mode = false # use < primal p > data output patches (auto mode)
+    set primal data output patches           = 1    # use this (no auto mode)
+	
+	set dual data output dwr loop = none      # use none, all, last or number
+    set dual data output trigger type = fixed # use fixed (fixed trigger time) or I_n (one output per I_n)
+    set dual data output trigger time      = 0.01
+    set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
+    set dual data output patches           = 1    # use this (no auto mode)
+end
+

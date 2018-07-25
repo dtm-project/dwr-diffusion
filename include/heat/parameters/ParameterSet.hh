@@ -85,8 +85,21 @@ struct ParameterSet {
 	
 	// data output
 	struct {
-		double trigger;
-		unsigned int patches;
+		struct {
+			std::string dwr_loop;
+			std::string trigger_type;
+			
+			double trigger;
+			unsigned int patches;
+		} primal;
+		
+		struct {
+			std::string dwr_loop;
+			std::string trigger_type;
+			
+			double trigger;
+			unsigned int patches;
+		} dual;
 	} data_output;
 };
 

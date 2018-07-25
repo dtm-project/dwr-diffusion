@@ -95,7 +95,8 @@ run() {
 	init_grid();
 	
 	// DWR loop:
-	for (unsigned int dwr_loop{0}; dwr_loop < 6; ++dwr_loop) {
+	dwr_loops = 6; // TODO: input parameter
+	for (unsigned int dwr_loop{0}; dwr_loop < dwr_loops; ++dwr_loop) {
 		grid->set_boundary_indicators();
 		grid->distribute();
 		
@@ -718,11 +719,9 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_init_data_output() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
-	// TODO:
 	DTM::pout
 		<< "primal solution data output: patches = "
-		<< parameter_set->fe.p // auto mode = cG in space: take p patches per K
-// 		<< parameter_set->data_output.patches
+		<< parameter_set->data_output.primal.patches
 		<< std::endl;
 	
 	std::vector<std::string> data_field_names;
@@ -735,11 +734,29 @@ primal_init_data_output() {
 	primal.data_output->set_data_field_names(data_field_names);
 	primal.data_output->set_data_component_interpretation_field(dci_field);
 	
-	// TODO:
 	primal.data_output->set_data_output_patches(
-		parameter_set->fe.p // auto mode = cG in space: take p patches per K
-// 		parameter_set->data_output->patches
+		parameter_set->data_output.primal.patches
 	);
+	
+	// set up which dwr loop(s) are allowed to make data output:
+	primal.data_output_dwr_loop = -3; // -3 => not initialized
+	if ( !parameter_set->data_output.primal.dwr_loop.compare("none") ) {
+		primal.data_output_dwr_loop = -2;
+	}
+	else if ( !parameter_set->data_output.primal.dwr_loop.compare("all") ) {
+		primal.data_output_dwr_loop = -1;
+	}
+	else if ( !parameter_set->data_output.primal.dwr_loop.compare("last") ) {
+		primal.data_output_dwr_loop = dwr_loops;
+	}
+	else {
+		primal.data_output_dwr_loop = std::stoi(parameter_set->data_output.primal.dwr_loop);
+	}
+	
+	DTM::pout
+		<< "primal solution data output: dwr loop = "
+		<< primal.data_output_dwr_loop
+		<< std::endl;
 }
 
 
@@ -751,6 +768,10 @@ primal_do_data_output(
 	std::shared_ptr< dealii::Vector<double> > u_trigger,
 	const double &t_trigger,
 	const unsigned int dwr_loop) {
+	
+	if (!( (primal.data_output_dwr_loop == -1) ||
+		(primal.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
+		return;
 	
 	primal.data_output->set_DoF_data(
 		slab->primal.dof
@@ -1309,11 +1330,9 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_init_data_output() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
-	// TODO:
 	DTM::pout
 		<< "dual solution data output: patches = "
-		<< parameter_set->fe.q // auto mode = cG in space: take q patches per K
-// 		<< parameter_set->data_output->patches
+		<< parameter_set->data_output.dual.patches
 		<< std::endl;
 	
 	std::vector<std::string> data_field_names;
@@ -1326,11 +1345,29 @@ dual_init_data_output() {
 	dual.data_output->set_data_field_names(data_field_names);
 	dual.data_output->set_data_component_interpretation_field(dci_field);
 	
-	// TODO:
 	dual.data_output->set_data_output_patches(
-		parameter_set->fe.q // auto mode = cG in space: take q patches per K
-// 		parameter_set->data_output.patches
+		parameter_set->data_output.dual.patches
 	);
+	
+	dual.data_output_dwr_loop = -3; // -2 => not initialized
+	// set up which dwr loop(s) are allowed to make data output:
+	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
+		dual.data_output_dwr_loop = -2;
+	}
+	else if ( !parameter_set->data_output.dual.dwr_loop.compare("all") ) {
+		dual.data_output_dwr_loop = -1;
+	}
+	else if ( !parameter_set->data_output.dual.dwr_loop.compare("last") ) {
+		dual.data_output_dwr_loop = dwr_loops;
+	}
+	else {
+		dual.data_output_dwr_loop = std::stoi(parameter_set->data_output.dual.dwr_loop);
+	}
+	
+	DTM::pout
+		<< "dual solution data output: dwr loop = "
+		<< dual.data_output_dwr_loop
+		<< std::endl;
 }
 
 
@@ -1342,6 +1379,10 @@ dual_do_data_output(
 	std::shared_ptr< dealii::Vector<double> > z_trigger,
 	const double &t_trigger,
 	const unsigned int dwr_loop) {
+	
+	if (!( (dual.data_output_dwr_loop == -1) ||
+		(dual.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
+		return;
 	
 	dual.data_output->set_DoF_data(
 		slab->dual.dof

@@ -139,14 +139,31 @@ ParameterSet(
 	
 	
 	handler->enter_subsection("Output Quantities"); {
-		data_output.trigger = handler->get_double("data output trigger time");
+		data_output.primal.dwr_loop = handler->get("primal data output dwr loop");
 		
-		if (handler->get_bool("data output patches auto mode")) {
-			data_output.patches = fe.p;
+		data_output.primal.trigger_type = handler->get("primal data output trigger type");
+		data_output.primal.trigger = handler->get_double("primal data output trigger time");
+		
+		if (handler->get_bool("primal data output patches auto mode")) {
+			data_output.primal.patches = fe.p;
 		}
 		else {
-			data_output.patches = static_cast<unsigned int> (
-				handler->get_integer("data output patches")
+			data_output.primal.patches = static_cast<unsigned int> (
+				handler->get_integer("primal data output patches")
+			);
+		}
+		
+		data_output.dual.dwr_loop = handler->get("dual data output dwr loop");
+		
+		data_output.dual.trigger_type = handler->get("dual data output trigger type");
+		data_output.dual.trigger = handler->get_double("dual data output trigger time");
+		
+		if (handler->get_bool("dual data output patches auto mode")) {
+			data_output.dual.patches = fe.q;
+		}
+		else {
+			data_output.dual.patches = static_cast<unsigned int> (
+				handler->get_integer("dual data output patches")
 			);
 		}
 	}

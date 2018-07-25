@@ -101,6 +101,7 @@ protected:
 	
 	virtual void init_functions();
 	
+	unsigned int dwr_loops;
 	
 	////////////////////////////////////////////////////////////////////////////
 	// primal problem:
@@ -126,6 +127,9 @@ protected:
 		
 		// Data Output
 		std::shared_ptr< DTM::DataOutput<dim> > data_output;
+		int data_output_dwr_loop;
+		double data_output_time_value;
+		double data_output_trigger;
 	} primal;
 	
 	virtual void primal_reinit_storage();
@@ -206,6 +210,9 @@ protected:
 		
 		// Data Output
 		std::shared_ptr< DTM::DataOutput<dim> > data_output;
+		int data_output_dwr_loop;
+		double data_output_time_value;
+		double data_output_trigger;
 	} dual;
 	
 	virtual void dual_reinit_storage();
