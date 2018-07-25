@@ -249,30 +249,38 @@ estimate(
 	std::shared_ptr< DTM::types::storage_data_vectors<2> > _z,
 	std::shared_ptr< DTM::types::storage_data_vectors<1> > _eta
 ) {
+	Assert(_epsilon.use_count(), dealii::ExcNotInitialized());
 	function.epsilon = _epsilon;
+	
+	Assert(_f.use_count(), dealii::ExcNotInitialized());
 	function.f = _f;
+	
+	Assert(_u_D.use_count(), dealii::ExcNotInitialized());
 	function.u_D = _u_D;
+	
+	Assert(_u_0.use_count(), dealii::ExcNotInitialized());
 	function.u_0 = _u_0;
 	
+	Assert(_grid.use_count(), dealii::ExcNotInitialized());
 	grid = _grid;
 	
+	Assert(_u.use_count(), dealii::ExcNotInitialized());
 	primal.storage.u = _u;
+	
+	Assert(_z.use_count(), dealii::ExcNotInitialized());
 	dual.storage.z = _z;
+	
+	Assert(_eta.use_count(), dealii::ExcNotInitialized());
 	error_estimator.storage.eta = _eta;
 	
-	Assert(error_estimator.storage.eta.use_count(), dealii::ExcNotInitialized());
 	Assert(error_estimator.storage.eta->size(), dealii::ExcNotInitialized());
 	Assert(error_estimator.storage.eta->front().x[0].use_count(), dealii::ExcNotInitialized());
 	
-	////////////////////////////////////////////////////////////////////////////
-	// prepare TMS loop for eta_K on Omega x I_n
-	//
 	
 	////////////////////////////////////////////////////////////////////////////
-	// grid: init slab iterator to first space-time slab: Omega x I_1
+	// do estimate errors over \Omega x (0,T) loop
 	//
 	
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
 	auto slab = grid->slabs.begin();
 	
@@ -280,11 +288,6 @@ estimate(
 	auto z = dual.storage.z->begin();
 	auto eta = error_estimator.storage.eta->begin();
 	
-	////////////////////////////////////////////////////////////////////////////
-	// do TMS loop
-	//
-	
-	unsigned int n{1};
 	while (slab != grid->slabs.end()) {
 		// local time variables
 		const double tm = slab->t_m;
@@ -535,7 +538,6 @@ estimate(
 		cell_integrals.clear();
 		face_integrals.clear();
 		
-		++n;
 		++slab;
 		++u; ++z; ++eta;
 	}
