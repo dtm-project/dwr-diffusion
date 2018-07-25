@@ -467,7 +467,8 @@ primal_do_forward_TMS(
 	);
 	
 	// output "initial value solution" at initial time t0
-	primal_do_data_output(slab,primal.um,slab->t_m,dwr_loop);
+	*u->x[0] = *primal.um;
+	primal_do_data_output(slab,u,dwr_loop,true);
 	
 	// init error computations (for global L2(L2) goal functional)
 	primal_init_error_computations();
@@ -535,7 +536,7 @@ primal_do_forward_TMS(
 		primal.un->add(zeta0, *u->x[0]);
 		
 		// output solution at t_n
-		primal_do_data_output(slab,primal.un,tn,dwr_loop);
+		primal_do_data_output(slab,u,dwr_loop,false);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -757,6 +758,31 @@ primal_init_data_output() {
 		<< "primal solution data output: dwr loop = "
 		<< primal.data_output_dwr_loop
 		<< std::endl;
+	
+	// check if we use a fixed trigger interval, or, do output once on a I_n
+	if ( !parameter_set->data_output.primal.trigger_type.compare("fixed") ) {
+		primal.data_output_trigger_type_fixed = true;
+	}
+	else {
+		primal.data_output_trigger_type_fixed = false;
+	}
+	
+	// only for fixed
+	primal.data_output_trigger = parameter_set->data_output.primal.trigger;
+	
+	if (primal.data_output_trigger_type_fixed) {
+		DTM::pout
+			<< "primal solution data output: using fixed mode with trigger = "
+			<< primal.data_output_trigger
+			<< std::endl;
+	}
+	else {
+		DTM::pout
+			<< "primal solution data output: using I_n mode (trigger adapts to I_n automatically)"
+			<< std::endl;
+	}
+	
+	primal.data_output_time_value = parameter_set->t0;
 }
 
 
@@ -765,34 +791,71 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_do_data_output(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	std::shared_ptr< dealii::Vector<double> > u_trigger,
-	const double &t_trigger,
-	const unsigned int dwr_loop) {
+	const typename DTM::types::storage_data_vectors<1>::iterator &u,
+	const unsigned int dwr_loop,
+	const bool dG_initial_value) {
 	
 	if (!( (primal.data_output_dwr_loop == -1) ||
 		(primal.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
 		return;
 	
+	if (primal.data_output_trigger <= 0) return;
+	
+	// adapt trigger value for I_n output mode
+	if (!primal.data_output_trigger_type_fixed) {
+		if (std::next(slab) != grid->slabs.end()) {
+			primal.data_output_trigger = std::next(slab)->tau_n();
+		}
+		else {
+			primal.data_output_trigger = slab->tau_n();
+		}
+	}
+	
 	primal.data_output->set_DoF_data(
 		slab->primal.dof
 	);
 	
-	// TODO: construct solution at t_n
-	// NOTE: dG(0) is constant in time, thus we can simply output u->x[0]
-	
-	//const double zeta0 = 1.0;
-	//u_trigger.add(zeta0, *u->x[0])
-	
-	// TODO
+	auto u_trigger = std::make_shared< dealii::Vector<double> > ();
+	u_trigger->reinit(
+		slab->primal.dof->n_dofs()
+	);
 	
 	std::ostringstream filename;
 	filename << "solution-dwr_loop-" << dwr_loop;
 	
-	primal.data_output->write_data(
-		filename.str(),
-		u_trigger,
-		t_trigger
-	);
+	double &t{primal.data_output_time_value};
+	
+	if (dG_initial_value) {
+		// NOTE: for dG-in-time discretisations the initial value function
+		//       does not belong to the set of dof's. Thus, we need a special
+		//       implementation here to output "primal.um".
+		
+		u_trigger->equ(1., *u->x[0]); // NOTE: this must be primal.um!
+		
+		primal.data_output->write_data(
+			filename.str(),
+			u_trigger,
+			t
+		);
+		
+		t += primal.data_output_trigger;
+	}
+	else {
+		for ( ; t <= slab->t_n; t += primal.data_output_trigger) {
+			[[maybe_unused]] double _t = (t - slab->t_m)/ slab->tau_n();
+			
+			double zeta0 = 1.;
+			
+			// evalute space-time solution
+			u_trigger->equ(zeta0, *u->x[0]);
+			
+			primal.data_output->write_data(
+				filename.str(),
+				u_trigger,
+				t
+			);
+		}
+	}
 }
 
 
