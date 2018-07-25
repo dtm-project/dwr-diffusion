@@ -386,20 +386,19 @@ primal_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
+	// condense hanging nodes in system matrix, if any
+	//
+	
+	DTM::pout << "dwr-heat: slab->primal.constraints->condense(*primal.K)...";
+	slab->primal.constraints->condense(*primal.K);
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
 	// solve linear system directly
 	//
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
-	
-	slab->primal.constraints->condense(*primal.K);
-	
-#ifdef DEBUG
-	{
-		std::ofstream out_K("primalK.gpl");
-		primal.K->print(out_K);
-		out_K.close();
-	}
-#endif
 	
 	dealii::SparseDirectUMFPACK iA;
 	iA.initialize(*primal.K);
@@ -1112,21 +1111,19 @@ dual_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
+	// condense hanging nodes in system matrix, if any
+	//
+	
+	DTM::pout << "dwr-heat: slab->dual.constraints->condense(*dual.K)...";
+	slab->dual.constraints->condense(*dual.K);
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
 	// solve linear system directly
 	//
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
-	
-// 	TODO: resolve issue with direct solver here:
-	slab->dual.constraints->condense(*dual.K);
-	
-#ifdef DEBUG
-	{
-		std::ofstream out_K("dualK.gpl");
-		dual.K->print(out_K);
-		out_K.close();
-	}
-#endif
 	
 	dealii::SparseDirectUMFPACK iA;
 	iA.initialize(*dual.K);
@@ -1135,7 +1132,7 @@ dual_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// distribute hanging node constraints on solution
+	// distribute hanging nodes constraints on solution
 	//
 	
 	DTM::pout << "dwr-heat: primal.constraints->distribute...";
