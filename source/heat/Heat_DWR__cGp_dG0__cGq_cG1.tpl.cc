@@ -95,10 +95,18 @@ run() {
 	init_grid();
 	
 	// DWR loop:
-	DTM::pout << "dwr loops = " << parameter_set->dwr.loops << std::endl;
+	DTM::pout
+		<< std::endl
+		<< "*******************************************************************"
+		<< "*************" << std::endl
+		<< "dwr loops = " << parameter_set->dwr.loops << std::endl
+		<< std::endl;
 	
 	for (unsigned int dwr_loop{0}; dwr_loop < parameter_set->dwr.loops; ++dwr_loop) {
-		DTM::pout << "dwr loop = " << dwr_loop << std::endl;
+		DTM::pout
+			<< "***************************************************************"
+			<< "*****************" << std::endl
+			<< "dwr loop = " << dwr_loop << std::endl;
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -118,8 +126,8 @@ run() {
 		compute_error_indicators();
 		compute_effectivity_index();
 		
-		// if another dwr loop do:
-		refine_and_coarsen_space_time_grid();
+		if ((dwr_loop+1) < parameter_set->dwr.loops)
+			refine_and_coarsen_space_time_grid();
 	}
 }
 
