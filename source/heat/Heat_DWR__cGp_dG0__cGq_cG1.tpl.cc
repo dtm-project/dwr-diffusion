@@ -748,7 +748,7 @@ primal_init_data_output() {
 		primal.data_output_dwr_loop = -1;
 	}
 	else if ( !parameter_set->data_output.primal.dwr_loop.compare("last") ) {
-		primal.data_output_dwr_loop = dwr_loops;
+		primal.data_output_dwr_loop = dwr_loops-1;
 	}
 	else {
 		primal.data_output_dwr_loop = std::stoi(parameter_set->data_output.primal.dwr_loop);
@@ -1439,7 +1439,7 @@ dual_init_data_output() {
 		dual.data_output_dwr_loop = -1;
 	}
 	else if ( !parameter_set->data_output.dual.dwr_loop.compare("last") ) {
-		dual.data_output_dwr_loop = dwr_loops;
+		dual.data_output_dwr_loop = dwr_loops-1;
 	}
 	else {
 		dual.data_output_dwr_loop = std::stoi(parameter_set->data_output.dual.dwr_loop);
