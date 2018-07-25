@@ -38,11 +38,11 @@ end
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
-    set time step size = 0.0625
+    set time step size = 0.01
 end
 
 subsection DWR
-    set loops = 2
+    set loops = 4
 end
 
 subsection Output Quantities
@@ -63,7 +63,7 @@ subsection Output Quantities
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.01
-
+    
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
 end
