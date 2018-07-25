@@ -1,0 +1,8 @@
+CMakeCache.txt
+CMakeFiles/
+Makefile
+dwr-heat
+cmake_install.cmake
+*.h5
+*.xdmf
+*.log
