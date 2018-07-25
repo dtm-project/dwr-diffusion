@@ -35,7 +35,6 @@
 
 #include <heat/types/boundary_id.hh>
 #include <heat/Force/Forces.hh>
-#include <heat/DirichletBoundary/DirichletBoundaries.hh>
 #include <heat/ExactSolution/ExactSolutions.hh>
 
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
@@ -133,7 +132,7 @@ init_functions() {
 	
 	// Hartmann Sec. 1.4.2 Test problem:
 	const double a{50.};
-	function.u_D = std::make_shared< heat::DirichletBoundary::Hartmann142<dim> > (a);
+	function.u_D = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
 	function.u_0 = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
 	
 	function.epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
