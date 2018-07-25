@@ -95,7 +95,7 @@ run() {
 	init_grid();
 	
 	// DWR loop:
-	dwr_loops = 6; // TODO: input parameter
+	dwr_loops = 2; // TODO: input parameter
 	for (unsigned int dwr_loop{0}; dwr_loop < dwr_loops; ++dwr_loop) {
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -842,9 +842,9 @@ primal_do_data_output(
 	}
 	else {
 		for ( ; t <= slab->t_n; t += primal.data_output_trigger) {
-			[[maybe_unused]] double _t = (t - slab->t_m) / slab->tau_n();
+			[[maybe_unused]] const double _t{ (t - slab->t_m) / slab->tau_n() };
 			
-			double zeta0 = 1.;
+			const double zeta0{1.};
 			
 			// evalute space-time solution
 			u_trigger->equ(zeta0, *u->x[0]);
@@ -856,6 +856,28 @@ primal_do_data_output(
 			);
 		}
 	}
+	
+	// check if data for t=T was written
+	if (std::next(slab) == grid->slabs.end()) {
+	if (primal.data_output_trigger_type_fixed) {
+		if ( t > slab->t_n ) {
+			// overshoot of time variable; manually set to t = T and do data output
+			t = slab->t_n;
+			
+			[[maybe_unused]] const double _t{ (t - slab->t_m) / slab->tau_n() };
+			
+			const double zeta0{1.};
+			
+			// evalute space-time solution
+			u_trigger->equ(zeta0, *u->x[0]);
+			
+			primal.data_output->write_data(
+				filename.str(),
+				u_trigger,
+				t
+			);
+		}
+	}}
 }
 
 
@@ -1494,7 +1516,7 @@ dual_do_data_output(
 	double &t{dual.data_output_time_value};
 	
 	for ( ; t >= slab->t_m; t -= dual.data_output_trigger) {
-		const double _t = (t - slab->t_m) / slab->tau_n();
+		const double _t{ (t - slab->t_m) / slab->tau_n() };
 		
 		const double xi0{ 1. - _t };
 		const double xi1{ _t };
@@ -1509,6 +1531,30 @@ dual_do_data_output(
 			t
 		);
 	}
+	
+	// check if data for t=0 (t_0) was written
+	if (slab == grid->slabs.begin()) {
+	if (dual.data_output_trigger_type_fixed) {
+		if ( t < slab->t_m ) {
+			// undershoot of time variable; manually set t = 0 and do data output
+			t = slab->t_m;
+			
+			const double _t{ (t - slab->t_m) / slab->tau_n() };
+		
+			const double xi0{ 1. - _t };
+			const double xi1{ _t };
+			
+			// evalute space-time solution
+			z_trigger->equ(xi0, *z->x[0]);
+			z_trigger->add(xi1, *z->x[1]);
+			
+			dual.data_output->write_data(
+				filename.str(),
+				z_trigger,
+				t
+			);
+		}
+	}}
 }
 
 

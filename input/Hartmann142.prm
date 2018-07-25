@@ -42,16 +42,20 @@ subsection Time Integration
 end
 
 subsection Output Quantities
-    set primal data output dwr loop = none     # use none, all, last or number
-
-    set primal data output trigger type = I_n # I_n mode: one output per I_n
-#    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
+    ############################################################################
+    # primal solution output control
+    set primal data output dwr loop = 1     # use none, all, last or number
+    
+#    set primal data output trigger type = I_n # I_n mode: one output per I_n
+    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
     set primal data output trigger time      = 0.01 # use fixed trigger value (fixed mode only)
     
     set primal data output patches auto mode = true # use < primal p > data output patches (auto mode)
     set primal data output patches           = 1    # use this (no auto mode)
 	
-	set dual data output dwr loop = none      # use none, all, last or number
+    ############################################################################
+    # dual solution output control
+	set dual data output dwr loop = 1      # use none, all, last or number
     set dual data output trigger type = I_n # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.01
