@@ -159,6 +159,7 @@ struct ErrorEstimateOnFace {
 	double val_uh;
 	double val_grad_zh;
 	double val_face_jump_grad_u;
+	double val_z_Rz_j;
 	
 	// other
 	double JxW;

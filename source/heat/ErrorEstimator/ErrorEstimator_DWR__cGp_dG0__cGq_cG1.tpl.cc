@@ -175,6 +175,7 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 	val_uh(scratch.val_uh),
 	val_grad_zh(scratch.val_grad_zh),
 	val_face_jump_grad_u(scratch.val_face_jump_grad_u),
+	val_z_Rz_j(scratch.val_z_Rz_j),
 	JxW(scratch.JxW),
 	q(scratch.q),
 // 	k(scratch.k),
@@ -1147,14 +1148,14 @@ assemble_error_on_regular_face(
 			scratch.fe_values_face.quadrature_point(scratch.q), 0
 		);
 		
-		// loop over all basis function combinitions to get the assembly
 		Assert(
 			(scratch.fe_values_face.get_fe().dofs_per_cell==
 			scratch.neighbor_fe_values_face.get_fe().dofs_per_cell),
 			dealii::ExcMessage("different fe.p between neighboring cells is not allowed here")
 		);
 		
-		scratch.val_face_jump_grad_u = 0.;
+		scratch.val_face_jump_grad_u=0.;
+		scratch.val_z_Rz_j=0.;
 		for (scratch.j=0;
 			scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell; ++scratch.j) {
 			scratch.val_face_jump_grad_u += (
@@ -1162,22 +1163,22 @@ assemble_error_on_regular_face(
 				- scratch.neighbor_local_u0[scratch.j]
 				* scratch.neighbor_grad_phi[scratch.j]
 			) * scratch.normal_vector;
+			
+			scratch.val_z_Rz_j +=
+				(scratch.local_z0[scratch.j] - scratch.local_Rz0[scratch.j])
+				* scratch.phi[scratch.j];
 		}
 		
-		for (scratch.j=0;
-			scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell; ++scratch.j) {
-			// \int_{I_n} ... :
-			copydata.value += (
-				scratch.value_epsilon
-				* scratch.val_face_jump_grad_u
-				// z_h - Rz_h:
-				* (scratch.local_z0[scratch.j] - scratch.local_Rz0[scratch.j])
-				* scratch.phi[scratch.j]
-				* tau_n
-				* scratch.JxW
-			);
-		} // for j
-	}
+		// \int_{I_n} ... :
+		copydata.value += (
+			scratch.value_epsilon
+			* scratch.val_face_jump_grad_u
+			// z_h - Rz_h:
+			* scratch.val_z_Rz_j
+			* tau_n
+			* scratch.JxW
+		);
+	} // for q
 	
 	Assert(
 		std::isnan(face_integrals[copydata.face]),
