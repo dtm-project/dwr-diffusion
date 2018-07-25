@@ -1594,12 +1594,12 @@ eta_reinit_storage() {
 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
 				Assert(slab->tria.use_count(), dealii::ExcNotInitialized());
 				Assert(
-					slab->tria->n_active_cells(),
-					dealii::ExcMessage("Error: slab->tria->n_active_cells() == 0")
+					slab->tria->n_global_active_cells(),
+					dealii::ExcMessage("Error: slab->tria->n_global_active_cells() == 0")
 				);
 				
 				element.x[j]->reinit(
-					slab->tria->n_active_cells()
+					slab->tria->n_global_active_cells()
 				);
 			}
 			++slab;
@@ -1763,7 +1763,7 @@ refine_and_coarsen_space_time_grid() {
 			
 			DTM::pout << "\tn = " << n << std::endl;
 			
-			const auto n_active_cells_on_slab{slab->tria->n_active_cells()};
+			const auto n_active_cells_on_slab{slab->tria->n_global_active_cells()};
 			DTM::pout << "\t#K = " << n_active_cells_on_slab << std::endl;
 			K_max = (K_max > n_active_cells_on_slab) ? K_max : n_active_cells_on_slab;
 			
@@ -1803,7 +1803,7 @@ refine_and_coarsen_space_time_grid() {
 				*eta_it->x[0],
 				.8, // top_fraction:    1 will refine every cell
 				.0, // bottom_fraction: 0 will coarsen no cells
-				slab->tria->n_active_cells()*3 // max elements restriction
+				slab->tria->n_global_active_cells()*3 // max elements restriction
 			);
 			
 			// execute refinement in space under the conditions of mesh smoothing
