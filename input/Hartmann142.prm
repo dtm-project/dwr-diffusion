@@ -44,9 +44,9 @@ end
 subsection Output Quantities
     ############################################################################
     # primal solution output control
-    set primal data output dwr loop = 1     # use none, all, last or number
+    set primal data output dwr loop = last     # use none, all, last or number
     
-#    set primal data output trigger type = I_n # I_n mode: one output per I_n
+#    set primal data output trigger type = I_n   # I_n mode: one output per I_n
     set primal data output trigger type = fixed # fixed mode: fixed output trigger time
     set primal data output trigger time      = 0.01 # use fixed trigger value (fixed mode only)
     
@@ -55,8 +55,8 @@ subsection Output Quantities
 	
     ############################################################################
     # dual solution output control
-	set dual data output dwr loop = 1      # use none, all, last or number
-    set dual data output trigger type = I_n # I_n mode: one output per I_n
+	set dual data output dwr loop = last      # use none, all, last or number
+    set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.01
 
