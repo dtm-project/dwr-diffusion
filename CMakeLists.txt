@@ -44,7 +44,7 @@ INCLUDE_DIRECTORIES(include)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 
-FIND_PACKAGE(deal.II 8.5 QUIET HINTS ${DEAL_II_DIR} $ENV{DEAL_II_DIR})
+FIND_PACKAGE(deal.II 9.0 QUIET HINTS ${DEAL_II_DIR} $ENV{DEAL_II_DIR})
 IF(NOT ${deal.II_FOUND})
 	MESSAGE(FATAL_ERROR "\n*** ERROR: Could not locate a suitably recent version of deal.II. ***\n"
 		"SOLUTION A: EITHER you pass a flag -DDEAL_II_DIR=/path/to/deal.II to cmake.\n"
