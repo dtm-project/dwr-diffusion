@@ -383,18 +383,33 @@ estimate(
 		dual_uD_on_t0->reinit( slab->dual.dof->n_dofs() );
 		
 		{
-			auto primal_uD_on_t0 = std::make_shared< dealii::Vector<double> > ();
-			primal_uD_on_t0->reinit( slab->primal.dof->n_dofs() );
+			// get boundary values on Dirichlet nodes by interpolation
+			auto boundary_values = std::make_shared< std::map<dealii::types::global_dof_index, double> > ();
 			
+			Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
 			function.u_D->set_time(t0);
-			// TODO: this also interpolates the interior of the domain, be careful!
-			dealii::VectorTools::interpolate(
+			
+			dealii::VectorTools::interpolate_boundary_values(
 				*slab->primal.mapping,
 				*slab->primal.dof,
+				static_cast< dealii::types::boundary_id > (
+					heat::types::boundary_id::Dirichlet
+				),
 				*function.u_D,
-				*primal_uD_on_t0
+				*boundary_values
 			);
 			
+			// copy Dirichlet node values into a vector for further use
+			auto primal_uD_on_t0 = std::make_shared< dealii::Vector<double> > ();
+			primal_uD_on_t0->reinit( slab->primal.dof->n_dofs() );
+			*primal_uD_on_t0 = 0.;
+			for (auto &boundary_value : *boundary_values) {
+				(*primal_uD_on_t0) [boundary_value.first] = boundary_value.second;
+			}
+			
+			boundary_values = nullptr;
+			
+			// interpolate uD values from primal to dual solution space
 			dealii::FETools::interpolate(
 				// primal solution
 				*slab->primal.dof,
