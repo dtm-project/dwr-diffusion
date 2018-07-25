@@ -103,10 +103,11 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	grad_epsilon(scratch.grad_epsilon),
 	val_R_u_kh_j(scratch.val_R_u_kh_j),
 	val_u_kh_j(scratch.val_u_kh_j),
+	val_z_Rz_j(scratch.val_z_Rz_j),
 	JxW(scratch.JxW),
 	q(scratch.q),
 	d(scratch.d),
-	k(scratch.k),
+// 	k(scratch.k),
 	j(scratch.j) {
 }
 
@@ -176,7 +177,7 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 	val_face_jump_grad_u(scratch.val_face_jump_grad_u),
 	JxW(scratch.JxW),
 	q(scratch.q),
-	k(scratch.k),
+// 	k(scratch.k),
 	j(scratch.j),
 	subface_no(scratch.subface_no) {
 }
@@ -876,25 +877,25 @@ assemble_error_on_cell(
 		scratch.JxW = scratch.fe_values.JxW(scratch.q);
 		
 		// loop over all basis functions to get the shape values
-		for (scratch.k=0; scratch.k < scratch.fe_values.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.phi[scratch.k] =
-				scratch.fe_values.shape_value_component(scratch.k,scratch.q,0);
+		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.phi[scratch.j] =
+				scratch.fe_values.shape_value_component(scratch.j,scratch.q,0);
 		}
 		
-		for (scratch.k=0; scratch.k < scratch.fe_values.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.grad_phi[scratch.k] =
-				scratch.fe_values.shape_grad(scratch.k,scratch.q);
+		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.grad_phi[scratch.j] =
+				scratch.fe_values.shape_grad(scratch.j,scratch.q);
 		}
 		
-		for (scratch.k=0; scratch.k < scratch.fe_values.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.hessian_phi = scratch.fe_values.shape_hessian(scratch.k,scratch.q);
+		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.hessian_phi = scratch.fe_values.shape_hessian(scratch.j,scratch.q);
 			
-			scratch.laplace_phi[scratch.k] = 0.;
+			scratch.laplace_phi[scratch.j] = 0.;
 			for (scratch.d=0; scratch.d < dim; ++scratch.d) {
-				scratch.laplace_phi[scratch.k] +=
+				scratch.laplace_phi[scratch.j] +=
 					scratch.hessian_phi[scratch.d][scratch.d];
 			}
 		}
@@ -915,6 +916,7 @@ assemble_error_on_cell(
 		
 		scratch.val_R_u_kh_j = 0.;
 		scratch.val_u_kh_j = 0.;
+		scratch.val_z_Rz_j = 0.;
 		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
 			++scratch.j) {
 			// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
@@ -927,30 +929,36 @@ assemble_error_on_cell(
 			scratch.val_u_kh_j +=
 				(scratch.local_up[scratch.j] - scratch.local_um[scratch.j])
 				* scratch.phi[scratch.j];
+				
+			scratch.val_z_Rz_j +=
+				(scratch.local_z0[scratch.j] - scratch.local_Rz0[scratch.j])
+				* scratch.phi[scratch.j];
 		}
 		
-		// loop over all basis function combinitions to get the assembly
+		// \int_{I_n} ... :
+		copydata.value += (
+			// R(u_kh):
+			( scratch.value_f + scratch.val_R_u_kh_j )
+			// z_h - Rz_h:
+			* scratch.val_z_Rz_j
+			* tau_n
+			* scratch.JxW
+		);
+		
+		scratch.val_z_Rz_j = 0.;
 		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
 			++scratch.j) {
-			// \int_{I_n} ... :
-			copydata.value += (
-				// R(u_kh):
-				( scratch.value_f + scratch.val_R_u_kh_j )
-				// z_h - Rz_h:
-				* (scratch.local_z0[scratch.j] - scratch.local_Rz0[scratch.j])
-				* scratch.phi[scratch.j]
-				* tau_n
-				* scratch.JxW
-			);
-			
-			// - [ u_kh(t_m) ] * ( z_h(t_m) - I(R(z_h(t_m))) )
-			copydata.value += (
-				- scratch.val_u_kh_j
-				* (scratch.local_zm[scratch.j] - scratch.local_Rzm[scratch.j])
-				* scratch.phi[scratch.j]
-				* scratch.JxW
-			);
+			scratch.val_z_Rz_j +=
+				(scratch.local_zm[scratch.j] - scratch.local_Rzm[scratch.j])
+				* scratch.phi[scratch.j];
 		} // for j
+		
+		// - [ u_kh(t_m) ] * ( z_h(t_m) - I(R(z_h(t_m))) )
+		copydata.value += (
+			- scratch.val_u_kh_j
+			* scratch.val_z_Rz_j
+			* scratch.JxW
+		);
 	} // for q
 	
 	Assert(
@@ -1111,24 +1119,24 @@ assemble_error_on_regular_face(
 		scratch.normal_vector = scratch.fe_values_face.normal_vector(scratch.q);
 		
 		// loop over all basis functions to get the shape values (K^+)
-		for (scratch.k=0; scratch.k < scratch.fe_values_face.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.phi[scratch.k] =
-				scratch.fe_values_face.shape_value_component(scratch.k,scratch.q,0);
+		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.phi[scratch.j] =
+				scratch.fe_values_face.shape_value_component(scratch.j,scratch.q,0);
 		}
 		
-		for (scratch.k=0; scratch.k < scratch.fe_values_face.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.grad_phi[scratch.k] =
-				scratch.fe_values_face.shape_grad(scratch.k,scratch.q);
+		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.grad_phi[scratch.j] =
+				scratch.fe_values_face.shape_grad(scratch.j,scratch.q);
 		}
 		
 		// loop over all basis functions to get the shape values (K^-)
-		for (scratch.k=0;
-			scratch.k < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell;
-			++scratch.k) {
-			scratch.neighbor_grad_phi[scratch.k] =
-				scratch.neighbor_fe_values_face.shape_grad(scratch.k,scratch.q);
+		for (scratch.j=0;
+			scratch.j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.neighbor_grad_phi[scratch.j] =
+				scratch.neighbor_fe_values_face.shape_grad(scratch.j,scratch.q);
 		}
 		
 		// fetch function value(s)
@@ -1264,28 +1272,28 @@ assemble_error_on_irregular_face(
 			scratch.normal_vector = scratch.fe_values_subface.normal_vector(scratch.q);
 			
 			// loop over all basis functions to get the shape values (K^+ subface)
-			for (scratch.k=0;
-				scratch.k < scratch.fe_values_subface.get_fe().dofs_per_cell;
-				++scratch.k) {
-				scratch.phi[scratch.k] =
+			for (scratch.j=0;
+				scratch.j < scratch.fe_values_subface.get_fe().dofs_per_cell;
+				++scratch.j) {
+				scratch.phi[scratch.j] =
 					scratch.fe_values_subface.shape_value_component(
-						scratch.k,scratch.q,0
+						scratch.j,scratch.q,0
 					);
 			}
 			
-			for (scratch.k=0;
-				scratch.k < scratch.fe_values_subface.get_fe().dofs_per_cell;
-				++scratch.k) {
-				scratch.grad_phi[scratch.k] =
-					scratch.fe_values_subface.shape_grad(scratch.k,scratch.q);
+			for (scratch.j=0;
+				scratch.j < scratch.fe_values_subface.get_fe().dofs_per_cell;
+				++scratch.j) {
+				scratch.grad_phi[scratch.j] =
+					scratch.fe_values_subface.shape_grad(scratch.j,scratch.q);
 			}
 			
 			// loop over all basis functions to get the shape values (K^-)
-			for (scratch.k=0;
-				scratch.k < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell;
-				++scratch.k) {
-				scratch.neighbor_grad_phi[scratch.k] =
-					scratch.neighbor_fe_values_face.shape_grad(scratch.k,scratch.q);
+			for (scratch.j=0;
+				scratch.j < scratch.neighbor_fe_values_face.get_fe().dofs_per_cell;
+				++scratch.j) {
+				scratch.neighbor_grad_phi[scratch.j] =
+					scratch.neighbor_fe_values_face.shape_grad(scratch.j,scratch.q);
 			}
 			
 			// fetch function value(s)

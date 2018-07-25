@@ -103,13 +103,14 @@ struct ErrorEstimateOnCell {
 	
 	double val_R_u_kh_j;
 	double val_u_kh_j;
+	double val_z_Rz_j;
 	
 	// other:
 	double JxW;
 	
 	unsigned int q;
 	unsigned int d;
-	unsigned int k;
+// 	unsigned int k;
 	unsigned int j;
 };
 
@@ -163,7 +164,7 @@ struct ErrorEstimateOnFace {
 	double JxW;
 	
 	unsigned int q;
-	unsigned int k;
+// 	unsigned int k;
 	unsigned int j;
 	unsigned int subface_no;
 };
