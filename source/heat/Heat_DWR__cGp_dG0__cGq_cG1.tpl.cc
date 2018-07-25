@@ -130,8 +130,6 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	// TODO: read those from parameter input file
-#if DEAL_II_VERSION_MAJOR>8
-	// dealii 9.0 and above (dealii::Functions:: )
 	
 	// Hartmann Sec. 1.4.2 Test problem:
 	const double a{50.};
@@ -144,20 +142,6 @@ init_functions() {
 	
 	// exact solution (if any)
 	function.u_E = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
-#else
-	// dealii 8.5
-	// Hartmann Sec. 1.4.2 Test problem:
-	const double a{50.};
-	function.u_D = std::make_shared< heat::DirichletBoundary::Hartmann142<dim> > (a);
-	function.u_0 = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
-	
-	function.epsilon = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
-	function.density = std::make_shared< dealii::ConstantFunction<dim> > (1.0);
-	function.f = std::make_shared< heat::force::Hartmann142<dim> > (a,function.epsilon);
-	
-	// exact solution (if any)
-	function.u_E = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
-#endif
 }
 
 
