@@ -38,7 +38,7 @@
 
 #include <heat/grid/Grid_DWR.tpl.hh>
 #include <heat/ErrorEstimator/ErrorEstimators.hh>
-// #include <Heat/types/error_functional.hh>
+#include <heat/types/error_functional.hh>
 
 // DTM++ includes
 #include <DTM++/base/LogStream.hh>

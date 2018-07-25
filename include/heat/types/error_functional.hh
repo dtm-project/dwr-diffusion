@@ -32,12 +32,12 @@ namespace heat {
 namespace types {
 
 enum class error_functional : unsigned int {
-	forbidden 	= 0,
-	L2_final 	= 1,
-	L2_global	= 2,
-	mean_final	= 3,
-	mean_global	= 4,
-	point		= 5
+	forbidden   = 0,
+	L2_final    = 1,
+	L2_global   = 2,
+	mean_final  = 3,
+	mean_global = 4,
+	point       = 5
 };
 
 }}
