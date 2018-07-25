@@ -95,8 +95,11 @@ run() {
 	init_grid();
 	
 	// DWR loop:
-	dwr_loops = 2; // TODO: input parameter
-	for (unsigned int dwr_loop{0}; dwr_loop < dwr_loops; ++dwr_loop) {
+	DTM::pout << "dwr loops = " << parameter_set->dwr.loops << std::endl;
+	
+	for (unsigned int dwr_loop{0}; dwr_loop < parameter_set->dwr.loops; ++dwr_loop) {
+		DTM::pout << "dwr loop = " << dwr_loop << std::endl;
+		
 		grid->set_boundary_indicators();
 		grid->distribute();
 		
@@ -748,7 +751,8 @@ primal_init_data_output() {
 		primal.data_output_dwr_loop = -1;
 	}
 	else if ( !parameter_set->data_output.primal.dwr_loop.compare("last") ) {
-		primal.data_output_dwr_loop = dwr_loops-1;
+		Assert(parameter_set->dwr.loops > 0, dealii::ExcInternalError());
+		primal.data_output_dwr_loop = parameter_set->dwr.loops-1;
 	}
 	else {
 		primal.data_output_dwr_loop = std::stoi(parameter_set->data_output.primal.dwr_loop);
@@ -1439,7 +1443,8 @@ dual_init_data_output() {
 		dual.data_output_dwr_loop = -1;
 	}
 	else if ( !parameter_set->data_output.dual.dwr_loop.compare("last") ) {
-		dual.data_output_dwr_loop = dwr_loops-1;
+		Assert(parameter_set->dwr.loops > 0, dealii::ExcInternalError());
+		dual.data_output_dwr_loop = parameter_set->dwr.loops-1;
 	}
 	else {
 		dual.data_output_dwr_loop = std::stoi(parameter_set->data_output.dual.dwr_loop);

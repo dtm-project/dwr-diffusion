@@ -1,6 +1,8 @@
 /**
  * @file   ParameterSet.hh
  * @author Uwe Koecher (UK)
+ *
+ * @date 2018-07-25, new parameters dwr, UK
  * @date 2018-03-06, included from ewave, UK
  * @date 2017-10-25, UK
  * @date 2017-02-06, UK
@@ -82,6 +84,11 @@ struct ParameterSet {
 	double t0;
 	double T;
 	double tau_n;
+	
+	// dwr
+	struct {
+		unsigned int loops;
+	} dwr;
 	
 	// data output
 	struct {

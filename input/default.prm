@@ -41,6 +41,10 @@ subsection Time Integration
     set time step size = 0.0625
 end
 
+subsection DWR
+    set loops = 2
+end
+
 subsection Output Quantities
     ############################################################################
     # primal solution output control

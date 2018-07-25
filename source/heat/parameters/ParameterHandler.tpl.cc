@@ -1,9 +1,11 @@
 /**
  * @file   ParameterHandler.cc
  * @author Uwe Koecher (UK)
- * @date   2018-03-06, included from ewave, UK
- * @date   2017-10-25, UK
- * @date   2017-02-06, UK
+ *
+ * @date 2018-07-25, new parameters dwr, UK
+ * @date 2018-03-06, included from ewave, UK
+ * @date 2017-10-25, UK
+ * @date 2017-02-06, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -219,6 +221,16 @@ ParameterHandler() {
 			"1e-2",
 			dealii::Patterns::Double(),
 			"initial time step size"
+		);
+	}
+	leave_subsection();
+	
+	
+	enter_subsection("DWR"); {
+		declare_entry(
+			"loops",
+			"2",
+			dealii::Patterns::Integer()
 		);
 	}
 	leave_subsection();

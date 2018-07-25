@@ -1,6 +1,8 @@
 /**
  * @file   ParameterSet.cc
  * @author Uwe Koecher (UK)
+ *
+ * @date 2018-07-25, new parameters dwr, UK
  * @date 2018-03-06, UK
  * @date 2017-09-11, UK
  * @date 2017-02-07, UK
@@ -67,6 +69,11 @@ ParameterSet(
 		t0 = handler->get_double("initial time");
 		T = handler->get_double("final time");
 		tau_n = handler->get_double("time step size");
+	}
+	handler->leave_subsection();
+	
+	handler->enter_subsection("DWR"); {
+		dwr.loops = static_cast<unsigned int> (handler->get_integer("loops"));
 	}
 	handler->leave_subsection();
 	
