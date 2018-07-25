@@ -293,9 +293,6 @@ estimate(
 		const double tm = slab->t_m;
 		const double t0 = tm + slab->tau_n()/2.;
 		
-		// set tau_n in error_estimator
-		tau_n = slab->tau_n();
-		
 		// interpolate primal solution u^-(t_m) to dual solution space
 		dual_um_on_tm = std::make_shared< dealii::Vector<double> > ();
 		dual_um_on_tm->reinit( slab->dual.dof->n_dofs() );
