@@ -9,18 +9,21 @@ subsection Parameter Specification
     
     ############################################################################
     # Force
-    set force function = Force0
-    set force options  = ""
+    set force function = ForceHartmann142
+    #                     a
+    set force options  = "1.0"
     
     ############################################################################
     # Dirichlet boundary value functions
-    set dirichlet boundary u_D function = ZeroFunction
-    set dirichlet boundary u_D options  = ""
+    set dirichlet boundary u_D function = ExactHartmann142
+    #                                      a
+    set dirichlet boundary u_D options  = "1.0"
     
     ############################################################################
     # Initial value functions
-    set initial displacement u0 function = ZeroFunction
-    set initial displacement u0 options  = ""
+    set initial displacement u0 function = ExactHartmann142
+    #                                       a
+    set initial displacement u0 options  = "1.0"
 end
 
 subsection Mesh Specification    
@@ -34,6 +37,7 @@ end
 
 subsection Time Integration
     set initial time   = 0.0
-    set final time     = 0.5
-    set time step size = 0.01
+    set final time     = 1.0
+    set time step size = 0.0625
 end
+

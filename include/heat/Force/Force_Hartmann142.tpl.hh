@@ -28,9 +28,8 @@
 #ifndef __Force_Hartmann142_tpl_hh
 #define __Force_Hartmann142_tpl_hh
 
-#include <DTM++/base/Function.tpl.hh>
-
 // DEAL.II includes
+#include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
 
 // C++ includes
@@ -39,12 +38,12 @@ namespace heat {
 namespace force {
 
 template<int dim>
-class Hartmann142 : public DTM::Function<dim,1> {
+class Hartmann142 : public dealii::Function<dim> {
 public:
 	Hartmann142(
 		const double &a,
 		std::shared_ptr< dealii::Function<dim> > epsilon
-	) : a(a) {
+	) : dealii::Function<dim> (1), a(a) {
 		function.epsilon = epsilon;
 	};
 	

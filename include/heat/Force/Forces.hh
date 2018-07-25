@@ -30,7 +30,6 @@
 #ifndef __Forces_hh
 #define __Forces_hh
 
-#include <heat/Force/Force_Test0.tpl.hh>
 #include <heat/Force/Force_Hartmann142.tpl.hh>
 
 #endif
