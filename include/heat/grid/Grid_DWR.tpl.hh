@@ -45,9 +45,6 @@
 #include <deal.II/base/utilities.h>
 #include <deal.II/base/mpi.h>
 
-// #include <deal.II/distributed/tria.h>
-// #include <deal.II/distributed/grid_refinement.h>
-
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
@@ -55,7 +52,6 @@
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/mapping.h>
 
-// #include <deal.II/grid/filtered_iterator.h>
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/grid_generator.h>

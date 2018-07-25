@@ -304,6 +304,9 @@ distribute() {
 			DTM::pout
 				<< "grid: primal mesh n_dofs on I_" << n
 				<< " = " << slab->primal.dof->n_dofs()
+				<< " , on global active cells #K = "
+				<< slab->tria->n_global_active_cells()
+				<< " , having tau_" << n << " = " << slab->tau_n()
 				<< std::endl;
 			
 			// setup constraints (e.g. hanging nodes)
