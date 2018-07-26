@@ -47,11 +47,11 @@ end
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
-    set time step size = 0.01
+    set time step size = 0.1
 end
 
 subsection DWR
-    set loops = 4
+    set loops = 8
 end
 
 subsection Output Quantities
