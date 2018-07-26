@@ -40,9 +40,9 @@
 #include <heat/Force/Force_Selector.tpl.hh>
 
 // TODO:
-#include <heat/types/boundary_id.hh>
 #include <heat/ExactSolution/ExactSolutions.hh>
 
+#include <heat/types/boundary_id.hh>
 
 #include <heat/assembler/L2_MassAssembly.tpl.hh>
 #include <heat/assembler/L2_LaplaceAssembly.tpl.hh>
