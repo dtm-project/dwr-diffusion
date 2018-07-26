@@ -1176,7 +1176,7 @@ dual_assemble_rhs(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// construct vector b = tau_n( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
+	// construct vector b = tau_n/2. * ( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
 	//
 	
 	DTM::pout << "dwr-heat: construct linear system rhs vector...";
