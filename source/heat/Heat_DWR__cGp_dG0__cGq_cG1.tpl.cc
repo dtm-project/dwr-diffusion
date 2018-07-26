@@ -500,6 +500,7 @@ primal_do_forward_TMS(
 		// local time variables: \f$ t0 \in I_n = (t_m, t_n) \f$
 		const double tm = slab->t_m;
 		const double t0 = tm + slab->tau_n()/2.;
+// 		const double t0 = slab->t_n;
 		const double tn = slab->t_n;
 		
 		DTM::pout
@@ -542,7 +543,7 @@ primal_do_forward_TMS(
 		// evaluate solution u(t_n)
 		primal.un = std::make_shared< dealii::Vector<double> >();
 		primal.un->reinit( slab->primal.dof->n_dofs() );
-		double zeta0 = 1.0; // zeta0( t_n ) = 1.0 for dG(0)
+		double zeta0 = 1.; // zeta0( t_n ) = 1. for dG(0)
 		*primal.un = 0;
 		primal.un->add(zeta0, *u->x[0]);
 		
@@ -651,7 +652,8 @@ primal_do_error_L2(
 	double norm_sqr{-1};
 	
 	dealii::QGauss<dim> quad_cell(
-		slab->primal.fe->tensor_degree()+2
+		slab->primal.fe->tensor_degree()+1
+// 		slab->primal.fe->tensor_degree()+2
 	);
 	
 	dealii::Vector<double> difference_per_cell(
@@ -1823,6 +1825,8 @@ refine_and_coarsen_space_time_grid() {
 			
 			// execute refinement in space under the conditions of mesh smoothing
 			slab->tria->execute_coarsening_and_refinement();
+			
+// 			slab->tria->refine_global(1);
 			
 			// refine in time
 			if (slab->refine_in_time) {
