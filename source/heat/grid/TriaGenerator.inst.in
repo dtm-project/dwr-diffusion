@@ -1,13 +1,10 @@
 /**
- * @file Grids.hh
+ * @file TriaGenerator.inst.in
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-03-06, UK
- * 
- * @brief collect all Grid class header files
+ * @date 2018-07-26, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -22,13 +19,16 @@
 /*  GNU Lesser General Public License for more details.                       */
 /*                                                                            */
 /*  You should have received a copy of the GNU Lesser General Public License  */
-/*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
+/*  along with DTM++.  If not, see <http://www.gnu.org/licenses/>.            */
 
-#ifndef __Grids_hh
-#define __Grids_hh
+#ifndef __TriaGenerator_inst_in
+#define __TriaGenerator_inst_in
 
-#include <heat/grid/Grid_DWR.tpl.hh>
+namespace heat {
 
-#include <heat/grid/Grid_DWR_PureDirichlet.tpl.hh>
+template class TriaGenerator<2>;
+template class TriaGenerator<3>;
+
+} // namespaces
 
 #endif

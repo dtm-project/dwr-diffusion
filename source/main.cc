@@ -45,7 +45,6 @@
 
 #include <heat/parameters/ParameterHandler.hh>
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
-#include <heat/grid/Grids.hh>
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
@@ -150,6 +149,7 @@ int main(int argc, char *argv[]) {
 			<< "dwr-heat solver: primal cG(p)-dG(0) with dual cG(q)-cG(1)"
 			<< std::endl;
 		
+		// TODO
 		// create simulator
 		//std::shared_ptr< DTM::Problem > problem;
 		DTM::pout
@@ -162,11 +162,8 @@ int main(int argc, char *argv[]) {
 			auto problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
 			
 			// TODO: put the following behind the switch block
+			
 			problem->set_input_parameters(parameter_handler);
-			
-			auto grid = std::make_shared< heat::Grid_DWR_0<2,1> > ();
-			problem->set_grid(grid);
-			
 			problem->run();
 			
 			break;
@@ -174,6 +171,7 @@ int main(int argc, char *argv[]) {
 		
 		case 3: [[fallthrough]]
 		default:
+			// TODO
 			dealii::ExcNotImplemented();
 		}
 		

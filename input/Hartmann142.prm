@@ -26,9 +26,18 @@ subsection Parameter Specification
     set initial displacement u0 options  = "1.0"
 end
 
-subsection Mesh Specification    
+subsection Mesh Specification
+    ############################################################################
+    set Grid Class = Grid_DWR_PureDirichlet
+    set Grid Class Options = ""
+    
+    set TriaGenerator = subdivided_hyper_rectangle
+    # subdivided_hyper_rectangle: point lower left, point upper right and spacing
+    set TriaGenerator Options = "0.0 0.0 0.0   1.0 1.0 1.0   1.00 1.00 1.00"
+    
+    ############################################################################
     # Global refinement of the initial mesh
-    set global refinement = 3
+    set global refinement = 1
     
     # Polynomial degrees
     set primal p = 1

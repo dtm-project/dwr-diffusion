@@ -1,7 +1,9 @@
 /**
- * @file Grid_DWR_0.tpl.cc
+ * @file Grid_DWR_PureDirichlet.tpl.cc
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-07-26, UK
  * @date 2018-03-06, UK
  */
 
@@ -22,9 +24,9 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-
 // PROJECT includes
-#include <heat/grid/Grid_DWR_0.tpl.hh>
+#include <heat/grid/Grid_DWR_PureDirichlet.tpl.hh>
+#include <heat/grid/TriaGenerator.tpl.hh>
 
 // DTM++ includes
 
@@ -33,23 +35,25 @@
 // C++ includes
 
 namespace heat {
+namespace grid {
 
 /// Generate grid. Throws Exception in base class.
 template<int dim, int spacedim>
 void
-Grid_DWR_0<dim,spacedim>::
+Grid_DWR_PureDirichlet<dim,spacedim>::
 generate() {
-	const double a(0.);
-	const double b(1.);
-	
 	auto slab(this->slabs.begin());
 	auto ends(this->slabs.end());
 	
 	for (; slab != ends; ++slab) {
-		dealii::GridGenerator::hyper_cube(
-			*(slab->tria),
-			a,b,false
-		);
+		{
+			heat::TriaGenerator<dim> tria_generator;
+			tria_generator.generate(
+				TriaGenerator,
+				TriaGenerator_Options,
+				slab->tria
+			);
+		}
 	}
 }
 
@@ -57,7 +61,7 @@ generate() {
 /// Set boundary indicators
 template<int dim, int spacedim>
 void
-Grid_DWR_0<dim,spacedim>::
+Grid_DWR_PureDirichlet<dim,spacedim>::
 set_boundary_indicators() {
 	// set boundary indicators
 	auto slab(this->slabs.begin());
@@ -81,6 +85,6 @@ set_boundary_indicators() {
 	}
 }
 
-} // namespaces
+}} // namespaces
 
-#include "Grid_DWR_0.inst.in"
+#include "Grid_DWR_PureDirichlet.inst.in"

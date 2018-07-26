@@ -1,10 +1,9 @@
 /**
- * @file Grid_DWR_0.inst.in
+ * @file Grid_DWR_Selector.tpl.hh
  * @author Uwe Koecher (UK)
- *
- * @date 2018-03-07, UK
  * 
- * @brief Grid_DWR instantiation file
+ * @date 2018-07-26, included from biot for dwr, UK
+ * @date 2016-02-12, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -24,14 +23,38 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Grid_DWR_0_inst_in
-#define __Grid_DWR_0_inst_in
+
+#ifndef __Grid_DWR_Selector_tpl_hh
+#define __Grid_DWR_Selector_tpl_hh
+
+#include <heat/grid/Grid_DWR.tpl.hh>
+
+// MPI includes
+
+// DEAL.II includes
+
+// C++ includes
+#include <memory>
+#include <string>
 
 namespace heat {
+namespace grid {
 
-template class Grid_DWR_0<2,1>;
-template class Grid_DWR_0<3,1>;
+template<int dim>
+class Selector {
+public:
+	Selector() = default;
+	virtual ~Selector() = default;
+	
+	virtual void create_grid(
+		const std::string &Grid_Class,
+		const std::string &Grid_Class_Options,
+		const std::string &TriaGenerator,
+		const std::string &TriaGenerator_Options,
+		std::shared_ptr< heat::Grid_DWR<dim,1> > &grid
+	) const;
+};
 
-} // namespaces
+}}
 
 #endif

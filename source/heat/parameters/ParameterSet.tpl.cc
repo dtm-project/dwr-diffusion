@@ -50,10 +50,11 @@ ParameterSet(
 		use_mesh_input_file = handler->get_bool("use mesh input file");
 		mesh_input_filename = handler->get("mesh input filename");
 		
-		GridGenerator = handler->get("GridGenerator");
-		GridGenerator_Options = handler->get("GridGenerator Options");
-		
 		Grid_Class = handler->get("Grid Class");
+		Grid_Class_Options = handler->get("Grid Class Options");
+		
+		TriaGenerator = handler->get("TriaGenerator");
+		TriaGenerator_Options = handler->get("TriaGenerator Options");
 		
 		global_refinement = static_cast<unsigned int> (
 			handler->get_integer("global refinement")

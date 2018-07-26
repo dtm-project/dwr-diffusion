@@ -153,19 +153,25 @@ ParameterHandler() {
 		);
 		
 		declare_entry(
-			"GridGenerator",
-			"invalid",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"GridGenerator Options",
-			"invalid",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
 			"Grid Class",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"Grid Class Options",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"TriaGenerator",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"TriaGenerator Options",
 			"invalid",
 			dealii::Patterns::Anything()
 		);

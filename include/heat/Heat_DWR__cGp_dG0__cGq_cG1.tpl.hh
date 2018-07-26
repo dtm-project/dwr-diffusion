@@ -71,10 +71,6 @@ public:
 		std::shared_ptr< dealii::ParameterHandler > parameter_handler
 	);
 	
-	virtual void set_grid(
-		std::shared_ptr< heat::Grid_DWR<dim,1> > grid
-	);
-	
 	virtual void run();
 
 protected:

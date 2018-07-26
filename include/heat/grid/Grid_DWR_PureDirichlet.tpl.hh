@@ -1,10 +1,10 @@
 /**
- * @file Grids.hh
+ * @file Grid_DWR_PureDirichlet.tpl.hh
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-03-06, UK
  * 
- * @brief collect all Grid class header files
+ * @date 2018-07-26, UK
+ * @date 2018-03-06, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -24,11 +24,41 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Grids_hh
-#define __Grids_hh
+#ifndef __Grid_DWR_PureDirichlet_tpl_hh
+#define __Grid_DWR_PureDirichlet_tpl_hh
 
+// PROJECT includes
 #include <heat/grid/Grid_DWR.tpl.hh>
 
-#include <heat/grid/Grid_DWR_PureDirichlet.tpl.hh>
+// DEAL.II includes
+
+// C++ includes
+
+namespace heat {
+namespace grid {
+
+template<int dim, int spacedim>
+class Grid_DWR_PureDirichlet : public heat::Grid_DWR<dim,spacedim> {
+public:
+	Grid_DWR_PureDirichlet(
+		const std::string &Grid_Class_Options,
+		const std::string &TriaGenerator,
+		const std::string &TriaGenerator_Options) :
+		Grid_Class_Options(Grid_Class_Options),
+		TriaGenerator(TriaGenerator),
+		TriaGenerator_Options(TriaGenerator_Options) {};
+	
+	virtual ~Grid_DWR_PureDirichlet() = default;
+	
+	virtual void generate();
+	virtual void set_boundary_indicators();
+	
+private:
+	const std::string Grid_Class_Options;
+	const std::string TriaGenerator;
+	const std::string TriaGenerator_Options;
+};
+
+}} // namespace
 
 #endif

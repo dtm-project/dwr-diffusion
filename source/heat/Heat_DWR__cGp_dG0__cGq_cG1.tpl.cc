@@ -35,8 +35,11 @@
 
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
+#include <heat/grid/Grid_DWR_Selector.tpl.hh>
+
 #include <heat/Force/Force_Selector.tpl.hh>
 
+// TODO:
 #include <heat/types/boundary_id.hh>
 #include <heat/ExactSolution/ExactSolutions.hh>
 
@@ -77,13 +80,6 @@ set_input_parameters(
 	);
 }
 
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-set_grid(std::shared_ptr< Grid_DWR<dim,1> > _grid) {
-	Assert(_grid.use_count(), dealii::ExcNotInitialized());
-	grid = _grid;
-}
 
 template<int dim>
 void
@@ -91,7 +87,6 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 run() {
 	// check
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	
 	init_functions();
 	init_grid();
@@ -142,6 +137,8 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	
 	// force function f:
 	{
 		heat::force::Selector<dim> selector;
@@ -173,6 +170,24 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_grid() {
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	
+	////////////////////////////////////////////////////////////////////////////
+	// init grid from input parameter file spec.
+	//
+	{
+		heat::grid::Selector<dim> selector;
+		selector.create_grid(
+			parameter_set->Grid_Class,
+			parameter_set->Grid_Class_Options,
+			parameter_set->TriaGenerator,
+			parameter_set->TriaGenerator_Options,
+			grid
+		);
+		
+		Assert(grid.use_count(), dealii::ExcNotInitialized());
+	}
+	
 	////////////////////////////////////////////////////////////////////////////
 	// initialize slabs of grid
 	//
@@ -184,6 +199,7 @@ init_grid() {
 	Assert((parameter_set->t0 < parameter_set->T), dealii::ExcInvalidState());
 	Assert((parameter_set->tau_n > 0), dealii::ExcInvalidState());
 	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	grid->initialize_slabs(
 		parameter_set->fe.p,
 		parameter_set->fe.q,

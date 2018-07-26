@@ -1,13 +1,14 @@
 /**
- * @file Grids.hh
+ * @file TriaGenerator.tpl.hh
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-03-06, UK
  * 
- * @brief collect all Grid class header files
+ * @date 2018-07-26, included from biot/piot as TriaGenerator, UK
+ * @date 2015-11-16, biot, UK
+ * @date 2015-09-16, TriaGenerator from input file, UK
+ * @date 2015-05-15, DTM++/AcousticWave Module, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,11 +25,32 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Grids_hh
-#define __Grids_hh
 
-#include <heat/grid/Grid_DWR.tpl.hh>
+#ifndef __TriaGenerator_tpl_hh
+#define __TriaGenerator_tpl_hh
 
-#include <heat/grid/Grid_DWR_PureDirichlet.tpl.hh>
+// Project includes
+#include <deal.II/grid/tria.h>
+
+// C++ includes
+#include <string>
+#include <vector>
+
+namespace heat {
+
+template<int dim>
+class TriaGenerator {
+public:
+	TriaGenerator() = default;
+	virtual ~TriaGenerator() = default;
+	
+	virtual void generate(
+		const std::string &TriaGenerator_Type,
+		const std::string &TriaGenerator_Options,
+		std::shared_ptr< dealii::Triangulation<dim> > tria
+	);
+};
+
+}
 
 #endif

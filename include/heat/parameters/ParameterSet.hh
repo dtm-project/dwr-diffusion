@@ -68,9 +68,11 @@ struct ParameterSet {
 	// mesh specification
 	bool use_mesh_input_file;
 	std::string mesh_input_filename;
-	std::string GridGenerator;
-	std::string GridGenerator_Options;
+	
 	std::string Grid_Class;
+	std::string Grid_Class_Options;
+	std::string TriaGenerator;
+	std::string TriaGenerator_Options;
 	
 	unsigned int global_refinement;
 	

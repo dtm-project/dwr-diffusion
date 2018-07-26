@@ -99,7 +99,7 @@ public:
 	
 	dealii::GridIn<dim>            grid_in;
 	dealii::GridOut                grid_out;
-}; // end class Grid_DWR
+};
 
 } // namespace
 
