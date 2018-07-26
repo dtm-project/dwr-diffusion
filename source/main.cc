@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  * 
+ * @date 2018-07-26, DTM::Problem, UK
  * @date 2018-07-25, tested and running instationary version, UK, MPB
  * @date 2018-03-06, new implementation, UK
  * @date 2017-08-01, Heat/DWR, UK
@@ -42,6 +43,7 @@
 
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
+#include <DTM++/base/Problem.hh>
 
 #include <heat/parameters/ParameterHandler.hh>
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
@@ -73,6 +75,15 @@ int main(int argc, char *argv[]) {
 	// Get MPI Variables
 	const unsigned int MyPID(dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD));
 	const unsigned int NumProc(dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
+	
+	////////////////////////////////////////////////////////////////////////
+	// Restrict usage to a single process (NumProc == 1) only.
+	//
+	
+	AssertThrow(NumProc == 1, dealii::ExcMessage("MPI mode not supported."));
+	
+	//
+	////////////////////////////////////////////////////////////////////////
 	
 	try {
 		////////////////////////////////////////////////////////////////////////
@@ -128,52 +139,47 @@ int main(int argc, char *argv[]) {
 		//
 		////////////////////////////////////////////////////////////////////////
 		
-		
-		////////////////////////////////////////////////////////////////////////
-		// Restrict usage to a single process (NumProc == 1) only.
-		//
-		
-		AssertThrow(NumProc == 1, dealii::ExcMessage("MPI mode not supported."));
-		
-		//
-		////////////////////////////////////////////////////////////////////////
-		
-		
 		////////////////////////////////////////////////////////////////////////
 		// Begin application
 		//
-		DTM::pout
-			<< std::endl
-			<< "*********************************************************"
-			<< std::endl
-			<< "dwr-heat solver: primal cG(p)-dG(0) with dual cG(q)-cG(1)"
-			<< std::endl;
 		
-		// TODO
 		// create simulator
-		//std::shared_ptr< DTM::Problem > problem;
+		std::shared_ptr< DTM::Problem > problem;
+		
+		// select simulator
+		{
+			DTM::pout
+				<< "dwr-heat solver: primal cG(p)-dG(0) with dual cG(q)-cG(1)"
+				<< std::endl;
+			
+			switch (dimension) {
+			case 2: {
+				problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
+				break;
+			}
+			
+			case 3: {
+				problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<3> > ();
+				break;
+			}
+			
+			default:
+				dealii::ExcNotImplemented();
+			}
+		}
+		
 		DTM::pout
 			<< "dwr-heat: dimension dim = " << dimension << std::endl
 			<< std::endl;
 		
-		// select, setup and run simulator
-		switch (dimension) {
-		case 2: {
-			auto problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
-			
-			// TODO: put the following behind the switch block
-			
-			problem->set_input_parameters(parameter_handler);
-			problem->run();
-			
-			break;
-		}
+		DTM::pout
+			<< std::endl
+			<< "*********************************************************"
+			<< std::endl << std::endl;
 		
-		case 3: [[fallthrough]]
-		default:
-			// TODO
-			dealii::ExcNotImplemented();
-		}
+		// run the simulator
+		problem->set_input_parameters(parameter_handler);
+		problem->run();
 		
 		DTM::pout << std::endl << "Goodbye." << std::endl;
 		

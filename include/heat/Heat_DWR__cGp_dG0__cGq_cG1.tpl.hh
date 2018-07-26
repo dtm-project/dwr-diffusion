@@ -42,7 +42,7 @@
 
 // DTM++ includes
 #include <DTM++/base/LogStream.hh>
-// #include <DTM++/base/Problem.hh>
+#include <DTM++/base/Problem.hh>
 #include <DTM++/io/DataOutput.tpl.hh>
 #include <DTM++/types/storage_data_vectors.tpl.hh>
 
@@ -62,7 +62,7 @@
 namespace heat {
 
 template<int dim>
-class Heat_DWR__cGp_dG0__cGq_cG1 {
+class Heat_DWR__cGp_dG0__cGq_cG1 : public DTM::Problem {
 public:
 	Heat_DWR__cGp_dG0__cGq_cG1() = default;
 	virtual ~Heat_DWR__cGp_dG0__cGq_cG1() = default;
