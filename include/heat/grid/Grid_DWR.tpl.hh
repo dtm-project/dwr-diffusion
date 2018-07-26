@@ -74,7 +74,12 @@ namespace heat {
 template<int dim, int spacedim>
 class Grid_DWR {
 public:
-	Grid_DWR() = default;
+	Grid_DWR(
+		const std::string &TriaGenerator,
+		const std::string &TriaGenerator_Options) :
+		TriaGenerator(TriaGenerator),
+		TriaGenerator_Options(TriaGenerator_Options) { };
+	
 	virtual ~Grid_DWR();
 	
 	virtual void initialize_slabs(
@@ -99,6 +104,10 @@ public:
 	
 	dealii::GridIn<dim>            grid_in;
 	dealii::GridOut                grid_out;
+	
+protected:
+	const std::string TriaGenerator;
+	const std::string TriaGenerator_Options;
 };
 
 } // namespace

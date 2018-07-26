@@ -35,6 +35,7 @@
 
 // PROJECT includes
 #include <heat/grid/Grid_DWR.tpl.hh>
+#include <heat/grid/TriaGenerator.tpl.hh>
 
 // DTM++ includes
 #include <DTM++/base/LogStream.hh>
@@ -246,13 +247,24 @@ refine_slab_in_time(
 }
 
 
-/// Generate grid. Throws Exception in base class.
+/// Generate tria on each slab.
 template<int dim, int spacedim>
 void
 Grid_DWR<dim,spacedim>::
 generate() {
-	// base class does not implement this function
-	Assert(false, dealii::ExcNotImplemented());
+	auto slab(this->slabs.begin());
+	auto ends(this->slabs.end());
+	
+	for (; slab != ends; ++slab) {
+		{
+			heat::TriaGenerator<dim> tria_generator;
+			tria_generator.generate(
+				TriaGenerator,
+				TriaGenerator_Options,
+				slab->tria
+			);
+		}
+	}
 }
 
 

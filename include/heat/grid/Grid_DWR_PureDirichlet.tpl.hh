@@ -44,19 +44,15 @@ public:
 		const std::string &Grid_Class_Options,
 		const std::string &TriaGenerator,
 		const std::string &TriaGenerator_Options) :
-		Grid_Class_Options(Grid_Class_Options),
-		TriaGenerator(TriaGenerator),
-		TriaGenerator_Options(TriaGenerator_Options) {};
+		heat::Grid_DWR<dim,spacedim> (TriaGenerator, TriaGenerator_Options),
+		Grid_Class_Options(Grid_Class_Options) { };
 	
 	virtual ~Grid_DWR_PureDirichlet() = default;
 	
-	virtual void generate();
 	virtual void set_boundary_indicators();
 	
 private:
 	const std::string Grid_Class_Options;
-	const std::string TriaGenerator;
-	const std::string TriaGenerator_Options;
 };
 
 }} // namespace

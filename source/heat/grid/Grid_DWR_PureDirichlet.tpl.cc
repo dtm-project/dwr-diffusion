@@ -26,7 +26,6 @@
 
 // PROJECT includes
 #include <heat/grid/Grid_DWR_PureDirichlet.tpl.hh>
-#include <heat/grid/TriaGenerator.tpl.hh>
 
 // DTM++ includes
 
@@ -37,28 +36,6 @@
 namespace heat {
 namespace grid {
 
-/// Generate grid. Throws Exception in base class.
-template<int dim, int spacedim>
-void
-Grid_DWR_PureDirichlet<dim,spacedim>::
-generate() {
-	auto slab(this->slabs.begin());
-	auto ends(this->slabs.end());
-	
-	for (; slab != ends; ++slab) {
-		{
-			heat::TriaGenerator<dim> tria_generator;
-			tria_generator.generate(
-				TriaGenerator,
-				TriaGenerator_Options,
-				slab->tria
-			);
-		}
-	}
-}
-
-
-/// Set boundary indicators
 template<int dim, int spacedim>
 void
 Grid_DWR_PureDirichlet<dim,spacedim>::
