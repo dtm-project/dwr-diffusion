@@ -46,30 +46,17 @@ value(
 	
 	const double t{this->get_time()};
 	
-	const double epsilon = function.epsilon->value(x, 0);
+// 	const double epsilon = function.epsilon->value(x, 0);
 	
 	const double x0 = 0.5+0.25*std::cos(2.*M_PI*t);
 	const double x1 = 0.5+0.25*std::sin(2.*M_PI*t);
 	
-// 	const double xminx_0t = (x[0]-x0);
-// 	const double yminy_0t = (x[1]-x1);
 	const double Nenner = 1. + a*( (x[0]-x0)*(x[0]-x0) + (x[1]-x1)*(x[1]-x1) );
 	
 	double dtu =
 		-( ( a * (x[0]-x0) * M_PI * std::sin(2.*M_PI*t) ) - ( a * (x[1]-x1) * M_PI * std::cos(2.*M_PI*t)) ) /
 		(Nenner*Nenner);
 	
-// 	double u_xx =
-// 		( (-2.*a*Nenner*Nenner) + (2.*a*xminx_0t) *
-// 		( 4*a*xminx_0t + 4.*a*a*xminx_0t*xminx_0t*xminx_0t
-// 		+ (4.*a*a*yminy_0t*yminy_0t*xminx_0t) ) ) / (Nenner*Nenner*Nenner*Nenner);
-// 	
-// 	double u_yy =
-// 		( (-2.*a*Nenner*Nenner) + (2.*a*yminy_0t) *
-// 		( (4.*a*yminy_0t) + 4.*a*a*yminy_0t*yminy_0t*yminy_0t
-// 		+ (4.*a*a*xminx_0t*xminx_0t*yminy_0t) ) ) / (Nenner*Nenner*Nenner*Nenner);
-		
-		
 	const double u_xx =
 		-2.*a*( 1./(Nenner*Nenner)
 		+ (x[0]-x0) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[0]-x0)) );

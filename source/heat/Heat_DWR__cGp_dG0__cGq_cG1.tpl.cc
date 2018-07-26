@@ -33,11 +33,13 @@
 // PROJECT includes
 #include <DTM++/base/LogStream.hh>
 
+#include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
+
+#include <heat/Force/Force_Selector.tpl.hh>
+
 #include <heat/types/boundary_id.hh>
-#include <heat/Force/Forces.hh>
 #include <heat/ExactSolution/ExactSolutions.hh>
 
-#include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 #include <heat/assembler/L2_MassAssembly.tpl.hh>
 #include <heat/assembler/L2_LaplaceAssembly.tpl.hh>
@@ -140,6 +142,18 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
+	// force function f:
+	{
+		heat::force::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->force_function,
+			parameter_set->force_options,
+			function.f
+		);
+		
+		Assert(function.f.use_count(), dealii::ExcNotInitialized());
+	}
+	
 	// TODO: read those from parameter input file
 	
 	// Hartmann Sec. 1.4.2 Test problem:
@@ -149,7 +163,6 @@ init_functions() {
 	
 	function.epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
-	function.f = std::make_shared< heat::force::Hartmann142<dim> > (a,function.epsilon);
 	
 	// exact solution (if any)
 	function.u_E = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);

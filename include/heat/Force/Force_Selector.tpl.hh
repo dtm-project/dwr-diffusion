@@ -1,13 +1,10 @@
 /**
- * @file Forces.hh
+ * @file Force_Selector.tpl.hh
  * @author Uwe Koecher (UK)
- * 
- * @date 2018-03-08, included from ewave, UK
- * @date 2017-10-25, UK
- * @date 2017-02-10, xwave, UK
- * @date 2016-05-30, biot, UK
- * 
- * @brief Collects all Force functions.
+ *
+ * @date 2018-07-26, dwr, UK
+ * @date 2016-05-30, UK
+ * @date 2016-02-11, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -27,11 +24,32 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Forces_hh
-#define __Forces_hh
+#ifndef __Force_Selector_tpl_hh
+#define __Force_Selector_tpl_hh
 
-#include <heat/Force/Force_Selector.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
 
-#include <heat/Force/Force_Hartmann142.tpl.hh>
+// C++ includes
+#include <memory>
+#include <string>
+
+namespace heat {
+namespace force {
+
+template<int dim>
+class Selector {
+public:
+	Selector() = default;
+	virtual ~Selector() = default;
+	
+	virtual void create_function(
+		const std::string &type,
+		const std::string &options,
+		std::shared_ptr< dealii::Function<dim> > &function
+	) const;
+};
+
+}}
 
 #endif

@@ -1,13 +1,12 @@
 /**
- * @file Forces.hh
+ * @file Force_Selector.inst.in
  * @author Uwe Koecher (UK)
  * 
- * @date 2018-03-08, included from ewave, UK
- * @date 2017-10-25, UK
- * @date 2017-02-10, xwave, UK
- * @date 2016-05-30, biot, UK
- * 
- * @brief Collects all Force functions.
+ * @date 2018-07-26, dwr, UK
+ * @date 2016-05-30, UK
+ * @date 2016-02-11, UK
+ *
+ * @brief Instantiation file
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -27,11 +26,16 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Forces_hh
-#define __Forces_hh
+#ifndef __Force_Selector_inst_in
+#define __Force_Selector_inst_in
 
-#include <heat/Force/Force_Selector.tpl.hh>
 
-#include <heat/Force/Force_Hartmann142.tpl.hh>
+namespace heat {
+namespace force {
+
+template class Selector<2>;
+template class Selector<3>;
+
+}} // namespaces
 
 #endif

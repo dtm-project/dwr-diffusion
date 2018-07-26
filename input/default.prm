@@ -9,9 +9,9 @@ subsection Parameter Specification
     
     ############################################################################
     # Force
-    set force function = ForceHartmann142
-    #                     a
-    set force options  = "1.0"
+    set force function = Force_Hartmann142
+    #                     a   epsilon
+    set force options  = "50. 1."
     
     ############################################################################
     # Dirichlet boundary value functions
@@ -48,18 +48,18 @@ end
 subsection Output Quantities
     ############################################################################
     # primal solution output control
-    set primal data output dwr loop = last     # use none, all, last or number
+    set primal data output dwr loop = all     # use none, all, last or number
     
-#    set primal data output trigger type = I_n   # I_n mode: one output per I_n
-    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
+    set primal data output trigger type = I_n   # I_n mode: one output per I_n
+#    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
     set primal data output trigger time      = 0.01 # use fixed trigger value (fixed mode only)
     
     set primal data output patches auto mode = true # use < primal p > data output patches (auto mode)
     set primal data output patches           = 1    # use this (no auto mode)
-	
+    
     ############################################################################
     # dual solution output control
-	set dual data output dwr loop = last      # use none, all, last or number
+    set dual data output dwr loop = all      # use none, all, last or number
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.01
@@ -67,4 +67,3 @@ subsection Output Quantities
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
 end
-

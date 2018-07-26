@@ -42,10 +42,8 @@ class Hartmann142 : public dealii::Function<dim> {
 public:
 	Hartmann142(
 		const double &a,
-		std::shared_ptr< dealii::Function<dim> > epsilon
-	) : dealii::Function<dim> (1), a(a) {
-		function.epsilon = epsilon;
-	};
+		const double &epsilon
+	) : dealii::Function<dim> (1), a(a), epsilon(epsilon) { };
 	
 	virtual ~Hartmann142() = default;
 	
@@ -59,10 +57,7 @@ public:
 
 private:
 	const double a;
-	
-	struct {
-		 std::shared_ptr< dealii::Function<dim> > epsilon;
-	} function;
+	const double epsilon;
 };
 
 }}
