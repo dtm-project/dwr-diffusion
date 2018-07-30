@@ -39,8 +39,9 @@
 
 #include <heat/Force/Force_Selector.tpl.hh>
 
-// TODO:
+#include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 #include <heat/ExactSolution/ExactSolutions.hh>
+
 
 #include <heat/types/boundary_id.hh>
 
@@ -152,7 +153,7 @@ init_functions() {
 	}
 	
 	// TODO: read those from parameter input file
-	
+// 	
 	// Hartmann Sec. 1.4.2 Test problem:
 	const double a{50.};
 	function.u_D = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
@@ -162,7 +163,16 @@ init_functions() {
 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	
 	// exact solution (if any)
-	function.u_E = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
+	{
+		heat::exact_solution::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->exact_solution_function,
+			parameter_set->exact_solution_options,
+			function.u_E
+		);
+		
+		Assert(function.f.use_count(), dealii::ExcNotInitialized());
+	}
 }
 
 

@@ -65,6 +65,9 @@ struct ParameterSet {
 	std::string initial_displacement_u0_function;
 	std::string initial_displacement_u0_options;
 	
+	std::string exact_solution_function;
+	std::string exact_solution_options;
+	
 	// mesh specification
 	bool use_mesh_input_file;
 	std::string mesh_input_filename;
