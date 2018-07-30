@@ -505,6 +505,9 @@ primal_do_forward_TMS(
 		*function.u_0,
 		*primal.um
 	);
+	// call hanging nodes to make the result continuous again (Note: after the 
+	// first dwr-loop the initial grid could have hanging nodes)
+	slab->primal.constraints->distribute(*primal.um);
 	
 	// output "initial value solution" at initial time t0
 	*u->x[0] = *primal.um;
@@ -1137,6 +1140,9 @@ dual_assemble_rhs(
 			*function.u_0,
 			*primal_um_on_t0
 		);
+		// call hanging nodes to make the result continuous again (Note: after the 
+		// first dwr-loop the initial grid could have hanging nodes)
+		slab->primal.constraints->distribute(*primal_um_on_t0);
 		
 		dealii::FETools::interpolate(
 			// primal solution
