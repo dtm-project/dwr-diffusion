@@ -123,13 +123,13 @@ ParameterHandler() {
 		
 		
 		declare_entry(
-			"initial displacement u0 function",
+			"initial value u0 function",
 			"invalid",
 			dealii::Patterns::Anything()
 		);
 		
 		declare_entry(
-			"initial displacement u0 options",
+			"initial value u0 options",
 			"",
 			dealii::Patterns::Anything()
 		);

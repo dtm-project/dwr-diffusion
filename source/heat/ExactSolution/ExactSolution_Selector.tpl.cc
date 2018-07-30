@@ -137,7 +137,7 @@ create_function(
 		AssertThrow(
 			options.size() == 1,
 			dealii::ExcMessage(
-				"force options invalid, "
+				"exact_solution options invalid, "
 				"please check your input file data."
 			)
 		);

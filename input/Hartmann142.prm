@@ -14,16 +14,16 @@ subsection Parameter Specification
     set force options  = "50. 1."
     
     ############################################################################
-    # Dirichlet boundary value functions
+    # DirichletBoundary 
     set dirichlet boundary u_D function = DirichletBoundary_Hartmann142
     #                                      a
     set dirichlet boundary u_D options  = "50."
     
     ############################################################################
-    # Initial value functions
-    set initial displacement u0 function = ExactHartmann142
-    #                                       a
-    set initial displacement u0 options  = "1.0"
+    # InitialValue 
+    set initial value u0 function = InitialValue_Hartmann142
+    #                                a
+    set initial value u0 options  = "50."
     ############################################################################
     # ExactSolution
     set exact solution function = ExactSolution_Hartmann142

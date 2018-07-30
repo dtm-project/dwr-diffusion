@@ -78,7 +78,7 @@ struct LaplaceAssembly {
 	std::vector<dealii::Tensor<1,dim> > grad_phi;
 	unsigned int                        dofs_per_cell;
 	double                              JxW;
-	double                              epsilon;
+	double                              diffusion_epsilon;
 	
 	// other
 	unsigned int q;
@@ -121,8 +121,8 @@ public:
 	
 	~Assembler() = default;
 	
-	void set_epsilon_function(
-		std::shared_ptr< dealii::Function<dim> > epsilon
+	void set_diffusion_epsilon_function(
+		std::shared_ptr< dealii::Function<dim> > diffusion_epsilon
 	);
 	
 	/** Assemble matrix. Matrix must be initialized before!
@@ -154,7 +154,7 @@ private:
 	dealii::UpdateFlags uflags;
 	
 	struct {
-		std::shared_ptr< dealii::Function<dim> > epsilon;
+		std::shared_ptr< dealii::Function<dim> > diffusion_epsilon;
 	} function;
 };
 
