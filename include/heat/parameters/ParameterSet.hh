@@ -51,6 +51,9 @@ struct ParameterSet {
 	std::string diffusion_epsilon_function;
 	std::string diffusion_epsilon_options;
 	
+	std::string density_function;
+	std::string density_options;
+	
 	std::string force_function;
 	std::string force_options;
 	unsigned int force_assembler_n_quadrature_points;

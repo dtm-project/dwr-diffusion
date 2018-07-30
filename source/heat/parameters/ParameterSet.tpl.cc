@@ -88,6 +88,15 @@ ParameterSet(
 		);
 		
 		
+		density_function = handler->get(
+			"density function"
+		);
+		
+		density_options = handler->get(
+			"density options"
+		);
+		
+		
 		force_function = handler->get(
 			"force function"
 		);

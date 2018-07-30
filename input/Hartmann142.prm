@@ -8,6 +8,11 @@ subsection Parameter Specification
     set diffusion epsilon options  = "1.0"
     
     ############################################################################
+    # Density
+    set density function = ConstantFunction
+    set density options  = "1.0"
+    
+    ############################################################################
     # Force
     set force function = Force_Hartmann142
     #                     a   epsilon
