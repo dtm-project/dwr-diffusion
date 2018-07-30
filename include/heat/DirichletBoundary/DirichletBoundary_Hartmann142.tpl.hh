@@ -1,12 +1,16 @@
 /**
- * @file ExactSolution_Hartmann142.inst.in
+ * @file DirichletBoundary_Hartmann142.tpl.hh
  * @author Uwe Koecher (UK)
- * @date 2018-07-20, UK
- *
- * @brief Instantiation file
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-07-30, Hartmann142, MPB, UK
+ * @date 2018-03-09, UK
+ * @date 2018-03-08, included from ewave, UK
+ * @date 2017-10-25, UK
+ * @date 2013-08-15, DTM++ v1, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -23,15 +27,37 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_Hartmann142_inst_in
-#define __ExactSolution_Hartmann142_inst_in
+#ifndef __DirichletBoundary_Hartmann142_tpl_hh
+#define __DirichletBoundary_Hartmann142_tpl_hh
+
+// DEAL.II includes
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+
+// C++ includes
 
 namespace heat {
-namespace exact_solution {
+namespace dirichlet_boundary {
 
-template class Hartmann142<2>;
-template class Hartmann142<3>;
+template<int dim>
+class Hartmann142 : public dealii::Function<dim> {
+public:
+	Hartmann142(const double &a) : dealii::Function<dim> (1), a(a) {};
+	
+	virtual ~Hartmann142() = default;
+	
+	/// get value (of a specific component) from a function evaluation
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
 
-}} // namespaces
+private:
+	const double a;
+};
+
+}}
 
 #endif

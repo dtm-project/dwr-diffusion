@@ -1,12 +1,17 @@
 /**
- * @file ExactSolution_Hartmann142.inst.in
+ * @file DirichletBoundary_Selector.inst.in
  * @author Uwe Koecher (UK)
- * @date 2018-07-20, UK
+ * @author Marius Paul Bruchhäuser (MPB)
+ * 
+ * @date 2018-07-30, dwr, MPB
+ * @date 2018-07-26, dwr, UK
+ * @date 2016-05-30, UK
+ * @date 2016-02-11, UK
  *
  * @brief Instantiation file
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher,  Marius Paul Bruchhäuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -23,14 +28,15 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_Hartmann142_inst_in
-#define __ExactSolution_Hartmann142_inst_in
+#ifndef __DirichletBoundary_Selector_inst_in
+#define __DirichletBoundary_Selector_inst_in
+
 
 namespace heat {
-namespace exact_solution {
+namespace dirichlet_boundary {
 
-template class Hartmann142<2>;
-template class Hartmann142<3>;
+template class Selector<2>;
+template class Selector<3>;
 
 }} // namespaces
 

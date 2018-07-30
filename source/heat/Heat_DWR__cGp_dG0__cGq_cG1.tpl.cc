@@ -38,7 +38,7 @@
 #include <heat/grid/Grid_DWR_Selector.tpl.hh>
 
 #include <heat/Force/Force_Selector.tpl.hh>
-
+#include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 #include <heat/ExactSolution/ExactSolutions.hh>
 
@@ -152,12 +152,24 @@ init_functions() {
 		Assert(function.f.use_count(), dealii::ExcNotInitialized());
 	}
 	
+	// fdirichlet boundary function u_D:
+	{
+		heat::dirichlet_boundary::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->dirichlet_boundary_u_D_function,
+			parameter_set->dirichlet_boundary_u_D_options,
+			function.u_D
+		);
+		
+		Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
+	}
+	
 	// TODO: read those from parameter input file
 // 	
 	// Hartmann Sec. 1.4.2 Test problem:
 	const double a{50.};
-	function.u_D = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
-	function.u_0 = std::make_shared< heat::ExactSolution::Hartmann142<dim> > (a);
+// 	function.u_D = std::make_shared< heat::exact_solution::Hartmann142<dim> > (a);
+	function.u_0 = std::make_shared< heat::exact_solution::Hartmann142<dim> > (a);
 	
 	function.epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
@@ -171,7 +183,7 @@ init_functions() {
 			function.u_E
 		);
 		
-		Assert(function.f.use_count(), dealii::ExcNotInitialized());
+		Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
 	}
 }
 
