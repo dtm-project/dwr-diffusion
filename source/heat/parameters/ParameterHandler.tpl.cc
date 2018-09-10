@@ -133,6 +133,19 @@ ParameterHandler() {
 			"",
 			dealii::Patterns::Anything()
 		);
+		
+		
+		declare_entry(
+			"exact solution function",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"exact solution options",
+			"",
+			dealii::Patterns::Anything()
+		);
 	}
 	leave_subsection();
 	

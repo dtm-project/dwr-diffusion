@@ -142,6 +142,15 @@ ParameterSet(
 		initial_displacement_u0_options = handler->get(
 			"initial displacement u0 options"
 		);
+		
+		
+		exact_solution_function = handler->get(
+			"exact solution function"
+		);
+		
+		exact_solution_options = handler->get(
+			"exact solution options"
+		);
 	}
 	handler->leave_subsection();
 	

@@ -24,6 +24,13 @@ subsection Parameter Specification
     set initial displacement u0 function = ExactHartmann142
     #                                       a
     set initial displacement u0 options  = "1.0"
+    ############################################################################
+    # ExactSolution
+    set exact solution function = ExactSolution_Hartmann142
+    #                     a   
+    set exact solution options  = "50."
+    
+    ############################################################################
 end
 
 subsection Mesh Specification
@@ -51,7 +58,7 @@ subsection Time Integration
 end
 
 subsection DWR
-    set loops = 8
+    set loops = 3
 end
 
 subsection Output Quantities
