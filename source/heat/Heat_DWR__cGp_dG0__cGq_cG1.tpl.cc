@@ -1906,7 +1906,8 @@ refine_and_coarsen_space_time_grid() {
 					*eta_it->x[0],
 					parameter_set->dwr.refine_and_coarsen.space.top_fraction,
 					parameter_set->dwr.refine_and_coarsen.space.bottom_fraction,
-					slab->tria->n_global_active_cells()*3 // max elements restriction
+					slab->tria->n_global_active_cells() *
+						parameter_set->dwr.refine_and_coarsen.space.max_growth_factor_n_active_cells
 				);
 				
 				// execute refinement in space under the conditions of mesh smoothing

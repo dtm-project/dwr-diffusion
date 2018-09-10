@@ -298,6 +298,12 @@ ParameterHandler() {
 		);
 		
 		declare_entry(
+			"refine and coarsen space max growth factor n_active_cells",
+			"4",
+			dealii::Patterns::Integer()
+		);
+		
+		declare_entry(
 			"refine and coarsen space Schwegler theta1",
 			"1.0",
 			dealii::Patterns::Double()
