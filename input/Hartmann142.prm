@@ -15,9 +15,9 @@ subsection Parameter Specification
     
     ############################################################################
     # Dirichlet boundary value functions
-    set dirichlet boundary u_D function = ExactHartmann142
+    set dirichlet boundary u_D function = DirichletBoundary_Hartmann142
     #                                      a
-    set dirichlet boundary u_D options  = "1.0"
+    set dirichlet boundary u_D options  = "50."
     
     ############################################################################
     # Initial value functions
@@ -27,7 +27,7 @@ subsection Parameter Specification
     ############################################################################
     # ExactSolution
     set exact solution function = ExactSolution_Hartmann142
-    #                     a   
+    #                              a   
     set exact solution options  = "50."
     
     ############################################################################

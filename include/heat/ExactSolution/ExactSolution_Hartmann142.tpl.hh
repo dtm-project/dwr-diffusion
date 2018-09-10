@@ -36,7 +36,7 @@
 // C++ includes
 
 namespace heat {
-namespace ExactSolution {
+namespace exact_solution {
 
 template<int dim>
 class Hartmann142 : public dealii::Function<dim> {

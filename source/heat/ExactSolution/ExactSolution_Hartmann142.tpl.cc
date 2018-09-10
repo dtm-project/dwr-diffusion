@@ -33,7 +33,7 @@
 // C++ includes
 
 namespace heat {
-namespace ExactSolution {
+namespace exact_solution {
 
 template<int dim>
 double

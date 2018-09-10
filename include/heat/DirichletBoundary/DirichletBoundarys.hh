@@ -1,9 +1,10 @@
 /**
- * @file ExactSolution_Hartmann142.inst.in
+ * @file DirichletBoundarys.hh
  * @author Uwe Koecher (UK)
+ * 
  * @date 2018-07-20, UK
- *
- * @brief Instantiation file
+ * 
+ * @brief Collects all DirichletBoundary functions.
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -23,15 +24,9 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_Hartmann142_inst_in
-#define __ExactSolution_Hartmann142_inst_in
+#ifndef __DirichletBoundarys_hh
+#define __DirichletBoundarys_hh
 
-namespace heat {
-namespace exact_solution {
-
-template class Hartmann142<2>;
-template class Hartmann142<3>;
-
-}} // namespaces
+#include <heat/DirichletBoundary/DirichletBoundary_Hartmann142.tpl.hh>
 
 #endif

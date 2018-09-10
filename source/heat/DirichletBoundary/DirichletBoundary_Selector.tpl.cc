@@ -1,5 +1,5 @@
 /**
- * @file ExactSolution_Selector.tpl.cc
+ * @file DirichletBoundary_Selector.tpl.cc
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhäuser (MPB)
  *
@@ -29,8 +29,8 @@
 
 #include <DTM++/base/LogStream.hh>
 
-#include <heat/ExactSolution/ExactSolutions.hh>
-#include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
+#include <heat/DirichletBoundary/DirichletBoundarys.hh>
+#include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
 
 // MPI includes
 
@@ -40,7 +40,7 @@
 #include <vector>
 
 namespace heat {
-namespace exact_solution {
+namespace dirichlet_boundary {
 
 template<int dim>
 void
@@ -75,8 +75,8 @@ create_function(
 	////////////////////////////////////////////////////////////////////////////
 	//
 	
-	DTM::pout << "* found configuration: exact_solution function = " << _type << std::endl;
-	DTM::pout << "* found configuration: exact_solution options = " << std::endl;
+	DTM::pout << "* found configuration: dirichlet_boundary function = " << _type << std::endl;
+	DTM::pout << "* found configuration: dirichlet_boundary options = " << std::endl;
 	for (auto &option : options) {
 		DTM::pout << "\t" << option << std::endl;
 	}
@@ -90,7 +90,7 @@ create_function(
 		AssertThrow(
 			options.size() == 0,
 			dealii::ExcMessage(
-				"exact_solution options invalid, "
+				"dirichlet_boundary options invalid, "
 				"please check your input file data."
 			)
 		);
@@ -99,7 +99,7 @@ create_function(
 			std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
 		
 		DTM::pout
-			<< "exact_solution selector: created zero function" << std::endl
+			<< "dirichlet_boundary selector: created zero function" << std::endl
 			<< std::endl;
 		
 		return;
@@ -111,7 +111,7 @@ create_function(
 		AssertThrow(
 			options.size() == 1,
 			dealii::ExcMessage(
-				"exact_solution options invalid, "
+				"dirichlet_boundary options invalid, "
 				"please check your input file data."
 			)
 		);
@@ -123,8 +123,8 @@ create_function(
 		);
 		
 		DTM::pout
-			<< "exact_solution selector: created ConstantFunction "
-			<< "as exact_solution function, with " << std::endl
+			<< "dirichlet_boundary selector: created ConstantFunction "
+			<< "as force function, with " << std::endl
 			<< "\tf(1) = " << std::stod(options.at(0)) << " . " << std::endl
 			<< std::endl;
 		
@@ -133,22 +133,22 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
-	if (_type.compare("ExactSolution_Hartmann142") == 0) {
+	if (_type.compare("DirichletBoundary_Hartmann142") == 0) {
 		AssertThrow(
 			options.size() == 1,
 			dealii::ExcMessage(
-				"force options invalid, "
+				"dirichlet_boundary options invalid, "
 				"please check your input file data."
 			)
 		);
 		
-		function = std::make_shared< heat::exact_solution::Hartmann142<dim> >(
+		function = std::make_shared< heat::dirichlet_boundary::Hartmann142<dim> >(
 			std::stod(options.at(0)) // a
 		);
 		
 		DTM::pout
-			<< "exact_solution selector: created Hartmann142 "
-			<< "as exact_solution function, with " << std::endl
+			<< "dirichlet_boundary selector: created Hartmann142 "
+			<< "as dirichlet_boundary function, with " << std::endl
 			<< "\ta = " << std::stod(options.at(0)) << std::endl
 			<< std::endl;
 		
@@ -159,10 +159,10 @@ create_function(
 	// 
 	AssertThrow(
 		false,
-		dealii::ExcMessage("exact_solution function unknown, please check your input file data.")
+		dealii::ExcMessage("dirichlet_boundary function unknown, please check your input file data.")
 	);
 }
 
 }} //namespaces
 
-#include "ExactSolution_Selector.inst.in"
+#include "DirichletBoundary_Selector.inst.in"
