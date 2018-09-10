@@ -38,12 +38,11 @@
 #include <heat/grid/Grid_DWR_Selector.tpl.hh>
 
 #include <heat/Diffusion/Diffusion_Selector.tpl.hh>
+#include <heat/Density/Density_Selector.tpl.hh>
 #include <heat/Force/Force_Selector.tpl.hh>
 #include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
 #include <heat/InitialValue/InitialValue_Selector.tpl.hh>
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
-// #include <heat/ExactSolution/ExactSolutions.hh>
-
 
 #include <heat/types/boundary_id.hh>
 
@@ -153,6 +152,18 @@ init_functions() {
 		
 		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
 	}
+
+	// density function density:
+	{
+		heat::diffusion::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->density_function,
+			parameter_set->density_options,
+			function.density
+		);
+		
+		Assert(function.density.use_count(), dealii::ExcNotInitialized());
+	}
 	
 	// force function f:
 	{
@@ -192,8 +203,8 @@ init_functions() {
 	
 	// TODO: read those from parameter input file
 	
-// 	function.diffusion_epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
-	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
+
+// 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	
 	// exact solution (if any)
 	{

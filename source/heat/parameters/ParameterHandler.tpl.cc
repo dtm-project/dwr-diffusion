@@ -60,6 +60,19 @@ ParameterHandler() {
 		
 		
 		declare_entry(
+			"density function",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"density options",
+			"",
+			dealii::Patterns::Anything()
+		);
+		
+		
+		declare_entry(
 			"force function",
 			"invalid",
 			dealii::Patterns::Anything()

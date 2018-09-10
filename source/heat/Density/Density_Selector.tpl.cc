@@ -1,5 +1,5 @@
 /**
- * @file Diffusion_Selector.tpl.cc
+ * @file Density_Selector.tpl.cc
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhäuser (MPB)
  *
@@ -29,8 +29,8 @@
 
 #include <DTM++/base/LogStream.hh>
 
-#include <heat/Diffusion/Diffusions.hh>
-#include <heat/Diffusion/Diffusion_Selector.tpl.hh>
+#include <heat/Density/Densities.hh>
+#include <heat/Density/Density_Selector.tpl.hh>
 
 // MPI includes
 
@@ -40,7 +40,7 @@
 #include <vector>
 
 namespace heat {
-namespace diffusion {
+namespace density {
 
 template<int dim>
 void
@@ -75,8 +75,8 @@ create_function(
 	////////////////////////////////////////////////////////////////////////////
 	//
 	
-	DTM::pout << "* found configuration: diffusion function = " << _type << std::endl;
-	DTM::pout << "* found configuration: diffusion options = " << std::endl;
+	DTM::pout << "* found configuration: density function = " << _type << std::endl;
+	DTM::pout << "* found configuration: density options = " << std::endl;
 	for (auto &option : options) {
 		DTM::pout << "\t" << option << std::endl;
 	}
@@ -90,7 +90,7 @@ create_function(
 		AssertThrow(
 			options.size() == 0,
 			dealii::ExcMessage(
-				"diffusion options invalid, "
+				"density options invalid, "
 				"please check your input file data."
 			)
 		);
@@ -99,7 +99,7 @@ create_function(
 			std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
 		
 		DTM::pout
-			<< "diffusion selector: created zero function" << std::endl
+			<< "density selector: created zero function" << std::endl
 			<< std::endl;
 		
 		return;
@@ -111,7 +111,7 @@ create_function(
 		AssertThrow(
 			options.size() == 1,
 			dealii::ExcMessage(
-				"diffusion options invalid, "
+				"density options invalid, "
 				"please check your input file data."
 			)
 		);
@@ -123,8 +123,8 @@ create_function(
 		);
 		
 		DTM::pout
-			<< "diffusion selector: created ConstantFunction "
-			<< "as diffusion function, with " << std::endl
+			<< "density selector: created ConstantFunction "
+			<< "as density function, with " << std::endl
 			<< "\tf(1) = " << std::stod(options.at(0)) << " . " << std::endl
 			<< std::endl;
 		
@@ -134,7 +134,7 @@ create_function(
 	////////////////////////////////////////////////////////////////////////////
 	// 
 	// NOTE not implemented yet
-// 	if (_type.compare("Diffusion_Hartmann142") == 0) {
+// 	if (_type.compare("Density_Hartmann142") == 0) {
 // 		AssertThrow(
 // 			options.size() == 1,
 // 			dealii::ExcMessage(
@@ -143,13 +143,13 @@ create_function(
 // 			)
 // 		);
 // 		
-// 		function = std::make_shared< heat::diffusion::Hartmann142<dim> >(
+// 		function = std::make_shared< heat::density::Hartmann142<dim> >(
 // 			std::stod(options.at(0)) // a
 // 		);
 // 		
 // 		DTM::pout
-// 			<< "diffusion selector: created Hartmann142 "
-// 			<< "as diffusion function, with " << std::endl
+// 			<< "density selector: created Hartmann142 "
+// 			<< "as density function, with " << std::endl
 // 			<< "\ta = " << std::stod(options.at(0)) << std::endl
 // 			<< std::endl;
 // 		
@@ -160,10 +160,10 @@ create_function(
 	// 
 	AssertThrow(
 		false,
-		dealii::ExcMessage("diffusion function unknown, please check your input file data.")
+		dealii::ExcMessage("density function unknown, please check your input file data.")
 	);
 }
 
 }} //namespaces
 
-#include "Diffusion_Selector.inst.in"
+#include "Density_Selector.inst.in"
