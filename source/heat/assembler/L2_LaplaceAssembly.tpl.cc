@@ -65,7 +65,7 @@ LaplaceAssembly<dim>::LaplaceAssembly(
 	grad_phi(fe.dofs_per_cell),
 	dofs_per_cell(0),
 	JxW(0.),
-	diffusion_epsilon(0.) {
+	epsilon(0.) {
 }
 
 
@@ -80,7 +80,7 @@ LaplaceAssembly<dim>::LaplaceAssembly(const LaplaceAssembly &scratch) :
 	grad_phi(scratch.grad_phi),
 	dofs_per_cell(scratch.dofs_per_cell),
 	JxW(scratch.JxW),
-	diffusion_epsilon(scratch.diffusion_epsilon),
+	epsilon(scratch.epsilon),
 	q(scratch.q),
 	k(scratch.k),
 	i(scratch.i),
@@ -135,9 +135,9 @@ Assembler(
 template<int dim>
 void
 Assembler<dim>::
-set_diffusion_epsilon_function(
-	std::shared_ptr< dealii::Function<dim> > diffusion_epsilon) {
-	function.diffusion_epsilon = diffusion_epsilon;
+set_epsilon_function(
+	std::shared_ptr< dealii::Function<dim> > epsilon) {
+	function.epsilon = epsilon;
 }
 
 
@@ -154,7 +154,7 @@ assemble(
 	AssertThrow( fe.use_count(), dealii::ExcNotInitialized() );
 	AssertThrow( mapping.use_count(), dealii::ExcNotInitialized() );
 	AssertThrow( constraints.use_count(), dealii::ExcNotInitialized() );
-	AssertThrow( function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized() );
+	AssertThrow( function.epsilon.use_count(), dealii::ExcNotInitialized() );
 	
 	////////////////////////////////////////////////////////////////////////////
 	// assemble matrix
@@ -212,7 +212,7 @@ void Assembler<dim>::local_assemble_cell(
 	// assemble cell terms
 	for (scratch.q=0; scratch.q < scratch.fe_values.n_quadrature_points;
 		++scratch.q) {
-		scratch.diffusion_epsilon = function.diffusion_epsilon->value(
+		scratch.epsilon = function.epsilon->value(
 			scratch.fe_values.quadrature_point(scratch.q),0
 		);
 		scratch.JxW = scratch.fe_values.JxW(scratch.q);
@@ -230,7 +230,7 @@ void Assembler<dim>::local_assemble_cell(
 		for (scratch.j=0; scratch.j < scratch.dofs_per_cell; ++scratch.j) {
 			copydata.vi_ui_matrix(scratch.i,scratch.j) +=
 				scratch.grad_phi[scratch.i] *
-				scratch.diffusion_epsilon *
+				scratch.epsilon *
 				scratch.grad_phi[scratch.j] *
 				scratch.JxW;
 		}}
