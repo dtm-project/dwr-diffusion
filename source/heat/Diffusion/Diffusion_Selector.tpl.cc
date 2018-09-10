@@ -29,7 +29,6 @@
 
 #include <DTM++/base/LogStream.hh>
 
-#include <heat/Diffusion/Diffusions.hh>
 #include <heat/Diffusion/Diffusion_Selector.tpl.hh>
 
 // MPI includes
@@ -130,31 +129,6 @@ create_function(
 		
 		return;
 	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// 
-	// NOTE not implemented yet
-// 	if (_type.compare("Diffusion_Hartmann142") == 0) {
-// 		AssertThrow(
-// 			options.size() == 1,
-// 			dealii::ExcMessage(
-// 				"initial_value options invalid, "
-// 				"please check your input file data."
-// 			)
-// 		);
-// 		
-// 		function = std::make_shared< heat::diffusion::Hartmann142<dim> >(
-// 			std::stod(options.at(0)) // a
-// 		);
-// 		
-// 		DTM::pout
-// 			<< "diffusion selector: created Hartmann142 "
-// 			<< "as diffusion function, with " << std::endl
-// 			<< "\ta = " << std::stod(options.at(0)) << std::endl
-// 			<< std::endl;
-// 		
-// 		return;
-// 	}
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
