@@ -1770,36 +1770,6 @@ refine_and_coarsen_space_time_grid() {
 		dealii::ExcInternalError()
 	);
 	
-	////////////////////////////////////////////////////////////////////////////
-	// Schwegeler space-time refinement strategy
-	//
-	const double theta_t{0.5}; // TODO: read from parameter input
-	
-// 	// TODO: read in from parameter input
-// 	const double theta1 = 1.2;
-// 	const double theta2 = 1.2;
-// // 	const double theta2 = std::max(theta1*2., 4.999);
-// 	
-	Assert(
-		((theta_t >= 0.) && (theta_t <= 1.)),
-		dealii::ExcMessage("theta_t must be in [0,1]")
-	);
-	
-// 	Assert(
-// 		((theta1 > 1.) && (theta1 < 5.)),
-// 		dealii::ExcMessage("theta1 must be in (1,5)")
-// 	);
-// 	
-// 	Assert(
-// 		((theta2 > 1.) && (theta2 < 5.)),
-// 		dealii::ExcMessage("theta2 must be in (1,5)")
-// 	);
-// 	
-// 	Assert(
-// 		(theta2 >= theta1),
-// 		dealii::ExcMessage("(theta2 >= theta1)")
-// 	);
-	
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
 	std::vector<double> eta(N);
 	
@@ -1822,19 +1792,27 @@ refine_and_coarsen_space_time_grid() {
 	
 	// 2nd loop: mark for time refinement
 	{
+		Assert(
+			((parameter_set->dwr.refine_and_coarsen.time.top_fraction >= 0.) &&
+			 (parameter_set->dwr.refine_and_coarsen.time.top_fraction <= 1.)),
+			dealii::ExcMessage("parameter_set->dwr.refine_and_coarsen.time.top_fraction must be in [0,1]")
+		);
+		
 		std::vector<double> eta_sorted(eta);
 		std::sort(eta_sorted.begin(), eta_sorted.end());
 		
 		// check if index for eta_criterium_for_mark_time_refinement is valid
 		Assert(
 			( static_cast<int>(N)
-			- static_cast<int>(std::floor(static_cast<double>(N)*theta_t)) ) >= 0,
+			- static_cast<int>(std::floor(static_cast<double>(N)
+				* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ) >= 0,
 			dealii::ExcInternalError()
 		);
 		
 		const auto eta_criterium_for_mark_time_refinement{
 			eta_sorted[ static_cast<int>(N)
-				- static_cast<int>(std::floor(static_cast<double>(N)*theta_t)) ]
+				- static_cast<int>(std::floor(static_cast<double>(N)
+					* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
 		};
 		
 		auto slab{grid->slabs.begin()};
@@ -1848,6 +1826,34 @@ refine_and_coarsen_space_time_grid() {
 		}
 	}
 	
+	
+	
+	
+	
+	////////////////////////////////////////////////////////////////////////////
+	// Schwegler space-time refinement strategy
+	//
+	
+// 	// TODO: read in from parameter input
+// 	const double theta1 = 1.2;
+// 	const double theta2 = 1.2;
+// // 	const double theta2 = std::max(theta1*2., 4.999);
+// 	
+	
+// 	Assert(
+// 		((theta1 > 1.) && (theta1 < 5.)),
+// 		dealii::ExcMessage("theta1 must be in (1,5)")
+// 	);
+// 	
+// 	Assert(
+// 		((theta2 > 1.) && (theta2 < 5.)),
+// 		dealii::ExcMessage("theta2 must be in (1,5)")
+// 	);
+// 	
+// 	Assert(
+// 		(theta2 >= theta1),
+// 		dealii::ExcMessage("(theta2 >= theta1)")
+// 	);
 	// 3rd loop execute_coarsening_and_refinement
 	{
 		unsigned int K_max{0};
@@ -1868,35 +1874,38 @@ refine_and_coarsen_space_time_grid() {
 			DTM::pout << "\t#K = " << n_active_cells_on_slab << std::endl;
 			K_max = (K_max > n_active_cells_on_slab) ? K_max : n_active_cells_on_slab;
 			
-// 			const double theta{ slab->refine_in_time ? theta1 : theta2 };
-// 			DTM::pout << "\ttheta = " << theta << std::endl;
+// 			// TODO if Schwegler
+	// 			const double theta{ slab->refine_in_time ? theta1 : theta2 };
+	// 			DTM::pout << "\ttheta = " << theta << std::endl;
+	// 			
+	// 			double mu{theta * eta[n] / n_active_cells_on_slab};
+	// 			DTM::pout << "\tmu = " << mu << std::endl;
+	// 			/////////////////
+	// 			
+	// 			const auto eta_max{
+	// 				*std::max_element(eta_it->x[0]->begin(), eta_it->x[0]->end())
+	// 			};
+	// 			DTM::pout << "\teta_max = " << eta_max << std::endl;
+	// 			
+	// 			while (mu > eta_max) {
+	// 				mu /= 2.;
+	// 			}
+	// 			DTM::pout << "\tmu = " << mu << std::endl;
+	// 			
+	// 			// mark cells in space for refinement
+	// 			
+	// 			// K. Schwegeler
+	// 			auto cell{slab->tria->begin_active()};
+	// 			auto endc{slab->tria->end()};
+	// 			for ( ; cell != endc; ++cell) {
+	// 				if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
+	// 					cell->set_refine_flag(
+	// 						dealii::RefinementCase<dim>::isotropic_refinement
+	// 					);
+	// 				}
+	// 			}
 			
-// 			double mu{theta * eta[n] / n_active_cells_on_slab};
-// 			DTM::pout << "\tmu = " << mu << std::endl;
-			
-			const auto eta_max{
-				*std::max_element(eta_it->x[0]->begin(), eta_it->x[0]->end())
-			};
-			DTM::pout << "\teta_max = " << eta_max << std::endl;
-			
-// 			while (mu > eta_max) {
-// 				mu /= 2.;
-// 			}
-// 			DTM::pout << "\tmu = " << mu << std::endl;
-			
-			// mark cells in space for refinement
-			
-// 			// K. Schwegeler
-// 			auto cell{slab->tria->begin_active()};
-// 			auto endc{slab->tria->end()};
-// 			for ( ; cell != endc; ++cell) {
-// 				if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
-// 					cell->set_refine_flag(
-// 						dealii::RefinementCase<dim>::isotropic_refinement
-// 					);
-// 				}
-// 			}
-			
+// 		// if fixed-fraction refinement strategy:
 			// mark for refinement with fixed fraction
 			// (similar but not identical to Hartmann Ex. Sec. 1.4.2)
 			dealii::GridRefinement::refine_and_coarsen_fixed_fraction(
@@ -1910,6 +1919,7 @@ refine_and_coarsen_space_time_grid() {
 			// execute refinement in space under the conditions of mesh smoothing
 			slab->tria->execute_coarsening_and_refinement();
 			
+// 		// if global refinement strategy (non-adaptive)
 // 			slab->tria->refine_global(1);
 			
 			// refine in time
