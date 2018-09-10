@@ -8,22 +8,34 @@ subsection Parameter Specification
     set epsilon options  = "1.0"
     
     ############################################################################
+    # Density
+    set density function = ConstantFunction
+    set density options  = "1.0"
+    
+    ############################################################################
     # Force
     set force function = Force_Hartmann142
     #                     a   epsilon
     set force options  = "50. 1."
     
     ############################################################################
-    # Dirichlet boundary value functions
-    set dirichlet boundary u_D function = ExactHartmann142
+    # DirichletBoundary 
+    set dirichlet boundary u_D function = DirichletBoundary_Hartmann142
     #                                      a
-    set dirichlet boundary u_D options  = "1.0"
+    set dirichlet boundary u_D options  = "50."
     
     ############################################################################
-    # Initial value functions
-    set initial displacement u0 function = ExactHartmann142
-    #                                       a
-    set initial displacement u0 options  = "1.0"
+    # InitialValue 
+    set initial value u0 function = InitialValue_Hartmann142
+    #                                a
+    set initial value u0 options  = "50."
+    ############################################################################
+    # ExactSolution
+    set exact solution function = ExactSolution_Hartmann142
+    #                              a   
+    set exact solution options  = "50."
+    
+    ############################################################################
 end
 
 subsection Mesh Specification
@@ -47,15 +59,17 @@ end
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
-    set time step size = 0.01
+    set time step size = 0.1
 end
 
 subsection DWR
-    set loops = 4
+    set loops = 3
     
+    # time strategy: global, fixed_fraction
     set refine and coarsen time strategy = fixed_fraction
     set refine and coarsen time top fraction = 0.5
     
+    # space strategy: global, fixed_fraction or Schwegler
     set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction = 0.8
     set refine and coarsen space bottom fraction = 0.0

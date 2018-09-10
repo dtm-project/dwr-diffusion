@@ -1912,6 +1912,40 @@ refine_and_coarsen_space_time_grid() {
 				// execute refinement in space under the conditions of mesh smoothing
 				slab->tria->execute_coarsening_and_refinement();
 			}
+			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("Schwegler") == 0) {
+				// mark for refinement with strategy from K. Schwegler PhD thesis
+				const double theta{ slab->refine_in_time ?
+					parameter_set->dwr.refine_and_coarsen.space.theta1 :
+					parameter_set->dwr.refine_and_coarsen.space.theta2
+				};
+				DTM::pout << "\ttheta = " << theta << std::endl;
+				
+				double mu{theta * eta[n] / n_active_cells_on_slab};
+				DTM::pout << "\tmu = " << mu << std::endl;
+				
+				const auto eta_max{
+					*std::max_element(eta_it->x[0]->begin(), eta_it->x[0]->end())
+				};
+				DTM::pout << "\teta_max = " << eta_max << std::endl;
+				
+				while (mu > eta_max) {
+					mu /= 2.;
+				}
+				DTM::pout << "\tmu = " << mu << std::endl;
+				
+				auto cell{slab->tria->begin_active()};
+				auto endc{slab->tria->end()};
+				for ( ; cell != endc; ++cell) {
+					if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
+						cell->set_refine_flag(
+							dealii::RefinementCase<dim>::isotropic_refinement
+						);
+					}
+				}
+				
+				// execute refinement in space under the conditions of mesh smoothing
+				slab->tria->execute_coarsening_and_refinement();
+			}
 			else {
 				AssertThrow(
 					false,
@@ -1919,42 +1953,7 @@ refine_and_coarsen_space_time_grid() {
 						"parameter_set->dwr.refine_and_coarsen.space.strategy unknown"
 					)
 				);
-			}	
-			
-			
-			
-// // 			// TODO if Schwegler
-// 	// 			const double theta{ slab->refine_in_time ? theta1 : theta2 };
-// 	// 			DTM::pout << "\ttheta = " << theta << std::endl;
-// 	// 			
-// 	// 			double mu{theta * eta[n] / n_active_cells_on_slab};
-// 	// 			DTM::pout << "\tmu = " << mu << std::endl;
-// 	// 			/////////////////
-// 	// 			
-// 	// 			const auto eta_max{
-// 	// 				*std::max_element(eta_it->x[0]->begin(), eta_it->x[0]->end())
-// 	// 			};
-// 	// 			DTM::pout << "\teta_max = " << eta_max << std::endl;
-// 	// 			
-// 	// 			while (mu > eta_max) {
-// 	// 				mu /= 2.;
-// 	// 			}
-// 	// 			DTM::pout << "\tmu = " << mu << std::endl;
-// 	// 			
-// 	// 			// mark cells in space for refinement
-// 	// 			
-// 	// 			// K. Schwegeler
-// 	// 			auto cell{slab->tria->begin_active()};
-// 	// 			auto endc{slab->tria->end()};
-// 	// 			for ( ; cell != endc; ++cell) {
-// 	// 				if ( (*eta_it->x[0])[ cell->index() ] > mu ) {
-// 	// 					cell->set_refine_flag(
-// 	// 						dealii::RefinementCase<dim>::isotropic_refinement
-// 	// 					);
-// 	// 				}
-// 	// 			}
-// // 			// execute refinement in space under the conditions of mesh smoothing
-// // 			slab->tria->execute_coarsening_and_refinement();
+			}
 			
 			// refine in time
 			if (slab->refine_in_time) {

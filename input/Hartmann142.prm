@@ -65,9 +65,11 @@ end
 subsection DWR
     set loops = 3
     
+    # time strategy: global, fixed_fraction
     set refine and coarsen time strategy = fixed_fraction
     set refine and coarsen time top fraction = 0.5
     
+    # space strategy: global, fixed_fraction or Schwegler
     set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction = 0.8
     set refine and coarsen space bottom fraction = 0.0
