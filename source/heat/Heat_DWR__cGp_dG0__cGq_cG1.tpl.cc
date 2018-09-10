@@ -1792,42 +1792,58 @@ refine_and_coarsen_space_time_grid() {
 	
 	// 2nd loop: mark for time refinement
 	{
-		Assert(
-			((parameter_set->dwr.refine_and_coarsen.time.top_fraction >= 0.) &&
-			 (parameter_set->dwr.refine_and_coarsen.time.top_fraction <= 1.)),
-			dealii::ExcMessage("parameter_set->dwr.refine_and_coarsen.time.top_fraction must be in [0,1]")
-		);
-		
-		std::vector<double> eta_sorted(eta);
-		std::sort(eta_sorted.begin(), eta_sorted.end());
-		
-		// check if index for eta_criterium_for_mark_time_refinement is valid
-		Assert(
-			( static_cast<int>(N)
-			- static_cast<int>(std::floor(static_cast<double>(N)
-				* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ) >= 0,
-			dealii::ExcInternalError()
-		);
-		
-		const auto eta_criterium_for_mark_time_refinement{
-			eta_sorted[ static_cast<int>(N)
-				- static_cast<int>(std::floor(static_cast<double>(N)
-					* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
-		};
-		
-		auto slab{grid->slabs.begin()};
-		auto ends{grid->slabs.end()};
-		for (unsigned int n{0} ; slab != ends; ++slab, ++n) {
-			Assert((n < N), dealii::ExcInternalError());
-			
-			if (eta[n] >= eta_criterium_for_mark_time_refinement) {
+		if (parameter_set->dwr.refine_and_coarsen.time.strategy.compare("global") == 0) {
+			// global refinement in time (marks all I_n for refinement)
+			auto slab{grid->slabs.begin()};
+			auto ends{grid->slabs.end()};
+			for (unsigned int n{0} ; slab != ends; ++slab, ++n) {
+				Assert((n < N), dealii::ExcInternalError());
 				slab->set_refine_in_time_flag();
 			}
 		}
+		else if (parameter_set->dwr.refine_and_coarsen.time.strategy.compare("fixed_fraction") == 0) {
+			Assert(
+				((parameter_set->dwr.refine_and_coarsen.time.top_fraction >= 0.) &&
+				(parameter_set->dwr.refine_and_coarsen.time.top_fraction <= 1.)),
+				dealii::ExcMessage("parameter_set->dwr.refine_and_coarsen.time.top_fraction must be in [0,1]")
+			);
+			
+			std::vector<double> eta_sorted(eta);
+			std::sort(eta_sorted.begin(), eta_sorted.end());
+			
+			// check if index for eta_criterium_for_mark_time_refinement is valid
+			Assert(
+				( static_cast<int>(N)
+				- static_cast<int>(std::floor(static_cast<double>(N)
+					* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ) >= 0,
+				dealii::ExcInternalError()
+			);
+			
+			const auto eta_criterium_for_mark_time_refinement{
+				eta_sorted[ static_cast<int>(N)
+					- static_cast<int>(std::floor(static_cast<double>(N)
+						* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
+			};
+			
+			auto slab{grid->slabs.begin()};
+			auto ends{grid->slabs.end()};
+			for (unsigned int n{0} ; slab != ends; ++slab, ++n) {
+				Assert((n < N), dealii::ExcInternalError());
+				
+				if (eta[n] >= eta_criterium_for_mark_time_refinement) {
+					slab->set_refine_in_time_flag();
+				}
+			}
+		}
+		else {
+			AssertThrow(
+				false,
+				dealii::ExcMessage(
+					"parameter_set->dwr.refine_and_coarsen.time.strategy unknown"
+				)
+			);
+		}
 	}
-	
-	
-	
 	
 	
 	////////////////////////////////////////////////////////////////////////////
