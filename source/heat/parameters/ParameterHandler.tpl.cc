@@ -298,13 +298,13 @@ ParameterHandler() {
 		);
 		
 		declare_entry(
-			"refine and coarsen Schwegler theta1",
+			"refine and coarsen space Schwegler theta1",
 			"1.0",
 			dealii::Patterns::Double()
 		);
 		
 		declare_entry(
-			"refine and coarsen Schwegler theta2",
+			"refine and coarsen space Schwegler theta2",
 			"0.0",
 			dealii::Patterns::Double()
 		);
