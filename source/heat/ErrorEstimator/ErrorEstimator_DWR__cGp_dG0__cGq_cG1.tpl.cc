@@ -315,6 +315,9 @@ estimate(
 				*function.u_0,
 				*primal_um_on_tm
 			);
+			// call hanging nodes to make the result continuous again (Note: after the 
+			// first dwr-loop the initial grid could have hanging nodes)
+			slab->primal.constraints->distribute(*primal_um_on_tm);
 			
 			dealii::FETools::interpolate(
 				// primal solution
