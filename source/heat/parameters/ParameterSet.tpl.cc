@@ -98,6 +98,11 @@ ParameterSet(
 			"refine and coarsen space bottom fraction"
 		);
 		
+		dwr.refine_and_coarsen.space.max_growth_factor_n_active_cells =
+			static_cast<unsigned int> (handler->get_integer(
+			"refine and coarsen space max growth factor n_active_cells"
+		));
+		
 		dwr.refine_and_coarsen.space.theta1 = handler->get_double(
 			"refine and coarsen space Schwegler theta1"
 		);

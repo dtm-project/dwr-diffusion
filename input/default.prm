@@ -73,6 +73,7 @@ subsection DWR
     set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction = 0.8
     set refine and coarsen space bottom fraction = 0.0
+    set refine and coarsen space max growth factor n_active_cells = 3
     
     set refine and coarsen space Schwegler theta1 = 1.2
     set refine and coarsen space Schwegler theta2 = 1.2

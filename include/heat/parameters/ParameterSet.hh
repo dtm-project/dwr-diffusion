@@ -109,6 +109,7 @@ struct ParameterSet {
 				
 				double top_fraction;
 				double bottom_fraction;
+				unsigned int max_growth_factor_n_active_cells;
 				
 				double theta1; // Schwegler
 				double theta2; // Schwegler
