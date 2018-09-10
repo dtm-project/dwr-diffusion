@@ -264,6 +264,50 @@ ParameterHandler() {
 			"2",
 			dealii::Patterns::Integer()
 		);
+		
+		
+		declare_entry(
+			"refine and coarsen time strategy",
+			"global",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"refine and coarsen time top fraction",
+			"1.0",
+			dealii::Patterns::Double()
+		);
+		
+		
+		declare_entry(
+			"refine and coarsen space strategy",
+			"global",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"refine and coarsen space top fraction",
+			"1.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space bottom fraction",
+			"0.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space Schwegler theta1",
+			"1.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space Schwegler theta2",
+			"0.0",
+			dealii::Patterns::Double()
+		);
 	}
 	leave_subsection();
 	

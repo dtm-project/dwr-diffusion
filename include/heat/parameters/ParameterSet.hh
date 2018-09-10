@@ -96,6 +96,24 @@ struct ParameterSet {
 	// dwr
 	struct {
 		unsigned int loops;
+		
+		struct {
+			struct {
+				std::string strategy; // global, fixed-fraction
+				
+				double top_fraction;
+			} time;
+			
+			struct {
+				std::string strategy; // global, fixed-fraction, Schwegler
+				
+				double top_fraction;
+				double bottom_fraction;
+				
+				double theta1; // Schwegler
+				double theta2; // Schwegler
+			} space;
+		} refine_and_coarsen;
 	} dwr;
 	
 	// data output
