@@ -1898,6 +1898,20 @@ refine_and_coarsen_space_time_grid() {
 				// global refinement in space
 				slab->tria->refine_global(1);
 			}
+			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("fixed_fraction") == 0) {
+				// mark for refinement with fixed fraction
+				// (similar but not identical to Hartmann Ex. Sec. 1.4.2)
+				dealii::GridRefinement::refine_and_coarsen_fixed_fraction(
+					*slab->tria,
+					*eta_it->x[0],
+					parameter_set->dwr.refine_and_coarsen.space.top_fraction,
+					parameter_set->dwr.refine_and_coarsen.space.bottom_fraction,
+					slab->tria->n_global_active_cells()*3 // max elements restriction
+				);
+				
+				// execute refinement in space under the conditions of mesh smoothing
+				slab->tria->execute_coarsening_and_refinement();
+			}
 			else {
 				AssertThrow(
 					false,
@@ -1906,6 +1920,7 @@ refine_and_coarsen_space_time_grid() {
 					)
 				);
 			}	
+			
 			
 			
 // // 			// TODO if Schwegler
@@ -1938,20 +1953,8 @@ refine_and_coarsen_space_time_grid() {
 // 	// 					);
 // 	// 				}
 // 	// 			}
-// 			
-// // 		// if fixed-fraction refinement strategy:
-// 			// mark for refinement with fixed fraction
-// 			// (similar but not identical to Hartmann Ex. Sec. 1.4.2)
-// 			dealii::GridRefinement::refine_and_coarsen_fixed_fraction(
-// 				*slab->tria,
-// 				*eta_it->x[0],
-// 				.8, // top_fraction:    1 will refine every cell
-// 				.0, // bottom_fraction: 0 will coarsen no cells
-// 				slab->tria->n_global_active_cells()*3 // max elements restriction
-// 			);
-// 			
-// 			// execute refinement in space under the conditions of mesh smoothing
-// 			slab->tria->execute_coarsening_and_refinement();
+// // 			// execute refinement in space under the conditions of mesh smoothing
+// // 			slab->tria->execute_coarsening_and_refinement();
 			
 			// refine in time
 			if (slab->refine_in_time) {

@@ -68,7 +68,7 @@ subsection DWR
     set refine and coarsen time strategy = fixed_fraction
     set refine and coarsen time top fraction = 0.5
     
-    set refine and coarsen space strategy = global
+    set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction = 0.8
     set refine and coarsen space bottom fraction = 0.0
     
