@@ -82,7 +82,7 @@ protected:
 	/// function: keep shared_ptr to Function<dim> for several quantities
 	struct {
 		/// diffusion function
-		std::shared_ptr< dealii::Function<dim> > diffusion_epsilon;
+		std::shared_ptr< dealii::Function<dim> > epsilon;
 		/// force function
 		std::shared_ptr< dealii::Function<dim> > f;
 		/// Dirichlet boundary values function

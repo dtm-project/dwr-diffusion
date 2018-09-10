@@ -141,16 +141,16 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	
-	// diffusion function diffusion_epsilon:
+	// diffusion function epsilon:
 	{
 		heat::diffusion::Selector<dim> selector;
 		selector.create_function(
-			parameter_set->diffusion_epsilon_function,
-			parameter_set->diffusion_epsilon_options,
-			function.diffusion_epsilon
+			parameter_set->epsilon_function,
+			parameter_set->epsilon_options,
+			function.epsilon
 		);
 		
-		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
+		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
 	}
 
 	// density function density:
@@ -372,8 +372,8 @@ primal_assemble_system(
 			slab->primal.constraints
 		);
 		
-		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
-		assemble_stiffness_cell_terms.set_diffusion_epsilon_function(function.diffusion_epsilon);
+		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
+		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
 		
 		DTM::pout << "dwr-heat: assemble cell stiffness matrix...";
 		assemble_stiffness_cell_terms.assemble();
@@ -1079,8 +1079,8 @@ dual_assemble_system(
 			slab->dual.constraints
 		);
 		
-		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
-		assemble_stiffness_cell_terms.set_diffusion_epsilon_function(function.diffusion_epsilon);
+		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
+		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
 		
 		DTM::pout << "dwr-heat: assemble cell stiffness matrix...";
 		assemble_stiffness_cell_terms.assemble();
@@ -1722,7 +1722,7 @@ compute_error_indicators() {
 		std::make_shared< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > ();
 	
 	error_estimator.dwr->estimate(
-		function.diffusion_epsilon,
+		function.epsilon,
 		function.f,
 		function.u_D,
 		function.u_0,
