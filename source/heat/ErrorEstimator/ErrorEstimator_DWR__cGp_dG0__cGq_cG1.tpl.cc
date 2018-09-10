@@ -99,8 +99,8 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	local_zm(scratch.local_zm),
 	local_Rzm(scratch.local_Rzm),
 	value_f(scratch.value_f),
-	value_diffusion_epsilon(scratch.value_diffusion_epsilon),
-	grad_diffusion_epsilon(scratch.grad_diffusion_epsilon),
+	value_epsilon(scratch.value_epsilon),
+	grad_epsilon(scratch.grad_epsilon),
 	val_R_u_kh_j(scratch.val_R_u_kh_j),
 	val_u_kh_j(scratch.val_u_kh_j),
 	val_z_Rz_j(scratch.val_z_Rz_j),
@@ -170,7 +170,7 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 	neighbor_grad_phi(scratch.neighbor_grad_phi),
 	neighbor_local_u0(scratch.neighbor_local_u0),
 	// other
-	value_diffusion_epsilon(scratch.value_diffusion_epsilon),
+	value_epsilon(scratch.value_epsilon),
 	value_u_D(scratch.value_u_D),
 	val_uh(scratch.val_uh),
 	val_grad_zh(scratch.val_grad_zh),
@@ -242,7 +242,7 @@ template<int dim>
 void
 ErrorEstimator<dim>::
 estimate(
-	std::shared_ptr< dealii::Function<dim> > _diffusion_epsilon,
+	std::shared_ptr< dealii::Function<dim> > _epsilon,
 	std::shared_ptr< dealii::Function<dim> > _f,
 	std::shared_ptr< dealii::Function<dim> > _u_D,
 	std::shared_ptr< dealii::Function<dim> > _u_0,
@@ -251,8 +251,8 @@ estimate(
 	std::shared_ptr< DTM::types::storage_data_vectors<2> > _z,
 	std::shared_ptr< DTM::types::storage_data_vectors<1> > _eta
 ) {
-	Assert(_diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
-	function.diffusion_epsilon = _diffusion_epsilon;
+	Assert(_epsilon.use_count(), dealii::ExcNotInitialized());
+	function.epsilon = _epsilon;
 	
 	Assert(_f.use_count(), dealii::ExcNotInitialized());
 	function.f = _f;
@@ -911,13 +911,13 @@ assemble_error_on_cell(
 			scratch.fe_values.quadrature_point(scratch.q), 0
 		);
 		
-		scratch.value_diffusion_epsilon =
-			function.diffusion_epsilon->value(
+		scratch.value_epsilon =
+			function.epsilon->value(
 				scratch.fe_values.quadrature_point(scratch.q), 0
 			);
 		
-		scratch.grad_diffusion_epsilon =
-			function.diffusion_epsilon->gradient(
+		scratch.grad_epsilon =
+			function.epsilon->gradient(
 				scratch.fe_values.quadrature_point(scratch.q), 0
 			);
 		
@@ -929,8 +929,8 @@ assemble_error_on_cell(
 			// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
 			scratch.val_R_u_kh_j +=
 				scratch.local_u0[scratch.j]
-				* (scratch.grad_phi[scratch.j] * scratch.grad_diffusion_epsilon)
-				+ scratch.value_diffusion_epsilon
+				* (scratch.grad_phi[scratch.j] * scratch.grad_epsilon)
+				+ scratch.value_epsilon
 				* scratch.local_u0[scratch.j] * scratch.laplace_phi[scratch.j];
 			
 			scratch.val_u_kh_j +=
@@ -1033,7 +1033,7 @@ assemble_error_on_boundary_face(
 		}
 		
 		// fetch function value(s)
-		scratch.value_diffusion_epsilon = function.diffusion_epsilon->value(
+		scratch.value_epsilon = function.epsilon->value(
 			scratch.fe_values_face.quadrature_point(scratch.q), 0
 		);
 		
@@ -1048,8 +1048,8 @@ assemble_error_on_boundary_face(
 			2.0
 			// u_D - I^dual(I^primal u_D)
 			* (scratch.value_u_D - scratch.val_uh)
-			// diffusion_epsilon(x_q) * grad z_h * n
-			* scratch.value_diffusion_epsilon * scratch.val_grad_zh 
+			// epsilon(x_q) * grad z_h * n
+			* scratch.value_epsilon * scratch.val_grad_zh 
 			* tau_n
 			* scratch.JxW
 		);
@@ -1147,7 +1147,7 @@ assemble_error_on_regular_face(
 		}
 		
 		// fetch function value(s)
-		scratch.value_diffusion_epsilon = function.diffusion_epsilon->value(
+		scratch.value_epsilon = function.epsilon->value(
 			scratch.fe_values_face.quadrature_point(scratch.q), 0
 		);
 		
@@ -1174,7 +1174,7 @@ assemble_error_on_regular_face(
 		
 		// \int_{I_n} ... :
 		copydata.value += (
-			scratch.value_diffusion_epsilon
+			scratch.value_epsilon
 			* scratch.val_face_jump_grad_u
 			// z_h - Rz_h:
 			* scratch.val_z_Rz_j
@@ -1304,8 +1304,8 @@ assemble_error_on_irregular_face(
 			}
 			
 			// fetch function value(s)
-			scratch.value_diffusion_epsilon =
-				function.diffusion_epsilon->value(
+			scratch.value_epsilon =
+				function.epsilon->value(
 					scratch.fe_values_subface.quadrature_point(scratch.q), 0
 				);
 			
@@ -1334,7 +1334,7 @@ assemble_error_on_irregular_face(
 			
 			// \int_{I_n} ... :
 			copydata.value += (
-				scratch.value_diffusion_epsilon
+				scratch.value_epsilon
 				* scratch.val_face_jump_grad_u
 				// z_h - Rz_h:
 				* scratch.val_z_Rz_j

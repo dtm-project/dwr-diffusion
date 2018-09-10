@@ -98,8 +98,8 @@ struct ErrorEstimateOnCell {
 	
 	// function eval scratch:
 	double value_f;
-	double value_diffusion_epsilon;
-	dealii::Tensor<1,dim> grad_diffusion_epsilon;
+	double value_epsilon;
+	dealii::Tensor<1,dim> grad_epsilon;
 	
 	double val_R_u_kh_j;
 	double val_u_kh_j;
@@ -153,7 +153,7 @@ struct ErrorEstimateOnFace {
 	std::vector<double>                  neighbor_local_u0;
 	
 	// function eval scratch:
-	double value_diffusion_epsilon;
+	double value_epsilon;
 	double value_u_D;
 	
 	double val_uh;
@@ -239,7 +239,7 @@ public:
 	virtual ~ErrorEstimator() = default;
 	
 	virtual void estimate(
-		std::shared_ptr< dealii::Function<dim> > diffusion_epsilon,
+		std::shared_ptr< dealii::Function<dim> > epsilon,
 		std::shared_ptr< dealii::Function<dim> > f,
 		std::shared_ptr< dealii::Function<dim> > u_D,
 		std::shared_ptr< dealii::Function<dim> > u_0,
@@ -349,7 +349,7 @@ protected:
 	} error_estimator;
 	
 	struct {
-		std::shared_ptr< dealii::Function<dim> > diffusion_epsilon;
+		std::shared_ptr< dealii::Function<dim> > epsilon;
 		std::shared_ptr< dealii::Function<dim> > f;
 		std::shared_ptr< dealii::Function<dim> > u_D;
 		std::shared_ptr< dealii::Function<dim> > u_0;
