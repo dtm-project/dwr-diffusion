@@ -29,7 +29,6 @@
 
 #include <DTM++/base/LogStream.hh>
 
-#include <heat/Density/Densities.hh>
 #include <heat/Density/Density_Selector.tpl.hh>
 
 // MPI includes
@@ -130,31 +129,6 @@ create_function(
 		
 		return;
 	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// 
-	// NOTE not implemented yet
-// 	if (_type.compare("Density_Hartmann142") == 0) {
-// 		AssertThrow(
-// 			options.size() == 1,
-// 			dealii::ExcMessage(
-// 				"initial_value options invalid, "
-// 				"please check your input file data."
-// 			)
-// 		);
-// 		
-// 		function = std::make_shared< heat::density::Hartmann142<dim> >(
-// 			std::stod(options.at(0)) // a
-// 		);
-// 		
-// 		DTM::pout
-// 			<< "density selector: created Hartmann142 "
-// 			<< "as density function, with " << std::endl
-// 			<< "\ta = " << std::stod(options.at(0)) << std::endl
-// 			<< std::endl;
-// 		
-// 		return;
-// 	}
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
