@@ -48,8 +48,8 @@ struct ParameterSet {
 	unsigned int dim;
 	
 	// parameter specification
-	std::string diffusion_epsilon_function;
-	std::string diffusion_epsilon_options;
+	std::string epsilon_function;
+	std::string epsilon_options;
 	
 	std::string density_function;
 	std::string density_options;

@@ -47,13 +47,13 @@ ParameterHandler() {
 	
 	enter_subsection("Parameter Specification"); {
 		declare_entry(
-			"diffusion epsilon function",
+			"epsilon function",
 			"invalid",
 			dealii::Patterns::Anything()
 		);
 		
 		declare_entry(
-			"diffusion epsilon options",
+			"epsilon options",
 			"",
 			dealii::Patterns::Anything()
 		);

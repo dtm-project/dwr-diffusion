@@ -4,8 +4,8 @@ set dim = 2
 subsection Parameter Specification
     ############################################################################
     # Diffusion
-    set diffusion epsilon function = ConstantFunction
-    set diffusion epsilon options  = "1.0"
+    set epsilon function = ConstantFunction
+    set epsilon options  = "1.0"
     
     ############################################################################
     # Density

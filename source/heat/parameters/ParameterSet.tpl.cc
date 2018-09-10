@@ -79,12 +79,12 @@ ParameterSet(
 	handler->leave_subsection();
 	
 	handler->enter_subsection("Parameter Specification"); {
-		diffusion_epsilon_function = handler->get(
-			"diffusion epsilon function"
+		epsilon_function = handler->get(
+			"epsilon function"
 		);
 		
-		diffusion_epsilon_options = handler->get(
-			"diffusion epsilon options"
+		epsilon_options = handler->get(
+			"epsilon options"
 		);
 		
 		
