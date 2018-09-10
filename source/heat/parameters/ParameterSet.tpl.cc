@@ -135,12 +135,12 @@ ParameterSet(
 		);
 		
 		
-		initial_displacement_u0_function = handler->get(
-			"initial displacement u0 function"
+		initial_value_u0_function = handler->get(
+			"initial value u0 function"
 		);
 		
-		initial_displacement_u0_options = handler->get(
-			"initial displacement u0 options"
+		initial_value_u0_options = handler->get(
+			"initial value u0 options"
 		);
 		
 		

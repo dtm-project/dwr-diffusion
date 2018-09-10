@@ -62,8 +62,8 @@ struct ParameterSet {
 	std::string normal_traction_boundary_t_N_function;
 	std::string normal_traction_boundary_t_N_options;
 	
-	std::string initial_displacement_u0_function;
-	std::string initial_displacement_u0_options;
+	std::string initial_value_u0_function;
+	std::string initial_value_u0_options;
 	
 	std::string exact_solution_function;
 	std::string exact_solution_options;

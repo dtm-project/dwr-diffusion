@@ -1,5 +1,5 @@
 /**
- * @file DirichletBoundary_Selector.tpl.cc
+ * @file Diffusion_Selector.tpl.cc
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhäuser (MPB)
  *
@@ -29,8 +29,8 @@
 
 #include <DTM++/base/LogStream.hh>
 
-#include <heat/DirichletBoundary/DirichletBoundarys.hh>
-#include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
+#include <heat/Diffusion/Diffusions.hh>
+#include <heat/Diffusion/Diffusion_Selector.tpl.hh>
 
 // MPI includes
 
@@ -40,7 +40,7 @@
 #include <vector>
 
 namespace heat {
-namespace dirichlet_boundary {
+namespace diffusion {
 
 template<int dim>
 void
@@ -75,8 +75,8 @@ create_function(
 	////////////////////////////////////////////////////////////////////////////
 	//
 	
-	DTM::pout << "* found configuration: dirichlet_boundary function = " << _type << std::endl;
-	DTM::pout << "* found configuration: dirichlet_boundary options = " << std::endl;
+	DTM::pout << "* found configuration: diffusion function = " << _type << std::endl;
+	DTM::pout << "* found configuration: diffusion options = " << std::endl;
 	for (auto &option : options) {
 		DTM::pout << "\t" << option << std::endl;
 	}
@@ -90,7 +90,7 @@ create_function(
 		AssertThrow(
 			options.size() == 0,
 			dealii::ExcMessage(
-				"dirichlet_boundary options invalid, "
+				"diffusion options invalid, "
 				"please check your input file data."
 			)
 		);
@@ -99,7 +99,7 @@ create_function(
 			std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
 		
 		DTM::pout
-			<< "dirichlet_boundary selector: created zero function" << std::endl
+			<< "diffusion selector: created zero function" << std::endl
 			<< std::endl;
 		
 		return;
@@ -111,7 +111,7 @@ create_function(
 		AssertThrow(
 			options.size() == 1,
 			dealii::ExcMessage(
-				"dirichlet_boundary options invalid, "
+				"diffusion options invalid, "
 				"please check your input file data."
 			)
 		);
@@ -123,8 +123,8 @@ create_function(
 		);
 		
 		DTM::pout
-			<< "dirichlet_boundary selector: created ConstantFunction "
-			<< "as dirichlet_boundary function, with " << std::endl
+			<< "diffusion selector: created ConstantFunction "
+			<< "as diffusion function, with " << std::endl
 			<< "\tf(1) = " << std::stod(options.at(0)) << " . " << std::endl
 			<< std::endl;
 		
@@ -133,36 +133,37 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
-	if (_type.compare("DirichletBoundary_Hartmann142") == 0) {
-		AssertThrow(
-			options.size() == 1,
-			dealii::ExcMessage(
-				"dirichlet_boundary options invalid, "
-				"please check your input file data."
-			)
-		);
-		
-		function = std::make_shared< heat::dirichlet_boundary::Hartmann142<dim> >(
-			std::stod(options.at(0)) // a
-		);
-		
-		DTM::pout
-			<< "dirichlet_boundary selector: created Hartmann142 "
-			<< "as dirichlet_boundary function, with " << std::endl
-			<< "\ta = " << std::stod(options.at(0)) << std::endl
-			<< std::endl;
-		
-		return;
-	}
+	// NOTE not implemented yet
+// 	if (_type.compare("Diffusion_Hartmann142") == 0) {
+// 		AssertThrow(
+// 			options.size() == 1,
+// 			dealii::ExcMessage(
+// 				"initial_value options invalid, "
+// 				"please check your input file data."
+// 			)
+// 		);
+// 		
+// 		function = std::make_shared< heat::initial_value::Hartmann142<dim> >(
+// 			std::stod(options.at(0)) // a
+// 		);
+// 		
+// 		DTM::pout
+// 			<< "diffusion selector: created Hartmann142 "
+// 			<< "as diffusion function, with " << std::endl
+// 			<< "\ta = " << std::stod(options.at(0)) << std::endl
+// 			<< std::endl;
+// 		
+// 		return;
+// 	}
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
 	AssertThrow(
 		false,
-		dealii::ExcMessage("dirichlet_boundary function unknown, please check your input file data.")
+		dealii::ExcMessage("diffusion function unknown, please check your input file data.")
 	);
 }
 
 }} //namespaces
 
-#include "DirichletBoundary_Selector.inst.in"
+#include "Diffusion_Selector.inst.in"

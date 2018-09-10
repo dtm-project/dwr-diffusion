@@ -37,10 +37,12 @@
 
 #include <heat/grid/Grid_DWR_Selector.tpl.hh>
 
+#include <heat/Diffusion/Diffusion_Selector.tpl.hh>
 #include <heat/Force/Force_Selector.tpl.hh>
 #include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
+#include <heat/InitialValue/InitialValue_Selector.tpl.hh>
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
-#include <heat/ExactSolution/ExactSolutions.hh>
+// #include <heat/ExactSolution/ExactSolutions.hh>
 
 
 #include <heat/types/boundary_id.hh>
@@ -140,6 +142,18 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	
+	// diffusion function diffusion_epsilon:
+	{
+		heat::diffusion::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->diffusion_epsilon_function,
+			parameter_set->diffusion_epsilon_options,
+			function.diffusion_epsilon
+		);
+		
+		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
+	}
+	
 	// force function f:
 	{
 		heat::force::Selector<dim> selector;
@@ -152,7 +166,7 @@ init_functions() {
 		Assert(function.f.use_count(), dealii::ExcNotInitialized());
 	}
 	
-	// fdirichlet boundary function u_D:
+	// dirichlet boundary function u_D:
 	{
 		heat::dirichlet_boundary::Selector<dim> selector;
 		selector.create_function(
@@ -164,14 +178,21 @@ init_functions() {
 		Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
 	}
 	
-	// TODO: read those from parameter input file
-// 	
-	// Hartmann Sec. 1.4.2 Test problem:
-	const double a{50.};
-// 	function.u_D = std::make_shared< heat::exact_solution::Hartmann142<dim> > (a);
-	function.u_0 = std::make_shared< heat::exact_solution::Hartmann142<dim> > (a);
+	// initial value function u_0:
+	{
+		heat::initial_value::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->initial_value_u0_function,
+			parameter_set->initial_value_u0_options,
+			function.u_0
+		);
+		
+		Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+	}
 	
-	function.epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
+	// TODO: read those from parameter input file
+	
+// 	function.diffusion_epsilon = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
 	
 	// exact solution (if any)
@@ -340,8 +361,8 @@ primal_assemble_system(
 			slab->primal.constraints
 		);
 		
-		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
-		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
+		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
+		assemble_stiffness_cell_terms.set_diffusion_epsilon_function(function.diffusion_epsilon);
 		
 		DTM::pout << "dwr-heat: assemble cell stiffness matrix...";
 		assemble_stiffness_cell_terms.assemble();
@@ -1047,8 +1068,8 @@ dual_assemble_system(
 			slab->dual.constraints
 		);
 		
-		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
-		assemble_stiffness_cell_terms.set_epsilon_function(function.epsilon);
+		Assert(function.diffusion_epsilon.use_count(), dealii::ExcNotInitialized());
+		assemble_stiffness_cell_terms.set_diffusion_epsilon_function(function.diffusion_epsilon);
 		
 		DTM::pout << "dwr-heat: assemble cell stiffness matrix...";
 		assemble_stiffness_cell_terms.assemble();
@@ -1690,7 +1711,7 @@ compute_error_indicators() {
 		std::make_shared< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > ();
 	
 	error_estimator.dwr->estimate(
-		function.epsilon,
+		function.diffusion_epsilon,
 		function.f,
 		function.u_D,
 		function.u_0,
