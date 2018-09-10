@@ -201,11 +201,6 @@ init_functions() {
 		Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
 	}
 	
-	// TODO: read those from parameter input file
-	
-
-// 	function.density = std::make_shared< dealii::Functions::ConstantFunction<dim> > (1.0);
-	
 	// exact solution (if any)
 	{
 		heat::exact_solution::Selector<dim> selector;
