@@ -75,6 +75,36 @@ ParameterSet(
 	
 	handler->enter_subsection("DWR"); {
 		dwr.loops = static_cast<unsigned int> (handler->get_integer("loops"));
+		
+		
+		dwr.refine_and_coarsen.time.strategy = handler->get(
+			"refine and coarsen time strategy"
+		);
+		
+		dwr.refine_and_coarsen.time.top_fraction = handler->get_double(
+			"refine and coarsen time top fraction"
+		);
+		
+		
+		dwr.refine_and_coarsen.space.strategy = handler->get(
+			"refine and coarsen space strategy"
+		);
+		
+		dwr.refine_and_coarsen.space.top_fraction = handler->get_double(
+			"refine and coarsen space top fraction"
+		);
+		
+		dwr.refine_and_coarsen.space.bottom_fraction = handler->get_double(
+			"refine and coarsen space bottom fraction"
+		);
+		
+		dwr.refine_and_coarsen.space.theta1 = handler->get_double(
+			"refine and coarsen space Schwegler theta1"
+		);
+		
+		dwr.refine_and_coarsen.space.theta2 = handler->get_double(
+			"refine and coarsen space Schwegler theta2"
+		);
 	}
 	handler->leave_subsection();
 	
