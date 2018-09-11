@@ -1950,6 +1950,7 @@ compute_error_indicators() {
 		function.u_D,
 		function.u_0,
 		grid,
+		parameter_set,
 		primal.storage.u,
 		dual.storage.z,
 		error_estimator.storage.eta
