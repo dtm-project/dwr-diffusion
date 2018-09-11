@@ -64,7 +64,7 @@ subsection Time Integration
     # primal time discretisation: dG0_Q_G1, dG0_Q_GR1
     set primal time discretisation = dG0_Q_G1
     # dual time discretisation: cG1_Q_G1, cG1_Q_GL2
-    set dual time discretisation = cG1_Q_G1
+    set dual time discretisation = cG1_Q_GL2
 end
 
 subsection DWR
