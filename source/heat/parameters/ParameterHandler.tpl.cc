@@ -257,13 +257,25 @@ ParameterHandler() {
 		
 		declare_entry(
 			"primal time discretisation",
-			"dG0_Q_G1",
+			"dG0",
 			dealii::Patterns::Anything()
 		);
 		
 		declare_entry(
 			"dual time discretisation",
-			"cG1_Q_G1",
+			"cG1",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal time quadrature",
+			"G1",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual time quadrature",
+			"G1",
 			dealii::Patterns::Anything()
 		);
 	}

@@ -73,6 +73,8 @@ ParameterSet(
 		
 		primal_time_discretisation = handler->get("primal time discretisation");
 		dual_time_discretisation = handler->get("dual time discretisation");
+		primal_time_quadrature = handler->get("primal time quadrature");
+		dual_time_quadrature = handler->get("dual time quadrature");
 	}
 	handler->leave_subsection();
 	
