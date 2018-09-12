@@ -69,7 +69,7 @@ subsection Time Integration
     # primal time quadrature: G1 or GR1
     set primal time quadrature = G1
     # dual time quadrature: G1 or GL2
-    set dual time quadrature = GL2
+    set dual time quadrature = G1
 end
 
 subsection DWR

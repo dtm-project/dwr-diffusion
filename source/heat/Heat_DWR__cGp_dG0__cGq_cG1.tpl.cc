@@ -90,6 +90,32 @@ run() {
 	// check
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	
+	// check primal time discretisation
+	if (parameter_set->primal_time_discretisation.compare("dG0") == 0) {
+		DTM::pout << "primal time discretisation = dG0" << std::endl;
+	}
+	else {
+		AssertThrow(
+			false,
+			dealii::ExcMessage(
+				"parameter_set->primal_time_discretisation unknown"
+			)
+		);
+	}
+	
+	// check dual time discretisation
+	if (parameter_set->dual_time_discretisation.compare("cG1") == 0) {
+		DTM::pout << "dual time discretisation = cG1" << std::endl;
+	}
+	else {
+		AssertThrow(
+			false,
+			dealii::ExcMessage(
+				"parameter_set->dual_time_discretisation unknown"
+			)
+		);
+	}
+	
 	init_functions();
 	init_grid();
 	
@@ -580,23 +606,23 @@ primal_do_forward_TMS(
 	while (slab != grid->slabs.end()) {
 		// local time variables: \f$ t0 \in I_n = (t_m, t_n) \f$
 		const double tm = slab->t_m;
-		const double tn = slab->t_n;
 		double t0{0};
-		// choose primal time discretisation (dG0_Q_G1 or dG0_Q_GR1)
-		if (parameter_set->primal_time_discretisation.compare("dG0_Q_G1") == 0) {
+		// choose primal time quadrature (G1 or GR1)
+		if (parameter_set->primal_time_quadrature.compare("G1") == 0) {
 			t0 = tm + slab->tau_n()/2.;
 		}
-		else if (parameter_set->primal_time_discretisation.compare("dG0_Q_GR1") == 0) {
+		else if (parameter_set->primal_time_quadrature.compare("GR1") == 0) {
 			t0 = slab->t_n;
 		}
 		else {
 			AssertThrow(
 				false,
 				dealii::ExcMessage(
-					"parameter_set->primal_time_discretisation unknown"
+					"parameter_set->primal_time_quadrature unknown"
 				)
 			);
 		}
+		const double tn = slab->t_n;
 		
 		DTM::pout
 			<< "primal: solving problem on "
@@ -1101,14 +1127,14 @@ dual_assemble_system(
 	
 	*dual.K = 0;
 	
-	// choose dual time discretisation (cG1_Q_G1 or cG1_Q_GL2)
-	if (parameter_set->dual_time_discretisation.compare("cG1_Q_G1") == 0) {
+	// choose dual time quadrature (G1 or GL2)
+	if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
 		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
 		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
 		dual.K->add(slab->tau_n(),*dual.A);
 		dual.K->add(2.0, *dual.M);
 	}
-	else if (parameter_set->dual_time_discretisation.compare("cG1_Q_GL2") == 0) {
+	else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
 		// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
 		DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
 		dual.K->add(slab->tau_n()/2., *dual.A);
@@ -1118,7 +1144,7 @@ dual_assemble_system(
 		AssertThrow(
 			false,
 			dealii::ExcMessage(
-				"parameter_set->dual_time_discretisation unknown"
+				"parameter_set->dual_time_quadrature unknown"
 			)
 		);
 	}
@@ -1130,7 +1156,7 @@ dual_assemble_system(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_assemble_rhs_Q_GL2(
+dual_assemble_rhs(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<1>::iterator &u,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
@@ -1166,27 +1192,18 @@ dual_assemble_rhs_Q_GL2(
 	dual.u0 = std::make_shared< dealii::Vector<double> > ();
 	dual.u0->reinit( slab->dual.dof->n_dofs() );
 	
-	if ( n > 1 ) {
-		// n > 1:
-		//   get u_h(t0) from:    Omega_h^primal x I_{n-1} (t_{n-1})
-		//   (1) interpolated to: Omega_h^primal x I_{n} (t_m) => u0_on_primal
-		//   (2) interpolated to: Omega_h^dual x I_{n} (t_m)   => dual.u0
+	auto u0_on_primal = std::make_shared< dealii::Vector<double> > ();
+	u0_on_primal->reinit( slab->primal.dof->n_dofs() );
+	*u0_on_primal = 0;
+	
+	// choose dual time quadrature (G1 or GL2)
+	if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
+		//   get u_h(t0) from:    Omega_h^primal x I_{n}            => u->x[0]
+		//   (1) (1) evaluate primal solution u->x[0] at t0 (u(t0)) => u0_on_primal
+		//   (2) interpolated to: Omega_h^dual x I_{n} (t0)   => dual.u0
 		
-		// (1) interpolate_to_different_mesh (in primal):
-		//     - needs the same fe: dof1.get_fe() = dof2.get_fe()
-		//     - allow different triangulations: dof1.get_tria() != dof2.get_tria()
-		auto u0_on_primal = std::make_shared< dealii::Vector<double> > ();
-		u0_on_primal->reinit( slab->primal.dof->n_dofs() );
-		
-		dealii::VectorTools::interpolate_to_different_mesh(
-			// solution on I_{n-1}:
-			*std::prev(slab)->primal.dof,
-			*std::prev(u)->x[0],
-			// solution on I_n:
-			*slab->primal.dof,
-			*slab->primal.constraints,
-			*u0_on_primal
-		);
+		// (1) evaluate primal solution u->x[0] at t0 (u(t0))
+		primal_get_u_t_on_slab(slab, u, t0, u0_on_primal);
 		
 		// (2) interpolate primal -> dual:
 		//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
@@ -1203,38 +1220,84 @@ dual_assemble_rhs_Q_GL2(
 		
 		u0_on_primal = nullptr;
 	}
+	else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+		if ( n > 1 ) {
+			// n > 1:
+			//   get u_h(t0) from:    Omega_h^primal x I_{n-1} (t_{n-1})
+			//   (1) interpolated to: Omega_h^primal x I_{n} (t_m) => u0_on_primal
+			//   (2) interpolated to: Omega_h^dual x I_{n} (t_m)   => dual.u0
+			
+			// (1) interpolate_to_different_mesh (in primal):
+			//     - needs the same fe: dof1.get_fe() = dof2.get_fe()
+			//     - allow different triangulations: dof1.get_tria() != dof2.get_tria()
+
+			
+			dealii::VectorTools::interpolate_to_different_mesh(
+				// solution on I_{n-1}:
+				*std::prev(slab)->primal.dof,
+				*std::prev(u)->x[0],
+				// solution on I_n:
+				*slab->primal.dof,
+				*slab->primal.constraints,
+				*u0_on_primal
+			);
+			
+			// (2) interpolate primal -> dual:
+			//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
+			//     - allow different FE-spaces: dof1.get_fe() != dof2.get_fe()
+			dealii::FETools::interpolate(
+				// primal solution
+				*slab->primal.dof,
+				*u0_on_primal,
+				// dual solution
+				*slab->dual.dof,
+				*slab->dual.constraints,
+				*dual.u0
+			);
+			
+			u0_on_primal = nullptr;
+		}
+		else {
+			// n == 1: interpolate initial value function u_0
+			// firstly to primal space and finally from that into the dual space
+			// to keep the original error of the jump u^m(t_0) of the primal problem
+			// NOTE: dual.u0(t_0) corresponds to primal.u^-(t_0)
+			
+			auto primal_um_on_t0 = std::make_shared< dealii::Vector<double> > ();
+			primal_um_on_t0->reinit( slab->primal.dof->n_dofs() );
+			
+			function.u_0->set_time(t0);
+			
+			dealii::VectorTools::interpolate(
+				*slab->primal.mapping,
+				*slab->primal.dof,
+				*function.u_0,
+				*primal_um_on_t0
+			);
+			// call hanging nodes to make the result continuous again (Note: after the 
+			// first dwr-loop the initial grid could have hanging nodes)
+			slab->primal.constraints->distribute(*primal_um_on_t0);
+			
+			dealii::FETools::interpolate(
+				// primal solution
+				*slab->primal.dof,
+				*primal_um_on_t0,
+				// dual solution
+				*slab->dual.dof,
+				*slab->dual.constraints,
+				*dual.u0
+			);
+			
+			primal_um_on_t0 = nullptr;
+		}
+	}
 	else {
-		// n == 1: interpolate initial value function u_0
-		// firstly to primal space and finally from that into the dual space
-		// to keep the original error of the jump u^m(t_0) of the primal problem
-		// NOTE: dual.u0(t_0) corresponds to primal.u^-(t_0)
-		
-		auto primal_um_on_t0 = std::make_shared< dealii::Vector<double> > ();
-		primal_um_on_t0->reinit( slab->primal.dof->n_dofs() );
-		
-		function.u_0->set_time(t0);
-		
-		dealii::VectorTools::interpolate(
-			*slab->primal.mapping,
-			*slab->primal.dof,
-			*function.u_0,
-			*primal_um_on_t0
+		AssertThrow(
+			false,
+			dealii::ExcMessage(
+				"parameter_set->dual_time_quadrature unknown"
+			)
 		);
-		// call hanging nodes to make the result continuous again (Note: after the 
-		// first dwr-loop the initial grid could have hanging nodes)
-		slab->primal.constraints->distribute(*primal_um_on_t0);
-		
-		dealii::FETools::interpolate(
-			// primal solution
-			*slab->primal.dof,
-			*primal_um_on_t0,
-			// dual solution
-			*slab->dual.dof,
-			*slab->dual.constraints,
-			*dual.u0
-		);
-		
-		primal_um_on_t0 = nullptr;
 	}
 	
 	// init vector and run assemble J(v)(e) = (v,e)
@@ -1256,161 +1319,86 @@ dual_assemble_rhs_Q_GL2(
 	*dual.Je0 *= 1./primal_L2_L2_error_u;
 	DTM::pout << " (done)" << std::endl;
 	
-	
-	///////////////////////////////
-	// u_h(t1) = u_h(t1)|_{I_{n}}
-	//
-	
-	// interpolate primal solution u_h(t1) to dual solution space
-	dual.u1 = std::make_shared< dealii::Vector<double> > ();
-	dual.u1->reinit( slab->dual.dof->n_dofs() );
-	
-	dealii::FETools::interpolate(
-		*slab->primal.dof,
-		*u->x[0],
-		*slab->dual.dof,
-		*slab->dual.constraints,
-		*dual.u1
-	);
-	
-	// init vector and run assemble J(v)(e) = ((v,e))
-	DTM::pout << "dwr-heat: assemble Je1...";
-	dual.Je1 = std::make_shared< dealii::Vector<double> > ();
-	dual.Je1->reinit( slab->dual.dof->n_dofs() );
-	
-	*dual.Je1 = 0;
-	assemble_Je->assemble(
-		dual.Je1,
-		t1,
-		function.u_E,
-		dual.u1,
-		0,   // n_q_points: 0 -> q+1 in auto mode
-		true // auto mode
-	);
-	dual.u1 = nullptr;
-	
-	*dual.Je1 *= 1./primal_L2_L2_error_u;
-	DTM::pout << " (done)" << std::endl;
-	
-	////////////////////////////////////////////////////////////////////////////
-	// construct vector b = tau_n/2. * ( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
-	//
-	
-	DTM::pout << "dwr-heat: construct linear system rhs vector...";
-	
-	dual.b = std::make_shared< dealii::Vector<double> > ();
-	dual.b->reinit( slab->dual.dof->n_dofs() );
-	
-	dual.A->vmult(*dual.b, *z->x[1]);
-	*dual.b *= -slab->tau_n()/2.;
-	
-	dual.M->vmult_add(*dual.b, *z->x[1]);
-	
-	dual.b->add(slab->tau_n()/2., *dual.Je0 );
-	dual.b->add(slab->tau_n()/2., *dual.Je1 );
-	
-	DTM::pout << " (done)" << std::endl;
-}
-
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_assemble_rhs_Q_G1(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const typename DTM::types::storage_data_vectors<1>::iterator &u,
-	const typename DTM::types::storage_data_vectors<2>::iterator &z,
-	const double &t0
-) {
-	////////////////////////////////////////////////////////////////////////////
-	// TODO: this is only for global L2(L2) goal functional
-	//
-	
-	Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
-	
-	// init assembler:
-	auto assemble_Je = std::make_shared<
-		heat::Assemble::L2::Je_global_L2L2::Assembler<dim> > (
-		slab->dual.dof,
-		slab->dual.fe,
-		slab->dual.mapping,
-		slab->dual.constraints
-	);
-	
-	////////////////////////////////////////////////////////////////////////////
-	// NOTE: forward problem is dG(0) (constant in time and JUMPS in t_m = t0)
-	// NOTE: we need the reconstruction on dual cG(1)-Q_G(1) here
-	//
-	
-	///////////////////////////////
-	// u_h(t0) = u_h(t0)|_{I_{n-1}}
-	//
-	
-	// interpolate primal solution u_h(t0) to dual solution space
-	dual.u0 = std::make_shared< dealii::Vector<double> > ();
-	dual.u0->reinit( slab->dual.dof->n_dofs() );
-	
-	//   get u_h(t0) from:    Omega_h^primal x I_{n}            => u->x[0]
-	//   (1) (1) evaluate primal solution u->x[0] at t0 (u(t0)) => u0_on_primal
-	//   (2) interpolated to: Omega_h^dual x I_{n} (t0)   => dual.u0
-	
-	// (1) evaluate primal solution u->x[0] at t0 (u(t0))
-	auto u0_on_primal = std::make_shared< dealii::Vector<double> > ();
-	u0_on_primal->reinit( slab->primal.dof->n_dofs() );
-	*u0_on_primal = 0;
-	primal_get_u_t_on_slab(slab, u, t0, u0_on_primal);
-	
-	// (2) interpolate primal -> dual:
-	//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
-	//     - allow different FE-spaces: dof1.get_fe() != dof2.get_fe()
-	dealii::FETools::interpolate(
-		// primal solution
-		*slab->primal.dof,
-		*u0_on_primal,
-		// dual solution
-		*slab->dual.dof,
-		*slab->dual.constraints,
-		*dual.u0
-	);
-	
-	u0_on_primal = nullptr;
-
-	// init vector and run assemble J(v)(e) = (v,e)
-	DTM::pout << "dwr-heat: assemble Je0...";
-	dual.Je0 = std::make_shared< dealii::Vector<double> > ();
-	dual.Je0->reinit( slab->dual.dof->n_dofs() );
-	
-	*dual.Je0 = 0;
-	assemble_Je->assemble(
-		dual.Je0,
-		t0,
-		function.u_E,
-		dual.u0,
-		0,   // n_q_points: 0 -> q+1 in auto mode
-		true // auto mode
-	);
-	dual.u0 = nullptr;
-	
-	*dual.Je0 *= 1./primal_L2_L2_error_u;
-	DTM::pout << " (done)" << std::endl;
-	
-	///////////////////////////////
-	// beta_1,1 = 0 => beta_1,1 * Je^1 = 0
-	//
-	
-	////////////////////////////////////////////////////////////////////////////
-	// construct vector b = (tau_n * Je^0) + (0 * Je^1)  + (M - 0* A) z^1
-	//
-	
-	DTM::pout << "dwr-heat: construct linear system rhs vector...";
-	
-	dual.b = std::make_shared< dealii::Vector<double> > ();
-	dual.b->reinit( slab->dual.dof->n_dofs() );
-	
-	// add 2 M z^1 
-	dual.M->vmult(*dual.b, *z->x[1]);
-	*dual.b *= 2.0;
-	dual.b->add(slab->tau_n(), *dual.Je0 );
+	// choose dual time quadrature (G1 or GL2)
+	if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
+		////////////////////////////////////////////////////////////////////////
+		// beta_1,1 = 0 => beta_1,1 * Je^1 = 0
+		//
+		
+		////////////////////////////////////////////////////////////////////////
+		// construct vector b = (tau_n * Je^0) + (0 * Je^1)  + (M - 0* A) z^1
+		//
+		DTM::pout << "dwr-heat: construct linear system rhs vector b = (M - 0* A) z^1 + (tau * Je^0) + (0 * Je^1) ...";
+		
+		dual.b = std::make_shared< dealii::Vector<double> > ();
+		dual.b->reinit( slab->dual.dof->n_dofs() );
+		
+		// add 2 M z^1 
+		dual.M->vmult(*dual.b, *z->x[1]);
+		*dual.b *= 2.0;
+		dual.b->add(slab->tau_n(), *dual.Je0 );
+	}
+	else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+		///////////////////////////////
+		// u_h(t1) = u_h(t1)|_{I_{n}}
+		//
+		
+		// interpolate primal solution u_h(t1) to dual solution space
+		dual.u1 = std::make_shared< dealii::Vector<double> > ();
+		dual.u1->reinit( slab->dual.dof->n_dofs() );
+		
+		dealii::FETools::interpolate(
+			*slab->primal.dof,
+			*u->x[0],
+			*slab->dual.dof,
+			*slab->dual.constraints,
+			*dual.u1
+		);
+		
+		// init vector and run assemble J(v)(e) = ((v,e))
+		DTM::pout << "dwr-heat: assemble Je1...";
+		dual.Je1 = std::make_shared< dealii::Vector<double> > ();
+		dual.Je1->reinit( slab->dual.dof->n_dofs() );
+		
+		*dual.Je1 = 0;
+		assemble_Je->assemble(
+			dual.Je1,
+			t1,
+			function.u_E,
+			dual.u1,
+			0,   // n_q_points: 0 -> q+1 in auto mode
+			true // auto mode
+		);
+		dual.u1 = nullptr;
+		
+		*dual.Je1 *= 1./primal_L2_L2_error_u;
+		DTM::pout << " (done)" << std::endl;
+		
+		////////////////////////////////////////////////////////////////////////////
+		// construct vector b = tau_n/2. * ( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
+		//
+		
+		DTM::pout << "dwr-heat: construct linear system rhs vector b = (M - tau_n/2 A) z^1 + tau/2 * ( Je^0 + Je^1 ) ...";
+		
+		dual.b = std::make_shared< dealii::Vector<double> > ();
+		dual.b->reinit( slab->dual.dof->n_dofs() );
+		
+		dual.A->vmult(*dual.b, *z->x[1]);
+		*dual.b *= -slab->tau_n()/2.;
+		
+		dual.M->vmult_add(*dual.b, *z->x[1]);
+		
+		dual.b->add(slab->tau_n()/2., *dual.Je0 );
+		dual.b->add(slab->tau_n()/2., *dual.Je1 );
+	}
+	else {
+		AssertThrow(
+			false,
+			dealii::ExcMessage(
+				"parameter_set->dual_time_quadrature unknown"
+			)
+		);
+	}
 	
 	DTM::pout << " (done)" << std::endl;
 }
@@ -1538,24 +1526,23 @@ dual_do_backward_TMS(
 		// local time variables: \f$ t0, t1 \in I_n = (t_m, t_n) \f$
 		const double tm = slab->t_m;
 		double t0{0};
-		const double t1 = slab->t_n;
-		const double tn = slab->t_n;
-		
-		// choose dual time discretisation (cG1_Q_G1 or cG1_Q_GL2)
-		if (parameter_set->dual_time_discretisation.compare("cG1_Q_G1") == 0) {
+		// choose dual time quadrature (G1 or GL2)
+		if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
 			t0 = tm + slab->tau_n()/2.;
 		}
-		else if (parameter_set->dual_time_discretisation.compare("cG1_Q_GL2") == 0) {
+		else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
 			t0 = slab->t_m;
 		}
 		else {
 			AssertThrow(
 				false,
 				dealii::ExcMessage(
-					"parameter_set->dual_time_discretisation unknown"
+					"parameter_set->dual_time_quadrature unknown"
 				)
 			);
 		}
+		const double t1 = slab->t_n;
+		const double tn = slab->t_n;
 		
 		DTM::pout
 			<< "dual: solving problem on "
@@ -1566,8 +1553,8 @@ dual_do_backward_TMS(
 			// for 0 < n < N interpolate between two (different) spatial meshes
 			// the solution z(t_m)|_{I_{n+1}}  to  z(t_n)|_{I_n}
 			
-			// choose dual time discretisation (cG1_Q_G1 or cG1_Q_GL2)
-			if (parameter_set->dual_time_discretisation.compare("cG1_Q_G1") == 0) {
+			// choose dual time quadrature (G1 or GL2)
+			if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
 				dealii::VectorTools::interpolate_to_different_mesh(
 					// solution on I_{n+1}:
 					*std::next(slab)->dual.dof,
@@ -1579,7 +1566,7 @@ dual_do_backward_TMS(
 				);
 				dual.zm = nullptr;
 			}
-			else if (parameter_set->dual_time_discretisation.compare("cG1_Q_GL2") == 0) {
+			else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
 				dealii::VectorTools::interpolate_to_different_mesh(
 					// solution on I_{n+1}:
 					*std::next(slab)->dual.dof,
@@ -1594,7 +1581,7 @@ dual_do_backward_TMS(
 				AssertThrow(
 					false,
 					dealii::ExcMessage(
-						"parameter_set->dual_time_discretisation unknown"
+						"parameter_set->dual_time_quadrature unknown"
 					)
 				);
 			}
@@ -1602,23 +1589,8 @@ dual_do_backward_TMS(
 		
 		// assemble slab problem
 		dual_assemble_system(slab);
+		dual_assemble_rhs(slab,u,z,n,t0,t1);
 		
-		// choose dual time discretisation (cG1_Q_G1 or cG1_Q_GL2)
-		if (parameter_set->dual_time_discretisation.compare("cG1_Q_G1") == 0) {
-			dual_assemble_rhs_Q_G1(slab,u,z,t0);
-		}
-		else if (parameter_set->dual_time_discretisation.compare("cG1_Q_GL2") == 0) {
-			dual_assemble_rhs_Q_GL2(slab,u,z,n,t0,t1);
-		}
-		else {
-			AssertThrow(
-				false,
-				dealii::ExcMessage(
-					"parameter_set->dual_time_discretisation unknown"
-				)
-			);
-		}
-
 		// solve slab problem (i.e. apply boundary values and solve for z0)
 		dual_solve_slab_problem(slab,z);
 		
@@ -1631,9 +1603,9 @@ dual_do_backward_TMS(
 		// prepare next I_n slab problem:
 		//
 		
-		// only needed for dual time discretisation cG1_Q_G1,
-		// for cG1_Q_GL2 z->[0]=zm
-		if (parameter_set->dual_time_discretisation.compare("cG1_Q_G1") == 0) {
+		// only needed for dual time quadrature G1,
+		// for GL2 z->[0]=zm
+		if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
 			// Evaluate dual solution z(tm) (at left time-point) and save as dual.zm,
 			// which is used to be interpolated to the "next" grid at tm.
 			dual.zm = std::make_shared< dealii::Vector<double> > ();

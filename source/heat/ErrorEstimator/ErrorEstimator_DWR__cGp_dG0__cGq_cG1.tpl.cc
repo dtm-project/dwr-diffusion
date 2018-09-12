@@ -374,8 +374,8 @@ estimate(
 			primal_um_on_tm = nullptr;
 		}
 		
-		// choose dual time discretisation (cG1_Q_G1 or cG1_Q_GL2)
-		if (parameter_set->dual_time_discretisation.compare("cG1_Q_G1") == 0) {
+		// choose dual time quadrature (G1 or GL2)
+		if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
 			dual_get_z_t_on_slab_Q_G1(slab, z, tm, dual_z_on_tm);
 		
 			dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_G1(
@@ -388,7 +388,7 @@ estimate(
 				slab, z, t0, dual_Rz_on_t0
 			);
 		}
-		else if (parameter_set->dual_time_discretisation.compare("cG1_Q_GL2") == 0) {
+		else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
 			dual_get_z_t_on_slab_Q_GL2(slab, z, tm, dual_z_on_tm);
 		
 			dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_GL2(
@@ -405,7 +405,7 @@ estimate(
 			AssertThrow(
 				false,
 				dealii::ExcMessage(
-					"parameter_set->dual_time_discretisation unknown"
+					"parameter_set->dual_time_quadrature unknown"
 				)
 			);
 		}

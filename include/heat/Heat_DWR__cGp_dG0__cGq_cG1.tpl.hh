@@ -224,20 +224,13 @@ protected:
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab
 	);
 	
-	virtual void dual_assemble_rhs_Q_GL2(
+	virtual void dual_assemble_rhs(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const unsigned int &n,
 		const double &t0,
 		const double &t1
-	);
-	
-	virtual void dual_assemble_rhs_Q_G1(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<1>::iterator &u,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double &t0
 	);
 	
 	virtual void dual_solve_slab_problem(
