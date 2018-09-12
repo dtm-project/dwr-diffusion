@@ -101,6 +101,7 @@ struct ErrorEstimateOnCell {
 	double value_f;
 	double value_epsilon;
 	dealii::Tensor<1,dim> grad_epsilon;
+	double value_density;
 	
 	double val_R_u_kh_j;
 	double val_u_kh_j;
@@ -241,6 +242,7 @@ public:
 	
 	virtual void estimate(
 		std::shared_ptr< dealii::Function<dim> > epsilon,
+		std::shared_ptr< dealii::Function<dim> > density,
 		std::shared_ptr< dealii::Function<dim> > f,
 		std::shared_ptr< dealii::Function<dim> > u_D,
 		std::shared_ptr< dealii::Function<dim> > u_0,
@@ -366,10 +368,10 @@ protected:
 	
 	struct {
 		std::shared_ptr< dealii::Function<dim> > epsilon;
+		std::shared_ptr< dealii::Function<dim> > density;
 		std::shared_ptr< dealii::Function<dim> > f;
 		std::shared_ptr< dealii::Function<dim> > u_D;
 		std::shared_ptr< dealii::Function<dim> > u_0;
-// 		std::shared_ptr< dealii::Function<dim> > density;
 	} function;
 	
 	// parameter set
