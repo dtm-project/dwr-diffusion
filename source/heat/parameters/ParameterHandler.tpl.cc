@@ -254,6 +254,30 @@ ParameterHandler() {
 			dealii::Patterns::Double(),
 			"initial time step size"
 		);
+		
+		declare_entry(
+			"primal time discretisation",
+			"dG0",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual time discretisation",
+			"cG1",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal time quadrature",
+			"G1",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual time quadrature",
+			"G1",
+			dealii::Patterns::Anything()
+		);
 	}
 	leave_subsection();
 	

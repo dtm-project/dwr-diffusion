@@ -35,6 +35,7 @@
 
 // PROJECT includes
 #include <heat/grid/Grid_DWR.tpl.hh>
+#include <heat/parameters/ParameterSet.hh>
 
 // DTM++ includes
 #include <DTM++/types/storage_data_vectors.tpl.hh>
@@ -244,6 +245,7 @@ public:
 		std::shared_ptr< dealii::Function<dim> > u_D,
 		std::shared_ptr< dealii::Function<dim> > u_0,
 		std::shared_ptr< heat::Grid_DWR<dim,1> > grid,
+		std::shared_ptr< heat::dwr::ParameterSet > parameter_set,
 		std::shared_ptr< DTM::types::storage_data_vectors<1> > u,
 		std::shared_ptr< DTM::types::storage_data_vectors<2> > z,
 		std::shared_ptr< DTM::types::storage_data_vectors<1> > eta
@@ -268,7 +270,14 @@ protected:
 	);
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
-	virtual void dual_get_z_t_on_slab(
+	virtual void dual_get_z_t_on_slab_Q_GL2(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result
+	);
+	
+	virtual void dual_get_z_t_on_slab_Q_G1(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double &t,
@@ -276,7 +285,14 @@ protected:
 	);
 	
 	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
-	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
+	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_GL2(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction
+	);
+	
+	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_G1(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double &t,
@@ -355,6 +371,9 @@ protected:
 		std::shared_ptr< dealii::Function<dim> > u_0;
 // 		std::shared_ptr< dealii::Function<dim> > density;
 	} function;
+	
+	// parameter set
+	std::shared_ptr< heat::dwr::ParameterSet > parameter_set;
 	
 	double tau_n;
 	

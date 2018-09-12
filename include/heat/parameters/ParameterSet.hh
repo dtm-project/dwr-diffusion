@@ -92,6 +92,10 @@ struct ParameterSet {
 	double t0;
 	double T;
 	double tau_n;
+	std::string primal_time_discretisation;
+	std::string dual_time_discretisation;
+	std::string primal_time_quadrature;
+	std::string dual_time_quadrature;
 	
 	// dwr
 	struct {

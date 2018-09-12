@@ -60,6 +60,16 @@ subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
     set time step size = 0.1
+    
+    # primal time discretisation: dG0
+    set primal time discretisation = dG0
+    # dual time discretisation: cG1
+    set dual time discretisation = cG1
+    
+    # primal time quadrature: G1 or GR1
+    set primal time quadrature = G1
+    # dual time quadrature: G1 or GL2
+    set dual time quadrature = G1
 end
 
 subsection DWR

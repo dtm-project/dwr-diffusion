@@ -205,6 +205,8 @@ protected:
 		std::shared_ptr< dealii::Vector<double> > u1;
 		std::shared_ptr< dealii::Vector<double> > Je1;
 		
+		std::shared_ptr< dealii::Vector<double> > zm;
+		
 		std::shared_ptr< dealii::SparseMatrix<double> > K;
 		std::shared_ptr< dealii::Vector<double> > b;
 		
@@ -242,7 +244,14 @@ protected:
 	);
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
-	virtual void dual_get_z_t_on_slab(
+	virtual void dual_get_z_t_on_slab_Q_GL2(
+		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+		const typename DTM::types::storage_data_vectors<2>::iterator &z,
+		const double &t,
+		std::shared_ptr< dealii::Vector<double> > &dual_z_result
+	);
+	
+	virtual void dual_get_z_t_on_slab_Q_G1(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double &t,

@@ -247,6 +247,7 @@ estimate(
 	std::shared_ptr< dealii::Function<dim> > _u_D,
 	std::shared_ptr< dealii::Function<dim> > _u_0,
 	std::shared_ptr< heat::Grid_DWR<dim,1> > _grid,
+	std::shared_ptr< heat::dwr::ParameterSet > _parameter_set,
 	std::shared_ptr< DTM::types::storage_data_vectors<1> > _u,
 	std::shared_ptr< DTM::types::storage_data_vectors<2> > _z,
 	std::shared_ptr< DTM::types::storage_data_vectors<1> > _eta
@@ -265,6 +266,9 @@ estimate(
 	
 	Assert(_grid.use_count(), dealii::ExcNotInitialized());
 	grid = _grid;
+	
+	Assert(_parameter_set.use_count(), dealii::ExcNotInitialized());
+	parameter_set = _parameter_set;
 	
 	Assert(_u.use_count(), dealii::ExcNotInitialized());
 	primal.storage.u = _u;
@@ -370,17 +374,41 @@ estimate(
 			primal_um_on_tm = nullptr;
 		}
 		
-		dual_get_z_t_on_slab(slab, z, tm, dual_z_on_tm);
+		// choose dual time quadrature (G1 or GL2)
+		if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
+			dual_get_z_t_on_slab_Q_G1(slab, z, tm, dual_z_on_tm);
 		
-		dual_get_z_t_on_slab_after_restriction_to_primal_space(
-			slab, z, tm, dual_Rz_on_tm
-		);
+			dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_G1(
+				slab, z, tm, dual_Rz_on_tm
+			);
+			
+			dual_get_z_t_on_slab_Q_G1(slab, z, t0, dual_z_on_t0);
+			
+			dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_G1(
+				slab, z, t0, dual_Rz_on_t0
+			);
+		}
+		else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+			dual_get_z_t_on_slab_Q_GL2(slab, z, tm, dual_z_on_tm);
 		
-		dual_get_z_t_on_slab(slab, z, t0, dual_z_on_t0);
-		
-		dual_get_z_t_on_slab_after_restriction_to_primal_space(
-			slab, z, t0, dual_Rz_on_t0
-		);
+			dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_GL2(
+				slab, z, tm, dual_Rz_on_tm
+			);
+			
+			dual_get_z_t_on_slab_Q_GL2(slab, z, t0, dual_z_on_t0);
+			
+			dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_GL2(
+				slab, z, t0, dual_Rz_on_t0
+			);
+		}
+		else {
+			AssertThrow(
+				false,
+				dealii::ExcMessage(
+					"parameter_set->dual_time_quadrature unknown"
+				)
+			);
+		}
 		
 		dual_get_u_t_on_slab(slab, u, t0, dual_u_on_t0);
 		
@@ -629,7 +657,7 @@ dual_get_u_t_on_slab(
 template<int dim>
 void
 ErrorEstimator<dim>::
-dual_get_z_t_on_slab(
+dual_get_z_t_on_slab_Q_GL2(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const double &t,
@@ -658,7 +686,7 @@ dual_get_z_t_on_slab(
 template<int dim>
 void
 ErrorEstimator<dim>::
-dual_get_z_t_on_slab_after_restriction_to_primal_space(
+dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_GL2(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const double &t,
@@ -739,6 +767,119 @@ dual_get_z_t_on_slab_after_restriction_to_primal_space(
 	);
 }
 
+
+template<int dim>
+void
+ErrorEstimator<dim>::
+dual_get_z_t_on_slab_Q_G1(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	const double &t,
+	std::shared_ptr< dealii::Vector<double> > &z_result
+) {
+	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	z_result = std::make_shared< dealii::Vector<double> > ();
+	z_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	// get time _t on reference time interval I_hat = (0,1)
+	const double _t{ (t - slab->t_m) / slab->tau_n() };
+	
+	// trial basis functions evaluation on reference interval
+	const double xi0{ -2.0*_t + 2. };
+	const double xi1{ 2.0*_t - 1. };
+	
+	z_result->equ(xi0, *z->x[0]);
+	z_result->add(xi1, *z->x[1]);
+}
+
+
+template<int dim>
+void
+ErrorEstimator<dim>::
+dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_G1(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z,
+	const double &t,
+	std::shared_ptr< dealii::Vector<double> > &z_result) {
+	////////////////////////////////////////////////////////////////////////////
+	// NOTE: this function must know the time discretisation of
+	//       the primal problem!
+	//
+	
+	// result is: z^dual(t) = I^dual{ [R^primal(z^dual)] (t) }
+	
+	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
+	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
+	
+	////////////////////////////////////////////////////////////////////////////
+	// compute the restriction z^primal(t) = R^primal(z^dual) (t)
+	//
+	
+	/// primal_z_t = R^primal(z^dual) (t)
+	std::shared_ptr< dealii::Vector<double> > primal_z_t;
+	{
+		// get dual_z_on_primal_t0 for t0 of primal problem
+		auto dual_z_on_primal_t0 = std::make_shared< dealii::Vector<double> > ();
+		dual_z_on_primal_t0->reinit(
+			slab->dual.dof->n_dofs()
+		);
+		
+		const double _t{ (t - slab->t_m) / slab->tau_n() };
+		
+		// evaluate dual trial functions in time on _t
+		const double xi0{ -2.*_t + 2. };
+		const double xi1{ 2.*_t - 1. };
+		
+		// evaluate z^dual on time-dof t0 of the primal problem
+		dual_z_on_primal_t0->equ(xi0, *z->x[0]);
+		dual_z_on_primal_t0->add(xi1, *z->x[1]);
+		
+		// interpolate dual_z_on_primal_t0 to primal_z_on_primal_t0
+		auto primal_z_on_primal_t0 = std::make_shared< dealii::Vector<double> > ();
+		primal_z_on_primal_t0->reinit(
+			slab->primal.dof->n_dofs()
+		);
+		
+		dealii::FETools::interpolate(
+			// dual solution
+			*slab->dual.dof,
+			*dual_z_on_primal_t0,
+			// primal solution
+			*slab->primal.dof,
+			*slab->primal.constraints,
+			*primal_z_on_primal_t0
+		);
+		
+		// evaluate solution for t \in I_n on primal time discretisation:
+		// NOTE: primal problem: dG(0)-Q_G(1) discretisation (constant in time):
+		//   primal_z_t = zeta0(_t) * primal_z_on_primal_t0
+		//              = 1 * primal_z_on_primal_t0
+		primal_z_t = primal_z_on_primal_t0;
+	}
+	
+	// interpolate primal_z_t to z_result (on dual space for fixed t)
+	Assert(primal_z_t.use_count(), dealii::ExcNotInitialized());
+	Assert(primal_z_t->size(), dealii::ExcNotInitialized());
+	
+	z_result = std::make_shared< dealii::Vector<double> > ();
+	z_result->reinit(
+		slab->dual.dof->n_dofs()
+	);
+	
+	dealii::FETools::interpolate(
+		// primal solution
+		*slab->primal.dof,
+		*primal_z_t,
+		// dual solution
+		*slab->dual.dof,
+		*slab->dual.constraints,
+		*z_result
+	);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
