@@ -50,17 +50,17 @@ subsection Time Integration
 end
 
 subsection DWR
-    set loops = 5
+    set loops = 10
     
     # space strategy: global, fixed_fraction or Schwegler
     set refine and coarsen space strategy = fixed_fraction
-    set refine and coarsen space top fraction = 0.8
+    set refine and coarsen space top fraction = 0.1
     set refine and coarsen space bottom fraction = 0.0
     set refine and coarsen space max growth factor n_active_cells = 3
     
     # time strategy: global, fixed_fraction
     set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.2
+    set refine and coarsen time top fraction = 0.5
 end
 
 subsection Parameter Specification
