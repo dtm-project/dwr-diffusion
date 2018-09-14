@@ -1,56 +1,42 @@
+# Problem: Hartmann Sec. 1.4.2, Diploma-thesis
+
 # Overall space dimension:
 set dim = 2
 
-subsection Parameter Specification
-    ############################################################################
-    # Diffusion
-    set epsilon function = ConstantFunction
-    set epsilon options  = "1.0"
+subsection Problem Specification
+    # Finite Elements in space-time
     
-    ############################################################################
-    # Density
-    set density function = ConstantFunction
-    set density options  = "1.0"
+    # primal problem
+    set primal space type u = cG
+    set primal space type u support points = canonical
     
-    ############################################################################
-    # Force
-    set force function = Force_Hartmann142
-    #                     a   epsilon
-    set force options  = "50. 1."
+    set primal time type = dG0
+    set primal time support points = Gauss-Radau
     
-    ############################################################################
-    # DirichletBoundary 
-    set dirichlet boundary u_D function = DirichletBoundary_Hartmann142
-    #                                      a
-    set dirichlet boundary u_D options  = "50."
+    # dual problem
+    set dual space type u = cG
+    set dual space type u support points = canonical
     
-    ############################################################################
-    # InitialValue 
-    set initial value u0 function = InitialValue_Hartmann142
-    #                                a
-    set initial value u0 options  = "50."
-    ############################################################################
-    # ExactSolution
-    set exact solution function = ExactSolution_Hartmann142
-    #                              a   
-    set exact solution options  = "50."
-    
-    ############################################################################
+    set dual time type = cG1
+    set dual time support points = Gauss-Lobatto
 end
 
 subsection Mesh Specification
     ############################################################################
-    set Grid Class = Grid_DWR_PureDirichlet
-    set Grid Class Options = ""
-    
+    # triangulation description
     set TriaGenerator = subdivided_hyper_rectangle
     # subdivided_hyper_rectangle: point lower left, point upper right and spacing
     set TriaGenerator Options = "0.0 0.0 0.0   1.0 1.0 1.0   1.00 1.00 1.00"
+    
+    # boundary description
+    set Grid Class = Grid_DWR_PureDirichlet
+    set Grid Class Options = ""
     
     ############################################################################
     # Global refinement of the initial mesh
     set global refinement = 1
     
+    ############################################################################
     # Polynomial degrees
     set primal p = 1
     set dual q   = 2
@@ -63,7 +49,7 @@ subsection Time Integration
 end
 
 subsection DWR
-    set loops = 3
+    set loops = 8
     
     # time strategy: global, fixed_fraction
     set refine and coarsen time strategy = fixed_fraction
@@ -79,13 +65,48 @@ subsection DWR
     set refine and coarsen space Schwegler theta2 = 1.2
 end
 
+subsection Parameter Specification
+    ############################################################################
+    # Mass density function rho
+    set density function = ConstantFunction
+    set density options  = "1.0"
+
+    # Diffusion coefficient function epsilon
+    set epsilon function = ConstantFunction
+    set epsilon options  = "1.0"
+    
+    ############################################################################
+    # Force f
+    set force function = Force_Hartmann142
+    #                     a   epsilon
+    set force options  = "50. 1."
+    
+    ############################################################################
+    # Boundary value function
+    set dirichlet boundary u_D function = DirichletBoundary_Hartmann142
+    #                                      a
+    set dirichlet boundary u_D options  = "50."
+    
+    ############################################################################
+    # Initial value function
+    set initial value u0 function = InitialValue_Hartmann142
+    #                                a
+    set initial value u0 options  = "50."
+    
+    ############################################################################
+    # Exact solution function (if any)
+    set exact solution function = ExactSolution_Hartmann142
+    #                              a   
+    set exact solution options  = "50."
+end
+
 subsection Output Quantities
     ############################################################################
     # primal solution output control
     set primal data output dwr loop = all     # use none, all, last or number
     
-    set primal data output trigger type = I_n   # I_n mode: one output per I_n
-#    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
+#    set primal data output trigger type = I_n   # I_n mode: one output per I_n
+    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
     set primal data output trigger time      = 0.01 # use fixed trigger value (fixed mode only)
     
     set primal data output patches auto mode = true # use < primal p > data output patches (auto mode)
@@ -93,7 +114,7 @@ subsection Output Quantities
     
     ############################################################################
     # dual solution output control
-    set dual data output dwr loop = all      # use none, all, last or number
+    set dual data output dwr loop = none      # use none, all, last or number
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.01
