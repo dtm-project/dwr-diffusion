@@ -1,15 +1,13 @@
 /**
  * @file Heat_DWR__cGp_dG0__cGq_cG1.inst.in
- *
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
  *
  * @date 2018-03-06, Heat/DWR, UK
  *
  * @brief Instanciation file.
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */

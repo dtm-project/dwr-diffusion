@@ -1,9 +1,9 @@
 /**
  * @file Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh
- * 
+ *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * 
+ *
  * @date 2018-07-19, finialised dwr-loop, UK
  * @date 2018-03-08, primal problem, UK
  * @date 2018-03-06, new implementation, UK
@@ -13,7 +13,7 @@
  * @brief Heat/DWR Problem with primal solver: cG(p)-dG(0) and dual solver: cG(q)-cG(1)
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -79,25 +79,18 @@ protected:
 	std::shared_ptr< heat::Grid_DWR<dim,1> > grid;
 	virtual void init_grid();
 	
-	/// function: keep shared_ptr to Function<dim> for several quantities
 	struct {
-		/// diffusion function
-		std::shared_ptr< dealii::Function<dim> > epsilon;
-		/// mass density function
 		std::shared_ptr< dealii::Function<dim> > density;
-		/// force function
+		std::shared_ptr< dealii::Function<dim> > epsilon;
 		std::shared_ptr< dealii::Function<dim> > f;
-		/// Dirichlet boundary values function
-		std::shared_ptr< dealii::Function<dim> > u_D; 
-		/// initial value function
+		
+		std::shared_ptr< dealii::Function<dim> > u_D;
 		std::shared_ptr< dealii::Function<dim> > u_0;
-		/// exact solution (if any)
+		
 		std::shared_ptr< dealii::Function<dim> > u_E;
 	} function;
 	
 	virtual void init_functions();
-	
-	unsigned int dwr_loops;
 	
 	////////////////////////////////////////////////////////////////////////////
 	// primal problem:
@@ -108,7 +101,7 @@ protected:
 		// storage container
 		struct {
 			/// primal solutions list (time dG(r)-Q_{G(r+1)} method)
-			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;  // time dof
+			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
 		} storage;
 		
 		std::shared_ptr< dealii::Vector<double> > um; // dof on t_m
@@ -151,7 +144,6 @@ protected:
 		const unsigned int dwr_loop
 	);
 	
-	
 	/// evaluate solution dof vector u^primal(t) on primal solution space
 	virtual void primal_get_u_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
@@ -159,7 +151,6 @@ protected:
 		const double &t,
 		std::shared_ptr< dealii::Vector<double> > &u_result
 	);
-	
 	
 	// post-processing functions for L2(L2) error
 	double primal_L2_L2_error_u;
@@ -170,7 +161,6 @@ protected:
 	);
 	virtual void primal_finish_error_computations();
 	
-	
 	// post-processing functions for data output
 	virtual void primal_init_data_output();
 	
@@ -180,7 +170,6 @@ protected:
 		const unsigned int dwr_loop,
 		const bool dG_initial_value
 	);
-	
 	
 	////////////////////////////////////////////////////////////////////////////
 	// dual problem:
@@ -241,14 +230,7 @@ protected:
 	);
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
-	virtual void dual_get_z_t_on_slab_Q_GL2(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double &t,
-		std::shared_ptr< dealii::Vector<double> > &dual_z_result
-	);
-	
-	virtual void dual_get_z_t_on_slab_Q_G1(
+	virtual void dual_get_z_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double &t,
@@ -263,7 +245,6 @@ protected:
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const unsigned int dwr_loop
 	);
-	
 	
 	////////////////////////////////////////////////////////////////////////////
 	// error estimation and space-time grid adaption
