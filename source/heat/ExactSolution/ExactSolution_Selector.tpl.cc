@@ -157,6 +157,30 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
+	if (_type.compare("ExactSolution_AtanHartmann") == 0) {
+		AssertThrow(
+			options.size() == 1,
+			dealii::ExcMessage(
+				"exact_solution options invalid, "
+				"please check your input file data."
+			)
+		);
+		
+		function = std::make_shared< heat::exact_solution::AtanHartmann<dim> >(
+			std::stod(options.at(0)) // a
+		);
+		
+		DTM::pout
+			<< "exact_solution selector: created AtanHartmann "
+			<< "as exact_solution function, with " << std::endl
+			<< "\ta = " << std::stod(options.at(0)) << std::endl
+			<< std::endl;
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// 
 	AssertThrow(
 		false,
 		dealii::ExcMessage("exact_solution function unknown, please check your input file data.")
