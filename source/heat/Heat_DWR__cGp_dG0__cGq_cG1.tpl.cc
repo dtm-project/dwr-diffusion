@@ -2024,7 +2024,7 @@ refine_and_coarsen_space_time_grid() {
 			const auto eta_criterium_for_mark_time_refinement{
 				eta_sorted[ static_cast<int>(N)
 					- static_cast<int>(std::floor(static_cast<double>(N)
-						* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
+					* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
 			};
 			
 			auto slab{grid->slabs.begin()};
@@ -2047,7 +2047,6 @@ refine_and_coarsen_space_time_grid() {
 		}
 	}
 	
-
 	// 3rd loop execute_coarsening_and_refinement
 	{
 		unsigned int K_max{0};
@@ -2089,6 +2088,25 @@ refine_and_coarsen_space_time_grid() {
 			}
 			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("Schwegler") == 0) {
 				// mark for refinement with strategy from K. Schwegler PhD thesis
+				
+				Assert(
+					((parameter_set->dwr.refine_and_coarsen.space.theta1 > 1.)
+					&& (parameter_set->dwr.refine_and_coarsen.space.theta1 < 5.)),
+					dealii::ExcMessage("theta1 must be in (1,5)")
+				);
+				
+				Assert(
+					((parameter_set->dwr.refine_and_coarsen.space.theta2 > 1.)
+					&& (parameter_set->dwr.refine_and_coarsen.space.theta2 < 5.)),
+					dealii::ExcMessage("theta2 must be in (1,5)")
+				);
+				
+				Assert(
+					(parameter_set->dwr.refine_and_coarsen.space.theta2 >=
+					parameter_set->dwr.refine_and_coarsen.space.theta1),
+					dealii::ExcMessage("(theta2 >= theta1)")
+				);
+				
 				const double theta{ slab->refine_in_time ?
 					parameter_set->dwr.refine_and_coarsen.space.theta1 :
 					parameter_set->dwr.refine_and_coarsen.space.theta2
