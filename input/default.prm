@@ -7,18 +7,22 @@ subsection Problem Specification
     # Finite Elements in space-time
     
     # primal problem
-    set primal space type u = cG
-    set primal space type u support points = canonical
+    set primal space type = cG
+    set primal space type support points = canonical
+    set primal p = 1
     
-    set primal time type = dG0
+    set primal time type = dG
     set primal time support points = Gauss-Radau
+    set primal r = 0
     
     # dual problem
-    set dual space type u = cG
-    set dual space type u support points = canonical
+    set dual space type = cG
+    set dual space type support points = canonical
+    set dual q = 2
     
-    set dual time type = cG1
+    set dual time type = cG
     set dual time support points = Gauss-Lobatto
+    set dual s = 1
 end
 
 subsection Mesh Specification
@@ -35,11 +39,6 @@ subsection Mesh Specification
     ############################################################################
     # Global refinement of the initial mesh
     set global refinement = 1
-    
-    ############################################################################
-    # Polynomial degrees
-    set primal p = 1
-    set dual q   = 2
 end
 
 subsection Time Integration
@@ -51,10 +50,6 @@ end
 subsection DWR
     set loops = 8
     
-    # time strategy: global, fixed_fraction
-    set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.5
-    
     # space strategy: global, fixed_fraction or Schwegler
     set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction = 0.8
@@ -63,6 +58,10 @@ subsection DWR
     
     set refine and coarsen space Schwegler theta1 = 1.2
     set refine and coarsen space Schwegler theta2 = 1.2
+    
+    # time strategy: global, fixed_fraction
+    set refine and coarsen time strategy = fixed_fraction
+    set refine and coarsen time top fraction = 0.5
 end
 
 subsection Parameter Specification
@@ -75,7 +74,6 @@ subsection Parameter Specification
     set epsilon function = ConstantFunction
     set epsilon options  = "1.0"
     
-    ############################################################################
     # Force f
     set force function = Force_Hartmann142
     #                     a   epsilon
