@@ -1,10 +1,10 @@
 /**
  * @file ExactSolution_KoecherBruchhaeuser1.inst.in
- * @author Marius Paul Bruchhaeuser (MPB)
+ *
  * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
  * 
- * @date 2018-09-14, MPB, UK
- * @date 2018-07-20, UK
+ * @date 2018-09-14, MPB
  *
  * @brief Instantiation file
  */

@@ -1,13 +1,10 @@
 /**
  * @file InitialValue_KoecherBruchhaeuser1.tpl.hh
- * @author Marius Paul Bruchhaeuser (MPB)
+ *
  * @author Uwe Koecher (UK)
+ * @author Marius Paul Bruchhaeuser (MPB)
  * 
  * @date 2018-09-14, MPB, UK
- * @date 2018-03-09, UK
- * @date 2018-03-08, included from ewave, UK
- * @date 2017-10-25, UK
- * @date 2013-08-15, DTM++ v1, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -33,8 +30,6 @@
 // DEAL.II includes
 #include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
-
-// C++ includes
 
 namespace heat {
 namespace initial_value {
