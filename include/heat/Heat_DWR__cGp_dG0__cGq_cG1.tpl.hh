@@ -83,17 +83,14 @@ protected:
 	struct {
 		/// diffusion function
 		std::shared_ptr< dealii::Function<dim> > epsilon;
+		/// mass density function
+		std::shared_ptr< dealii::Function<dim> > density;
 		/// force function
 		std::shared_ptr< dealii::Function<dim> > f;
 		/// Dirichlet boundary values function
 		std::shared_ptr< dealii::Function<dim> > u_D; 
-		
 		/// initial value function
 		std::shared_ptr< dealii::Function<dim> > u_0;
-		
-		/// mass density function
-		std::shared_ptr< dealii::Function<dim> > density;
-		
 		/// exact solution (if any)
 		std::shared_ptr< dealii::Function<dim> > u_E;
 	} function;
