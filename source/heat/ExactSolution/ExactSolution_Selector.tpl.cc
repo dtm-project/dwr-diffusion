@@ -157,7 +157,7 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
-	if (_type.compare("ExactSolution_AtanHartmann") == 0) {
+	if (_type.compare("ExactSolution_KoecherBruchhaeuser1") == 0) {
 		AssertThrow(
 			options.size() == 1,
 			dealii::ExcMessage(
@@ -166,12 +166,12 @@ create_function(
 			)
 		);
 		
-		function = std::make_shared< heat::exact_solution::AtanHartmann<dim> >(
+		function = std::make_shared< heat::exact_solution::KoecherBruchhaeuser1<dim> >(
 			std::stod(options.at(0)) // a
 		);
 		
 		DTM::pout
-			<< "exact_solution selector: created AtanHartmann "
+			<< "exact_solution selector: created KoecherBruchhaeuser1 "
 			<< "as exact_solution function, with " << std::endl
 			<< "\ta = " << std::stod(options.at(0)) << std::endl
 			<< std::endl;

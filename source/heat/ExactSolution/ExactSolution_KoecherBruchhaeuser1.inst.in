@@ -1,5 +1,5 @@
 /**
- * @file ExactSolution_AtanHartmann.inst.in
+ * @file ExactSolution_KoecherBruchhaeuser1.inst.in
  * @author Marius Paul Bruchhaeuser (MPB)
  * @author Uwe Koecher (UK)
  * 
@@ -26,14 +26,14 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_AtanHartmann_inst_in
-#define __ExactSolution_AtanHartmann_inst_in
+#ifndef __ExactSolution_KoecherBruchhaeuser1_inst_in
+#define __ExactSolution_KoecherBruchhaeuser1_inst_in
 
 namespace heat {
 namespace exact_solution {
 
-template class AtanHartmann<2>;
-template class AtanHartmann<3>;
+template class KoecherBruchhaeuser1<2>;
+template class KoecherBruchhaeuser1<3>;
 
 }} // namespaces
 

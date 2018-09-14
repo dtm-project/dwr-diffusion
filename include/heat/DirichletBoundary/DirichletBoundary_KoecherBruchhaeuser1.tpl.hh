@@ -1,13 +1,16 @@
 /**
- * @file ExactSolutions.hh
+ * @file DirichletBoundary_KoecherBruchhaeuser1.tpl.hh
+ * @author Marius Paul Bruchhaeuser (MPB)
  * @author Uwe Koecher (UK)
  * 
- * @date 2018-07-20, UK
- * 
- * @brief Collects all ExactSolution functions.
+ * @date 2018-09-14, MPB, UK
+ * @date 2018-03-09, UK
+ * @date 2018-03-08, included from ewave, UK
+ * @date 2017-10-25, UK
+ * @date 2013-08-15, DTM++ v1, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,10 +27,37 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolutions_hh
-#define __ExactSolutions_hh
+#ifndef __DirichletBoundary_KoecherBruchhaeuser1_tpl_hh
+#define __DirichletBoundary_KoecherBruchhaeuser1_tpl_hh
 
-#include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
-#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser1.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+
+// C++ includes
+
+namespace heat {
+namespace dirichlet_boundary {
+
+template<int dim>
+class KoecherBruchhaeuser1 : public dealii::Function<dim> {
+public:
+	KoecherBruchhaeuser1(const double &a) : dealii::Function<dim> (1), a(a) {};
+	
+	virtual ~KoecherBruchhaeuser1() = default;
+	
+	/// get value (of a specific component) from a function evaluation
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
+
+private:
+	const double a;
+};
+
+}}
 
 #endif

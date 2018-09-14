@@ -1,5 +1,5 @@
 /**
- * @file ExactSolution_AtanHartmann.tpl.hh
+ * @file ExactSolution_KoecherBruchhaeuser1.tpl.hh
  * @author Marius Paul Bruchhaeuser (MPB)
  * @author Uwe Koecher (UK)
  * 
@@ -27,8 +27,8 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_AtanHartmann_tpl_hh
-#define __ExactSolution_AtanHartmann_tpl_hh
+#ifndef __ExactSolution_KoecherBruchhaeuser1_tpl_hh
+#define __ExactSolution_KoecherBruchhaeuser1_tpl_hh
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
@@ -40,11 +40,11 @@ namespace heat {
 namespace exact_solution {
 
 template<int dim>
-class AtanHartmann : public dealii::Function<dim> {
+class KoecherBruchhaeuser1 : public dealii::Function<dim> {
 public:
-	AtanHartmann(const double &a) : dealii::Function<dim> (1), a(a) {};
+	KoecherBruchhaeuser1(const double &a) : dealii::Function<dim> (1), a(a) {};
 	
-	virtual ~AtanHartmann() = default;
+	virtual ~KoecherBruchhaeuser1() = default;
 	
 	/// get value (of a specific component) from a function evaluation
 	virtual
