@@ -112,7 +112,6 @@ struct ErrorEstimateOnCell {
 	
 	unsigned int q;
 	unsigned int d;
-// 	unsigned int k;
 	unsigned int j;
 };
 
@@ -167,7 +166,6 @@ struct ErrorEstimateOnFace {
 	double JxW;
 	
 	unsigned int q;
-// 	unsigned int k;
 	unsigned int j;
 	unsigned int subface_no;
 };
@@ -202,7 +200,7 @@ template<int dim>
 struct ErrorEstimateOnCell{
 	ErrorEstimateOnCell() = default;
 	ErrorEstimateOnCell(const ErrorEstimateOnCell &copydata);
-
+	
 	typename dealii::DoFHandler<dim>::cell_iterator cell;
 	double value;
 };
@@ -241,8 +239,8 @@ public:
 	virtual ~ErrorEstimator() = default;
 	
 	virtual void estimate(
-		std::shared_ptr< dealii::Function<dim> > epsilon,
 		std::shared_ptr< dealii::Function<dim> > density,
+		std::shared_ptr< dealii::Function<dim> > epsilon,
 		std::shared_ptr< dealii::Function<dim> > f,
 		std::shared_ptr< dealii::Function<dim> > u_D,
 		std::shared_ptr< dealii::Function<dim> > u_0,
@@ -272,14 +270,7 @@ protected:
 	);
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
-	virtual void dual_get_z_t_on_slab_Q_GL2(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double &t,
-		std::shared_ptr< dealii::Vector<double> > &dual_z_result
-	);
-	
-	virtual void dual_get_z_t_on_slab_Q_G1(
+	virtual void dual_get_z_t_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double &t,
@@ -287,14 +278,7 @@ protected:
 	);
 	
 	/// evaluate solution dof vector I^dual( R^primal(z^dual)(t) ) on dual solution space
-	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_GL2(
-		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-		const typename DTM::types::storage_data_vectors<2>::iterator &z,
-		const double &t,
-		std::shared_ptr< dealii::Vector<double> > &dual_z_result_after_restriction
-	);
-	
-	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space_Q_G1(
+	virtual void dual_get_z_t_on_slab_after_restriction_to_primal_space(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const double &t,
@@ -367,8 +351,8 @@ protected:
 	} error_estimator;
 	
 	struct {
-		std::shared_ptr< dealii::Function<dim> > epsilon;
 		std::shared_ptr< dealii::Function<dim> > density;
+		std::shared_ptr< dealii::Function<dim> > epsilon;
 		std::shared_ptr< dealii::Function<dim> > f;
 		std::shared_ptr< dealii::Function<dim> > u_D;
 		std::shared_ptr< dealii::Function<dim> > u_0;

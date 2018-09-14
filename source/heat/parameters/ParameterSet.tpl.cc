@@ -2,6 +2,7 @@
  * @file   ParameterSet.cc
  * @author Uwe Koecher (UK)
  *
+ * @date 2018-09-14, unified to other DTM programs, UK
  * @date 2018-07-25, new parameters dwr, UK
  * @date 2018-03-06, UK
  * @date 2017-09-11, UK
@@ -46,23 +47,47 @@ ParameterSet(
 	
 	dim = static_cast<unsigned int> (handler->get_integer("dim"));
 	
+	handler->enter_subsection("Problem Specification"); {
+		fe.primal.space_type = handler->get("primal space type");
+		fe.primal.space_type_support_points = handler->get(
+			"primal space type support points"
+		);
+		fe.primal.p = static_cast<unsigned int> (handler->get_integer("primal p"));
+		
+		fe.primal.time_type = handler->get("primal time type");
+		fe.primal.time_type_support_points = handler->get(
+			"primal time type support points"
+		);
+		fe.primal.r = static_cast<unsigned int> (handler->get_integer("primal r"));
+		
+		
+		fe.dual.space_type = handler->get("dual space type");
+		fe.dual.space_type_support_points = handler->get(
+			"dual space type support points"
+		);
+		fe.dual.q = static_cast<unsigned int> (handler->get_integer("dual q"));
+		
+		fe.dual.time_type = handler->get("dual time type");
+		fe.dual.time_type_support_points = handler->get(
+			"dual time type support points"
+		);
+		fe.dual.s = static_cast<unsigned int> (handler->get_integer("dual s"));
+	}
+	handler->leave_subsection();
+	
 	handler->enter_subsection("Mesh Specification"); {
 		use_mesh_input_file = handler->get_bool("use mesh input file");
 		mesh_input_filename = handler->get("mesh input filename");
 		
-		Grid_Class = handler->get("Grid Class");
-		Grid_Class_Options = handler->get("Grid Class Options");
-		
 		TriaGenerator = handler->get("TriaGenerator");
 		TriaGenerator_Options = handler->get("TriaGenerator Options");
+		
+		Grid_Class = handler->get("Grid Class");
+		Grid_Class_Options = handler->get("Grid Class Options");
 		
 		global_refinement = static_cast<unsigned int> (
 			handler->get_integer("global refinement")
 		);
-		
-		fe.element_type = handler->get("element type");
-		fe.p = static_cast<unsigned int> (handler->get_integer("primal p"));
-		fe.q = static_cast<unsigned int> (handler->get_integer("dual q"));
 	}
 	handler->leave_subsection();
 	
@@ -70,25 +95,11 @@ ParameterSet(
 		t0 = handler->get_double("initial time");
 		T = handler->get_double("final time");
 		tau_n = handler->get_double("time step size");
-		
-		primal_time_discretisation = handler->get("primal time discretisation");
-		dual_time_discretisation = handler->get("dual time discretisation");
-		primal_time_quadrature = handler->get("primal time quadrature");
-		dual_time_quadrature = handler->get("dual time quadrature");
 	}
 	handler->leave_subsection();
 	
 	handler->enter_subsection("DWR"); {
 		dwr.loops = static_cast<unsigned int> (handler->get_integer("loops"));
-		
-		
-		dwr.refine_and_coarsen.time.strategy = handler->get(
-			"refine and coarsen time strategy"
-		);
-		
-		dwr.refine_and_coarsen.time.top_fraction = handler->get_double(
-			"refine and coarsen time top fraction"
-		);
 		
 		
 		dwr.refine_and_coarsen.space.strategy = handler->get(
@@ -115,25 +126,34 @@ ParameterSet(
 		dwr.refine_and_coarsen.space.theta2 = handler->get_double(
 			"refine and coarsen space Schwegler theta2"
 		);
+		
+		
+		dwr.refine_and_coarsen.time.strategy = handler->get(
+			"refine and coarsen time strategy"
+		);
+		
+		dwr.refine_and_coarsen.time.top_fraction = handler->get_double(
+			"refine and coarsen time top fraction"
+		);
 	}
 	handler->leave_subsection();
 	
 	handler->enter_subsection("Parameter Specification"); {
-		epsilon_function = handler->get(
-			"epsilon function"
-		);
-		
-		epsilon_options = handler->get(
-			"epsilon options"
-		);
-		
-		
 		density_function = handler->get(
 			"density function"
 		);
 		
 		density_options = handler->get(
 			"density options"
+		);
+		
+		
+		epsilon_function = handler->get(
+			"epsilon function"
+		);
+		
+		epsilon_options = handler->get(
+			"epsilon options"
 		);
 		
 		
@@ -145,14 +165,13 @@ ParameterSet(
 			"force options"
 		);
 		
-		
 		force_assembler_n_quadrature_points = static_cast<unsigned int> (
 			handler->get_integer(
 				"force assembler quadrature points"
 			)
 		);
 		if (handler->get_bool("force assembler quadrature auto mode")) {
-			force_assembler_n_quadrature_points += fe.p + 1;
+			force_assembler_n_quadrature_points += fe.primal.p + 1;
 		}
 		
 		
@@ -164,14 +183,13 @@ ParameterSet(
 			"dirichlet boundary u_D options"
 		);
 		
-		
 		dirichlet_assembler_n_quadrature_points = static_cast<unsigned int> (
 			handler->get_integer(
 				"dirichlet assembler quadrature points"
 			)
 		);
 		if (handler->get_bool("dirichlet assembler quadrature auto mode")) {
-			dirichlet_assembler_n_quadrature_points += fe.p + 1;
+			dirichlet_assembler_n_quadrature_points += fe.primal.p + 1;
 		}
 		
 		
@@ -211,7 +229,7 @@ ParameterSet(
 		data_output.primal.trigger = handler->get_double("primal data output trigger time");
 		
 		if (handler->get_bool("primal data output patches auto mode")) {
-			data_output.primal.patches = fe.p;
+			data_output.primal.patches = fe.primal.p;
 		}
 		else {
 			data_output.primal.patches = static_cast<unsigned int> (
@@ -225,7 +243,7 @@ ParameterSet(
 		data_output.dual.trigger = handler->get_double("dual data output trigger time");
 		
 		if (handler->get_bool("dual data output patches auto mode")) {
-			data_output.dual.patches = fe.q;
+			data_output.dual.patches = fe.dual.q;
 		}
 		else {
 			data_output.dual.patches = static_cast<unsigned int> (

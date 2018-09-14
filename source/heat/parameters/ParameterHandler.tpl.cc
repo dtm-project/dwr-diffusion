@@ -2,6 +2,7 @@
  * @file   ParameterHandler.cc
  * @author Uwe Koecher (UK)
  *
+ * @date 2018-09-14, unified to other DTM programs, UK
  * @date 2018-07-25, new parameters dwr, UK
  * @date 2018-03-06, included from ewave, UK
  * @date 2017-10-25, UK
@@ -45,20 +46,216 @@ ParameterHandler() {
 		"dim"
 	);
 	
-	enter_subsection("Parameter Specification"); {
+	enter_subsection("Problem Specification"); {
 		declare_entry(
-			"epsilon function",
+			"primal space type",
+			"cG",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal space type support points",
+			"canonical",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal p",
+			"1",
+			dealii::Patterns::Integer()
+		);
+		
+		
+		declare_entry(
+			"primal time type",
+			"dG",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal time type support points",
+			"Gauss-Radau",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"primal r",
+			"0",
+			dealii::Patterns::Integer()
+		);
+		
+		
+		declare_entry(
+			"dual space type",
+			"cG",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual space type support points",
+			"canonical",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual q",
+			"2",
+			dealii::Patterns::Integer()
+		);
+		
+		
+		declare_entry(
+			"dual time type",
+			"cG",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual time type support points",
+			"Gauss-Lobatto",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"dual s",
+			"1",
+			dealii::Patterns::Integer()
+		);
+	}
+	leave_subsection();
+	
+	enter_subsection("Mesh Specification"); {
+		declare_entry(
+			"use mesh input file",
+			"false",
+			dealii::Patterns::Bool(),
+			"determines whether to use an input file or a deal.II GridGenerator"
+		);
+		
+		declare_entry(
+			"mesh input filename",
+			"./input/.empty",
+			dealii::Patterns::Anything(),
+			"filename of the mesh which can be read in with dealii::GridIn"
+		);
+		
+		declare_entry(
+			"TriaGenerator",
 			"invalid",
 			dealii::Patterns::Anything()
 		);
 		
 		declare_entry(
-			"epsilon options",
-			"",
+			"TriaGenerator Options",
+			"invalid",
 			dealii::Patterns::Anything()
 		);
 		
+		declare_entry(
+			"Grid Class",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
 		
+		declare_entry(
+			"Grid Class Options",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"global refinement",
+			"0",
+			dealii::Patterns::Integer(),
+			"Global refinements of the intial mesh"
+		);
+	}
+	leave_subsection();
+	
+	enter_subsection("Time Integration"); {
+		declare_entry(
+			"initial time",
+			"0.",
+			dealii::Patterns::Double(),
+			"initial time t0"
+		);
+		
+		declare_entry(
+			"final time",
+			"0.",
+			dealii::Patterns::Double(),
+			"final time T"
+		);
+		
+		declare_entry(
+			"time step size",
+			"1e-2",
+			dealii::Patterns::Double(),
+			"initial time step size"
+		);
+	}
+	leave_subsection();
+	
+	enter_subsection("DWR"); {
+		declare_entry(
+			"loops",
+			"2",
+			dealii::Patterns::Integer()
+		);
+		
+		
+		declare_entry(
+			"refine and coarsen space strategy",
+			"global",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"refine and coarsen space top fraction",
+			"1.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space bottom fraction",
+			"0.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space max growth factor n_active_cells",
+			"4",
+			dealii::Patterns::Integer()
+		);
+		
+		declare_entry(
+			"refine and coarsen space Schwegler theta1",
+			"1.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space Schwegler theta2",
+			"0.0",
+			dealii::Patterns::Double()
+		);
+		
+		
+		declare_entry(
+			"refine and coarsen time strategy",
+			"global",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"refine and coarsen time top fraction",
+			"1.0",
+			dealii::Patterns::Double()
+		);
+	}
+	leave_subsection();
+	
+	enter_subsection("Parameter Specification"); {
 		declare_entry(
 			"density function",
 			"invalid",
@@ -67,6 +264,19 @@ ParameterHandler() {
 		
 		declare_entry(
 			"density options",
+			"",
+			dealii::Patterns::Anything()
+		);
+		
+		
+		declare_entry(
+			"epsilon function",
+			"invalid",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"epsilon options",
 			"",
 			dealii::Patterns::Anything()
 		);
@@ -161,186 +371,6 @@ ParameterHandler() {
 		);
 	}
 	leave_subsection();
-	
-	
-	enter_subsection("Mesh Specification"); {
-		declare_entry(
-			"use mesh input file",
-			"false",
-			dealii::Patterns::Bool(),
-			"determines whether to use an input file or a deal.II GridGenerator"
-		);
-		
-		declare_entry(
-			"mesh input filename",
-			"./input/.empty",
-			dealii::Patterns::Anything(),
-			"filename of the mesh which can be read in with dealii::GridIn"
-		);
-		
-		declare_entry(
-			"Grid Class",
-			"invalid",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"Grid Class Options",
-			"invalid",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"TriaGenerator",
-			"invalid",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"TriaGenerator Options",
-			"invalid",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"global refinement",
-			"0",
-			dealii::Patterns::Integer(),
-			"Global refinements of the intial mesh"
-		);
-		
-		
-		declare_entry(
-			"element type",
-			"canocial",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"primal p",
-			"1",
-			dealii::Patterns::Integer(),
-			"Polynomial degree p of primal problem"
-		);
-		
-		declare_entry(
-			"dual q",
-			"1",
-			dealii::Patterns::Integer(),
-			"Polynomial degree q of dual problem"
-		);
-	}
-	leave_subsection();
-	
-	
-	enter_subsection("Time Integration"); {
-		declare_entry(
-			"initial time",
-			"0.",
-			dealii::Patterns::Double(),
-			"initial time t0"
-		);
-		
-		declare_entry(
-			"final time",
-			"0.",
-			dealii::Patterns::Double(),
-			"final time T"
-		);
-		
-		declare_entry(
-			"time step size",
-			"1e-2",
-			dealii::Patterns::Double(),
-			"initial time step size"
-		);
-		
-		declare_entry(
-			"primal time discretisation",
-			"dG0",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"dual time discretisation",
-			"cG1",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"primal time quadrature",
-			"G1",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"dual time quadrature",
-			"G1",
-			dealii::Patterns::Anything()
-		);
-	}
-	leave_subsection();
-	
-	
-	enter_subsection("DWR"); {
-		declare_entry(
-			"loops",
-			"2",
-			dealii::Patterns::Integer()
-		);
-		
-		
-		declare_entry(
-			"refine and coarsen time strategy",
-			"global",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"refine and coarsen time top fraction",
-			"1.0",
-			dealii::Patterns::Double()
-		);
-		
-		
-		declare_entry(
-			"refine and coarsen space strategy",
-			"global",
-			dealii::Patterns::Anything()
-		);
-		
-		declare_entry(
-			"refine and coarsen space top fraction",
-			"1.0",
-			dealii::Patterns::Double()
-		);
-		
-		declare_entry(
-			"refine and coarsen space bottom fraction",
-			"0.0",
-			dealii::Patterns::Double()
-		);
-		
-		declare_entry(
-			"refine and coarsen space max growth factor n_active_cells",
-			"4",
-			dealii::Patterns::Integer()
-		);
-		
-		declare_entry(
-			"refine and coarsen space Schwegler theta1",
-			"1.0",
-			dealii::Patterns::Double()
-		);
-		
-		declare_entry(
-			"refine and coarsen space Schwegler theta2",
-			"0.0",
-			dealii::Patterns::Double()
-		);
-	}
-	leave_subsection();
-	
 	
 	enter_subsection("Output Quantities"); {
 		declare_entry(

@@ -2,6 +2,7 @@
  * @file   ParameterSet.hh
  * @author Uwe Koecher (UK)
  *
+ * @date 2018-09-14, unified to other DTM programs, UK
  * @date 2018-07-25, new parameters dwr, UK
  * @date 2018-03-06, included from ewave, UK
  * @date 2017-10-25, UK
@@ -47,12 +48,76 @@ struct ParameterSet {
 	
 	unsigned int dim;
 	
-	// parameter specification
-	std::string epsilon_function;
-	std::string epsilon_options;
+	// problem specification
+	struct {
+		struct {
+			std::string space_type;
+			std::string space_type_support_points;
+			unsigned int p;
+			
+			std::string time_type;
+			std::string time_type_support_points;
+			unsigned int r;
+		} primal;
+		
+		struct {
+			std::string space_type;
+			std::string space_type_support_points;
+			unsigned int q;
+			
+			std::string time_type;
+			std::string time_type_support_points;
+			unsigned int s;
+		} dual;
+	} fe;
 	
+	// mesh specification
+	bool use_mesh_input_file;
+	std::string mesh_input_filename;
+	
+	std::string TriaGenerator;
+	std::string TriaGenerator_Options;
+	
+	std::string Grid_Class;
+	std::string Grid_Class_Options;
+	
+	unsigned int global_refinement;
+	
+	// time integration
+	double t0;
+	double T;
+	double tau_n;
+	
+	// dwr
+	struct {
+		unsigned int loops;
+		
+		struct {
+			struct {
+				std::string strategy; // global, fixed-fraction, Schwegler
+				
+				double top_fraction;
+				double bottom_fraction;
+				unsigned int max_growth_factor_n_active_cells;
+				
+				double theta1; // Schwegler
+				double theta2; // Schwegler
+			} space;
+			
+			struct {
+				std::string strategy; // global, fixed-fraction
+				
+				double top_fraction;
+			} time;
+		} refine_and_coarsen;
+	} dwr;
+	
+	// parameter specification
 	std::string density_function;
 	std::string density_options;
+	
+	std::string epsilon_function;
+	std::string epsilon_options;
 	
 	std::string force_function;
 	std::string force_options;
@@ -70,56 +135,6 @@ struct ParameterSet {
 	
 	std::string exact_solution_function;
 	std::string exact_solution_options;
-	
-	// mesh specification
-	bool use_mesh_input_file;
-	std::string mesh_input_filename;
-	
-	std::string Grid_Class;
-	std::string Grid_Class_Options;
-	std::string TriaGenerator;
-	std::string TriaGenerator_Options;
-	
-	unsigned int global_refinement;
-	
-	struct {
-		std::string element_type;
-		unsigned int p;
-		unsigned int q;
-	} fe;
-	
-	// time integration
-	double t0;
-	double T;
-	double tau_n;
-	std::string primal_time_discretisation;
-	std::string dual_time_discretisation;
-	std::string primal_time_quadrature;
-	std::string dual_time_quadrature;
-	
-	// dwr
-	struct {
-		unsigned int loops;
-		
-		struct {
-			struct {
-				std::string strategy; // global, fixed-fraction
-				
-				double top_fraction;
-			} time;
-			
-			struct {
-				std::string strategy; // global, fixed-fraction, Schwegler
-				
-				double top_fraction;
-				double bottom_fraction;
-				unsigned int max_growth_factor_n_active_cells;
-				
-				double theta1; // Schwegler
-				double theta2; // Schwegler
-			} space;
-		} refine_and_coarsen;
-	} dwr;
 	
 	// data output
 	struct {
