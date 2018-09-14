@@ -1,13 +1,15 @@
 /**
- * @file ExactSolutions.hh
+ * @file ExactSolution_KoecherBruchhaeuser1.inst.in
+ * @author Marius Paul Bruchhaeuser (MPB)
  * @author Uwe Koecher (UK)
  * 
+ * @date 2018-09-14, MPB, UK
  * @date 2018-07-20, UK
- * 
- * @brief Collects all ExactSolution functions.
+ *
+ * @brief Instantiation file
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -24,10 +26,15 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolutions_hh
-#define __ExactSolutions_hh
+#ifndef __ExactSolution_KoecherBruchhaeuser1_inst_in
+#define __ExactSolution_KoecherBruchhaeuser1_inst_in
 
-#include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
-#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser1.tpl.hh>
+namespace heat {
+namespace exact_solution {
+
+template class KoecherBruchhaeuser1<2>;
+template class KoecherBruchhaeuser1<3>;
+
+}} // namespaces
 
 #endif

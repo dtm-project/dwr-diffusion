@@ -28,5 +28,6 @@
 #define __DirichletBoundarys_hh
 
 #include <heat/DirichletBoundary/DirichletBoundary_Hartmann142.tpl.hh>
+#include <heat/DirichletBoundary/DirichletBoundary_KoecherBruchhaeuser1.tpl.hh>
 
 #endif

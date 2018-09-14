@@ -29,5 +29,6 @@
 #define __InitialValues_hh
 
 #include <heat/InitialValue/InitialValue_Hartmann142.tpl.hh>
+#include <heat/InitialValue/InitialValue_KoecherBruchhaeuser1.tpl.hh>
 
 #endif
