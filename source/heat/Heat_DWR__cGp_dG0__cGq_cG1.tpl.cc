@@ -227,7 +227,7 @@ init_functions() {
 		Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
 	}
 	
-	// exact solution (if any)
+	// exact solution u_E (if any)
 	{
 		heat::exact_solution::Selector<dim> selector;
 		selector.create_function(
@@ -1918,6 +1918,7 @@ compute_error_indicators() {
 	
 	error_estimator.dwr->estimate(
 		function.epsilon,
+		function.density,
 		function.f,
 		function.u_D,
 		function.u_0,
@@ -2023,7 +2024,7 @@ refine_and_coarsen_space_time_grid() {
 			const auto eta_criterium_for_mark_time_refinement{
 				eta_sorted[ static_cast<int>(N)
 					- static_cast<int>(std::floor(static_cast<double>(N)
-						* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
+					* parameter_set->dwr.refine_and_coarsen.time.top_fraction)) ]
 			};
 			
 			auto slab{grid->slabs.begin()};
@@ -2046,35 +2047,6 @@ refine_and_coarsen_space_time_grid() {
 		}
 	}
 	
-	
-	////////////////////////////////////////////////////////////////////////////
-	// Schwegler space-time refinement strategy
-	//
-	
-// 	// TODO: read in from parameter input
-// 	const double theta1 = 1.2;
-// 	const double theta2 = 1.2;
-// // 	const double theta2 = std::max(theta1*2., 4.999);
-// 	
-	
-// 	Assert(
-// 		((theta1 > 1.) && (theta1 < 5.)),
-// 		dealii::ExcMessage("theta1 must be in (1,5)")
-// 	);
-// 	
-// 	Assert(
-// 		((theta2 > 1.) && (theta2 < 5.)),
-// 		dealii::ExcMessage("theta2 must be in (1,5)")
-// 	);
-// 	
-// 	Assert(
-// 		(theta2 >= theta1),
-// 		dealii::ExcMessage("(theta2 >= theta1)")
-// 	);
-
-
-
-
 	// 3rd loop execute_coarsening_and_refinement
 	{
 		unsigned int K_max{0};
@@ -2116,6 +2088,25 @@ refine_and_coarsen_space_time_grid() {
 			}
 			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("Schwegler") == 0) {
 				// mark for refinement with strategy from K. Schwegler PhD thesis
+				
+				Assert(
+					((parameter_set->dwr.refine_and_coarsen.space.theta1 > 1.)
+					&& (parameter_set->dwr.refine_and_coarsen.space.theta1 < 5.)),
+					dealii::ExcMessage("theta1 must be in (1,5)")
+				);
+				
+				Assert(
+					((parameter_set->dwr.refine_and_coarsen.space.theta2 > 1.)
+					&& (parameter_set->dwr.refine_and_coarsen.space.theta2 < 5.)),
+					dealii::ExcMessage("theta2 must be in (1,5)")
+				);
+				
+				Assert(
+					(parameter_set->dwr.refine_and_coarsen.space.theta2 >=
+					parameter_set->dwr.refine_and_coarsen.space.theta1),
+					dealii::ExcMessage("(theta2 >= theta1)")
+				);
+				
 				const double theta{ slab->refine_in_time ?
 					parameter_set->dwr.refine_and_coarsen.space.theta1 :
 					parameter_set->dwr.refine_and_coarsen.space.theta2

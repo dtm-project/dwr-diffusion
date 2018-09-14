@@ -101,6 +101,7 @@ ErrorEstimateOnCell<dim>::ErrorEstimateOnCell(const ErrorEstimateOnCell &scratch
 	value_f(scratch.value_f),
 	value_epsilon(scratch.value_epsilon),
 	grad_epsilon(scratch.grad_epsilon),
+	value_density(scratch.value_density),
 	val_R_u_kh_j(scratch.val_R_u_kh_j),
 	val_u_kh_j(scratch.val_u_kh_j),
 	val_z_Rz_j(scratch.val_z_Rz_j),
@@ -243,6 +244,7 @@ void
 ErrorEstimator<dim>::
 estimate(
 	std::shared_ptr< dealii::Function<dim> > _epsilon,
+	std::shared_ptr< dealii::Function<dim> > _density,
 	std::shared_ptr< dealii::Function<dim> > _f,
 	std::shared_ptr< dealii::Function<dim> > _u_D,
 	std::shared_ptr< dealii::Function<dim> > _u_0,
@@ -254,6 +256,9 @@ estimate(
 ) {
 	Assert(_epsilon.use_count(), dealii::ExcNotInitialized());
 	function.epsilon = _epsilon;
+	
+	Assert(_density.use_count(), dealii::ExcNotInitialized());
+	function.density = _density;
 	
 	Assert(_f.use_count(), dealii::ExcNotInitialized());
 	function.f = _f;
@@ -1062,22 +1067,23 @@ assemble_error_on_cell(
 				scratch.fe_values.quadrature_point(scratch.q), 0
 			);
 		
+		// not needed, because \partial_t u = 0 (dG(0)->constant in time), see below
+		scratch.value_density =
+			function.density->value(
+				scratch.fe_values.quadrature_point(scratch.q), 0
+			);
+			
 		scratch.val_R_u_kh_j = 0.;
-		scratch.val_u_kh_j = 0.;
 		scratch.val_z_Rz_j = 0.;
 		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
 			++scratch.j) {
-			// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
 			scratch.val_R_u_kh_j +=
+				// - 0 <= here => - density(x_q,t_q) * \partial_t u * 1/tau_n
 				scratch.local_u0[scratch.j]
 				* (scratch.grad_phi[scratch.j] * scratch.grad_epsilon)
 				+ scratch.value_epsilon
 				* scratch.local_u0[scratch.j] * scratch.laplace_phi[scratch.j];
 			
-			scratch.val_u_kh_j +=
-				(scratch.local_up[scratch.j] - scratch.local_um[scratch.j])
-				* scratch.phi[scratch.j];
-				
 			scratch.val_z_Rz_j +=
 				(scratch.local_z0[scratch.j] - scratch.local_Rz0[scratch.j])
 				* scratch.phi[scratch.j];
@@ -1093,9 +1099,14 @@ assemble_error_on_cell(
 			* scratch.JxW
 		);
 		
+		scratch.val_u_kh_j = 0.;
 		scratch.val_z_Rz_j = 0.;
 		for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
 			++scratch.j) {
+			scratch.val_u_kh_j +=
+				(scratch.local_up[scratch.j] - scratch.local_um[scratch.j])
+				* scratch.phi[scratch.j];
+				
 			scratch.val_z_Rz_j +=
 				(scratch.local_zm[scratch.j] - scratch.local_Rzm[scratch.j])
 				* scratch.phi[scratch.j];
