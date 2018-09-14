@@ -171,7 +171,7 @@ ParameterSet(
 			)
 		);
 		if (handler->get_bool("force assembler quadrature auto mode")) {
-			force_assembler_n_quadrature_points += fe.p + 1;
+			force_assembler_n_quadrature_points += fe.primal.p + 1;
 		}
 		
 		
@@ -189,7 +189,7 @@ ParameterSet(
 			)
 		);
 		if (handler->get_bool("dirichlet assembler quadrature auto mode")) {
-			dirichlet_assembler_n_quadrature_points += fe.p + 1;
+			dirichlet_assembler_n_quadrature_points += fe.primal.p + 1;
 		}
 		
 		
@@ -229,7 +229,7 @@ ParameterSet(
 		data_output.primal.trigger = handler->get_double("primal data output trigger time");
 		
 		if (handler->get_bool("primal data output patches auto mode")) {
-			data_output.primal.patches = fe.p;
+			data_output.primal.patches = fe.primal.p;
 		}
 		else {
 			data_output.primal.patches = static_cast<unsigned int> (
@@ -243,7 +243,7 @@ ParameterSet(
 		data_output.dual.trigger = handler->get_double("dual data output trigger time");
 		
 		if (handler->get_bool("dual data output patches auto mode")) {
-			data_output.dual.patches = fe.q;
+			data_output.dual.patches = fe.dual.q;
 		}
 		else {
 			data_output.dual.patches = static_cast<unsigned int> (
