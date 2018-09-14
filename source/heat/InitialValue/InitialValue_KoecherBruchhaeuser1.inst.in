@@ -1,11 +1,13 @@
 /**
- * @file InitialValues.hh
- * @author Uwe Koecher (UK)
+ * @file InitialValue_KoecherBruchhaeuser1.tpl.hh
  * @author Marius Paul Bruchhaeuser (MPB)
+ * @author Uwe Koecher (UK)
  * 
- * @date 2018-07-20, UK
- * 
- * @brief Collects all InitialValue functions.
+ * @date 2018-09-14, MPB, UK
+ * @date 2018-03-09, UK
+ * @date 2018-03-08, included from ewave, UK
+ * @date 2017-10-25, UK
+ * @date 2013-08-15, DTM++ v1, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -25,10 +27,15 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __InitialValues_hh
-#define __InitialValues_hh
+#ifndef __InitialValue_KoecherBruchhaeuser1_inst_in
+#define __InitialValue_KoecherBruchhaeuser1_inst_in
 
-#include <heat/InitialValue/InitialValue_Hartmann142.tpl.hh>
-#include <heat/InitialValue/InitialValue_KoecherBruchhaeuser1.tpl.hh>
+namespace heat {
+namespace initial_value {
+
+template class KoecherBruchhaeuser1<2>;
+template class KoecherBruchhaeuser1<3>;
+
+}} // namespaces
 
 #endif
