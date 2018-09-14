@@ -264,6 +264,12 @@ protected:
 	virtual void compute_effectivity_index();
 	
 	virtual void refine_and_coarsen_space_time_grid();
+	
+	////////////////////////////////////////////////////////////////////////////
+	// other
+	//
+	
+	unsigned int setw_value_dwr_loops;
 };
 
 } // namespace

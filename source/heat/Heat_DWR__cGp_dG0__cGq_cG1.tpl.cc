@@ -130,6 +130,11 @@ run() {
 		);
 	}
 	
+	// determine setw value for dwr loop number of data output filename
+	setw_value_dwr_loops = static_cast<unsigned int>(
+		std::floor(std::log10(parameter_set->dwr.loops))+1
+	);
+	
 	init_functions();
 	init_grid();
 	
@@ -145,7 +150,7 @@ run() {
 		DTM::pout
 			<< "***************************************************************"
 			<< "*****************" << std::endl
-			<< "dwr loop = " << dwr_loop << std::endl;
+			<< "dwr loop = " << dwr_loop+1 << std::endl;
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -964,7 +969,9 @@ primal_do_data_output(
 	);
 	
 	std::ostringstream filename;
-	filename << "solution-dwr_loop-" << dwr_loop;
+	filename
+		<< "solution-dwr_loop-"
+		<< std::setw(setw_value_dwr_loops) << std::setfill('0') << dwr_loop+1;
 	
 	double &t{primal.data_output_time_value};
 	
@@ -1760,7 +1767,9 @@ dual_do_data_output(
 	);
 	
 	std::ostringstream filename;
-	filename << "dual-dwr_loop-" << dwr_loop;
+	filename
+		<< "dual-dwr_loop-"
+		<< std::setw(setw_value_dwr_loops) << std::setfill('0') << dwr_loop+1;
 	
 	double &t{dual.data_output_time_value};
 	
