@@ -1,7 +1,10 @@
 /**
  * @file Force_KoecherBruchhaeuser1.inst.in
+ *
  * @author Uwe Koecher (UK)
- * @date 2018-07-20, UK
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-09-14, MPB
  *
  * @brief Instantiation file
  */

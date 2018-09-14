@@ -1,12 +1,10 @@
 /**
  * @file Force_KoecherBruchhaeuser1.tpl.cc
- * @author Marius Paul Bruchhaeuser (MPB)
+ *
  * @author Uwe Koecher (UK)
- * 
+ * @author Marius Paul Bruchhaeuser (MPB)
+ *
  * @date 2018-09-14, MPB, UK
- * @date 2018-03-08, included from ewave, UK
- * @date 2017-10-25, UK
- * @date 2013-08-15, DTM++ v1, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -27,10 +25,6 @@
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
 #include <heat/Force/Force_KoecherBruchhaeuser1.tpl.hh>
-
-// DEAL.II includes
-
-// C++ includes
 
 namespace heat {
 namespace force {
@@ -55,7 +49,8 @@ value(
 	
 	double dtu = 
 		( (1./(1. + x2*x2))*Nenner
-		- std::atan(x2)*( ( a * (x[0]-x0) * M_PI * std::sin(2.*M_PI*t) ) - ( a * (x[1]-x1) * M_PI * std::cos(2.*M_PI*t)) ) )/
+		- std::atan(x2)*( ( a * (x[0]-x0) * M_PI * std::sin(2.*M_PI*t) )
+		- ( a * (x[1]-x1) * M_PI * std::cos(2.*M_PI*t)) ) )/
 		(Nenner*Nenner);
 	
 	const double u_xx =
