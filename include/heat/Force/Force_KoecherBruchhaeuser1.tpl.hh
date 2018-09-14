@@ -1,16 +1,15 @@
 /**
- * @file Forces.hh
+ * @file Force_KoecherBruchhaeuser1.tpl.hh
+ * @author Marius Paul Bruchhaeuser (MPB)
  * @author Uwe Koecher (UK)
  * 
+ * @date 2018-09-14, MPB, UK
  * @date 2018-03-08, included from ewave, UK
  * @date 2017-10-25, UK
- * @date 2017-02-10, xwave, UK
- * @date 2016-05-30, biot, UK
- * 
- * @brief Collects all Force functions.
+ * @date 2013-08-15, DTM++ v1, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -27,12 +26,41 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Forces_hh
-#define __Forces_hh
+#ifndef __Force_KoecherBruchhaeuser1_tpl_hh
+#define __Force_KoecherBruchhaeuser1_tpl_hh
 
-#include <heat/Force/Force_Selector.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
 
-#include <heat/Force/Force_Hartmann142.tpl.hh>
-#include <heat/Force/Force_KoecherBruchhaeuser1.tpl.hh>
+// C++ includes
+
+namespace heat {
+namespace force {
+
+template<int dim>
+class KoecherBruchhaeuser1 : public dealii::Function<dim> {
+public:
+	KoecherBruchhaeuser1(
+		const double &a,
+		const double &epsilon
+	) : dealii::Function<dim> (1), a(a), epsilon(epsilon) { };
+	
+	virtual ~KoecherBruchhaeuser1() = default;
+	
+	/// get value (of a specific component) from a function evaluation
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
+
+private:
+	const double a;
+	const double epsilon;
+};
+
+}}
 
 #endif

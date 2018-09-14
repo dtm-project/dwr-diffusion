@@ -157,6 +157,32 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
+	if (_type.compare("Force_KoecherBruchhaeuser1") == 0) {
+		AssertThrow(
+			options.size() == 2,
+			dealii::ExcMessage(
+				"force options invalid, "
+				"please check your input file data."
+			)
+		);
+		
+		function = std::make_shared< heat::force::KoecherBruchhaeuser1<dim> >(
+			std::stod(options.at(0)), // a
+			std::stod(options.at(1))  // epsilon
+		);
+		
+		DTM::pout
+			<< "force selector: created KoecherBruchhaeuser1 "
+			<< "as force function, with " << std::endl
+			<< "\ta = " << std::stod(options.at(0)) << " , and " << std::endl
+			<< "\tepsilon = " << std::stod(options.at(1)) << " . " << std::endl
+			<< std::endl;
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// 
 	AssertThrow(
 		false,
 		dealii::ExcMessage("force function unknown, please check your input file data.")
