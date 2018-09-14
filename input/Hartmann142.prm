@@ -12,7 +12,8 @@ subsection Problem Specification
     set primal p = 1
     
     set primal time type = dG
-    set primal time support points = Gauss-Radau
+    set primal time type support points = Gauss-Radau
+#    set primal time type support points = Gauss
     set primal r = 0
     
     # dual problem
@@ -21,7 +22,8 @@ subsection Problem Specification
     set dual q = 2
     
     set dual time type = cG
-    set dual time support points = Gauss-Lobatto
+    set dual time type support points = Gauss-Lobatto
+#    set primal time type support points = Gauss
     set dual s = 1
 end
 
@@ -120,3 +122,4 @@ subsection Output Quantities
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
 end
+
