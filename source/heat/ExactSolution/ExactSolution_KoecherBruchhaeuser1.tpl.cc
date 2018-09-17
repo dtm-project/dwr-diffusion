@@ -48,7 +48,7 @@ value(
 	const double x0 = 0.5+0.25*std::cos(2.*M_PI*t);
 	const double x1 = 0.5+0.25*std::sin(2.*M_PI*t);
 	
-	return ( std::atan(10.*(M_PI / 2.)*(2.*t-1.)) ) / (
+	return std::atan(10.*M_PI_2 * (2.*t-1.)) / (
 		1. + a*( (x[0]-x0)*(x[0]-x0) + (x[1]-x1)*(x[1]-x1) )
 	);
 }
