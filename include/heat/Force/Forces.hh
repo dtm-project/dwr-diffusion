@@ -33,5 +33,6 @@
 #include <heat/Force/Force_Selector.tpl.hh>
 
 #include <heat/Force/Force_Hartmann142.tpl.hh>
+#include <heat/Force/Force_KoecherBruchhaeuser1.tpl.hh>
 
 #endif

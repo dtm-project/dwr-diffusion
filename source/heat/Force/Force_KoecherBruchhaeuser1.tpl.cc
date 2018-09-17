@@ -1,11 +1,10 @@
 /**
- * @file InitialValues.hh
+ * @file Force_KoecherBruchhaeuser1.tpl.cc
+ *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * 
- * @date 2018-07-20, UK
- * 
- * @brief Collects all InitialValue functions.
+ *
+ * @date 2018-09-14, MPB, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
@@ -25,10 +24,49 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __InitialValues_hh
-#define __InitialValues_hh
+#include <heat/Force/Force_KoecherBruchhaeuser1.tpl.hh>
 
-#include <heat/InitialValue/InitialValue_Hartmann142.tpl.hh>
-#include <heat/InitialValue/InitialValue_KoecherBruchhaeuser1.tpl.hh>
+namespace heat {
+namespace force {
 
-#endif
+template<int dim>
+double
+KoecherBruchhaeuser1<dim>::
+value(
+	const dealii::Point<dim> &x,
+	[[maybe_unused]]const unsigned int c
+) const {
+	Assert(c==0, dealii::ExcMessage("you want to get component value which is not implemented"));
+	Assert(dim==2, dealii::ExcNotImplemented());
+	
+	const double t{this->get_time()};
+	
+	const double x0 = 0.5+0.25*std::cos(2.*M_PI*t);
+	const double x1 = 0.5+0.25*std::sin(2.*M_PI*t);
+	
+	const double t0 = 10.*(M_PI_2)*(2.*t-1.);
+	
+	const double Nenner = 1. + a*( (x[0]-x0)*(x[0]-x0) + (x[1]-x1)*(x[1]-x1) );
+	
+	double dtu =
+		( (10.*M_PI / (t0*t0+1)) * Nenner
+		- std::atan(t0)*( ( a * (x[0]-x0) * M_PI * std::sin(2.*M_PI*t) )
+		- ( a * (x[1]-x1) * M_PI * std::cos(2.*M_PI*t)) ) )/
+		(Nenner*Nenner);
+	
+	const double u_xx =
+		std::atan(t0)*
+		(-2.*a*( 1./(Nenner*Nenner)
+		+ (x[0]-x0) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[0]-x0)) ) );
+		
+	const double u_yy =
+		std::atan(t0)*
+		(-2.*a*( 1./(Nenner*Nenner)
+		+ (x[1]-x1) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[1]-x1)) ) );
+	
+	return dtu - epsilon * (u_xx+u_yy);
+}
+
+}} //namespaces
+
+#include "Force_KoecherBruchhaeuser1.inst.in"

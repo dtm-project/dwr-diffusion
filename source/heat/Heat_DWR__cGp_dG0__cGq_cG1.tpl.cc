@@ -13,7 +13,7 @@
  * @brief Heat/DWR Problem with primal solver: cG(p)-dG(0) and dual solver: cG(q)-cG(1)
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -37,11 +37,13 @@
 
 #include <heat/grid/Grid_DWR_Selector.tpl.hh>
 
-#include <heat/Diffusion/Diffusion_Selector.tpl.hh>
 #include <heat/Density/Density_Selector.tpl.hh>
+#include <heat/Diffusion/Diffusion_Selector.tpl.hh>
 #include <heat/Force/Force_Selector.tpl.hh>
+
 #include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
 #include <heat/InitialValue/InitialValue_Selector.tpl.hh>
+
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 
 #include <heat/types/boundary_id.hh>
@@ -91,30 +93,47 @@ run() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
 	
 	// check primal time discretisation
-	if (parameter_set->primal_time_discretisation.compare("dG0") == 0) {
-		DTM::pout << "primal time discretisation = dG0" << std::endl;
+	if ((parameter_set->fe.primal.time_type.compare("dG") == 0) &&
+		(parameter_set->fe.primal.r == 0)) {
+		DTM::pout
+			<< "primal time discretisation = dG("
+			<< parameter_set->fe.primal.r
+			<< ")-Q_"
+			<< parameter_set->fe.primal.time_type_support_points
+			<< std::endl;
 	}
 	else {
 		AssertThrow(
 			false,
 			dealii::ExcMessage(
-				"parameter_set->primal_time_discretisation unknown"
+				"primal time discretisation unknown"
 			)
 		);
 	}
 	
 	// check dual time discretisation
-	if (parameter_set->dual_time_discretisation.compare("cG1") == 0) {
-		DTM::pout << "dual time discretisation = cG1" << std::endl;
+	if ((parameter_set->fe.dual.time_type.compare("cG") == 0) &&
+		(parameter_set->fe.dual.s == 1)) {
+		DTM::pout
+			<< "dual time discretisation = cG("
+			<< parameter_set->fe.dual.s
+			<< ")-Q_"
+			<< parameter_set->fe.dual.time_type_support_points
+			<< std::endl;
 	}
 	else {
 		AssertThrow(
 			false,
 			dealii::ExcMessage(
-				"parameter_set->dual_time_discretisation unknown"
+				"dual time discretisation unknown"
 			)
 		);
 	}
+	
+	// determine setw value for dwr loop number of data output filename
+	setw_value_dwr_loops = static_cast<unsigned int>(
+		std::floor(std::log10(parameter_set->dwr.loops))+1
+	);
 	
 	init_functions();
 	init_grid();
@@ -131,7 +150,7 @@ run() {
 		DTM::pout
 			<< "***************************************************************"
 			<< "*****************" << std::endl
-			<< "dwr loop = " << dwr_loop << std::endl;
+			<< "dwr loop = " << dwr_loop+1 << std::endl;
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -166,6 +185,17 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 init_functions() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	// density function density:
+	{
+		heat::diffusion::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->density_function,
+			parameter_set->density_options,
+			function.density
+		);
+		
+		Assert(function.density.use_count(), dealii::ExcNotInitialized());
+	}
 	
 	// diffusion function epsilon:
 	{
@@ -177,18 +207,6 @@ init_functions() {
 		);
 		
 		Assert(function.epsilon.use_count(), dealii::ExcNotInitialized());
-	}
-
-	// density function density:
-	{
-		heat::diffusion::Selector<dim> selector;
-		selector.create_function(
-			parameter_set->density_function,
-			parameter_set->density_options,
-			function.density
-		);
-		
-		Assert(function.density.use_count(), dealii::ExcNotInitialized());
 	}
 	
 	// force function f:
@@ -227,7 +245,7 @@ init_functions() {
 		Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
 	}
 	
-	// exact solution u_E (if any)
+	// exact solution function u_E (if any)
 	{
 		heat::exact_solution::Selector<dim> selector;
 		selector.create_function(
@@ -267,8 +285,11 @@ init_grid() {
 	// initialize slabs of grid
 	//
 	
-	Assert((parameter_set->fe.p), dealii::ExcInvalidState());
-	Assert((parameter_set->fe.p < parameter_set->fe.q), dealii::ExcInvalidState());
+	Assert((parameter_set->fe.primal.p), dealii::ExcInvalidState());
+	Assert(
+		(parameter_set->fe.primal.p < parameter_set->fe.dual.q),
+		dealii::ExcInvalidState()
+	);
 	
 	Assert((parameter_set->t0 >= 0), dealii::ExcInvalidState());
 	Assert((parameter_set->t0 < parameter_set->T), dealii::ExcInvalidState());
@@ -276,8 +297,8 @@ init_grid() {
 	
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
 	grid->initialize_slabs(
-		parameter_set->fe.p,
-		parameter_set->fe.q,
+		parameter_set->fe.primal.p,
+		parameter_set->fe.dual.q,
 		parameter_set->t0,
 		parameter_set->T,
 		parameter_set->tau_n
@@ -606,22 +627,15 @@ primal_do_forward_TMS(
 	while (slab != grid->slabs.end()) {
 		// local time variables: \f$ t0 \in I_n = (t_m, t_n) \f$
 		const double tm = slab->t_m;
+		
 		double t0{0};
-		// choose primal time quadrature (G1 or GR1)
-		if (parameter_set->primal_time_quadrature.compare("G1") == 0) {
-			t0 = tm + slab->tau_n()/2.;
-		}
-		else if (parameter_set->primal_time_quadrature.compare("GR1") == 0) {
+		if (parameter_set->fe.primal.time_type_support_points.compare("Gauss-Radau")==0) {
 			t0 = slab->t_n;
 		}
-		else {
-			AssertThrow(
-				false,
-				dealii::ExcMessage(
-					"parameter_set->primal_time_quadrature unknown"
-				)
-			);
+		else if (parameter_set->fe.primal.time_type_support_points.compare("Gauss")==0) {
+			t0 = tm + slab->tau_n()/2.;
 		}
+		
 		const double tn = slab->t_n;
 		
 		DTM::pout
@@ -774,7 +788,6 @@ primal_do_error_L2(
 	
 	dealii::QGauss<dim> quad_cell(
 		slab->primal.fe->tensor_degree()+1
-// 		slab->primal.fe->tensor_degree()+2
 	);
 	
 	dealii::Vector<double> difference_per_cell(
@@ -956,7 +969,9 @@ primal_do_data_output(
 	);
 	
 	std::ostringstream filename;
-	filename << "solution-dwr_loop-" << dwr_loop;
+	filename
+		<< "solution-dwr_loop-"
+		<< std::setw(setw_value_dwr_loops) << std::setfill('0') << dwr_loop+1;
 	
 	double &t{primal.data_output_time_value};
 	
@@ -1127,26 +1142,17 @@ dual_assemble_system(
 	
 	*dual.K = 0;
 	
-	// choose dual time quadrature (G1 or GL2)
-	if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
-		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
-		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
-		dual.K->add(slab->tau_n(),*dual.A);
-		dual.K->add(2.0, *dual.M);
-	}
-	else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
 		// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
 		DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
 		dual.K->add(slab->tau_n()/2., *dual.A);
-		dual.K->add(1.0, *dual.M);
+		dual.K->add(1., *dual.M);
 	}
-	else {
-		AssertThrow(
-			false,
-			dealii::ExcMessage(
-				"parameter_set->dual_time_quadrature unknown"
-			)
-		);
+	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
+		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
+		dual.K->add(slab->tau_n(),*dual.A);
+		dual.K->add(2., *dual.M);
 	}
 	
 	DTM::pout << " (done)" << std::endl;
@@ -1196,31 +1202,8 @@ dual_assemble_rhs(
 	u0_on_primal->reinit( slab->primal.dof->n_dofs() );
 	*u0_on_primal = 0;
 	
-	// choose dual time quadrature (G1 or GL2)
-	if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
-		//   get u_h(t0) from:    Omega_h^primal x I_{n}            => u->x[0]
-		//   (1) (1) evaluate primal solution u->x[0] at t0 (u(t0)) => u0_on_primal
-		//   (2) interpolated to: Omega_h^dual x I_{n} (t0)   => dual.u0
-		
-		// (1) evaluate primal solution u->x[0] at t0 (u(t0))
-		primal_get_u_t_on_slab(slab, u, t0, u0_on_primal);
-		
-		// (2) interpolate primal -> dual:
-		//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
-		//     - allow different FE-spaces: dof1.get_fe() != dof2.get_fe()
-		dealii::FETools::interpolate(
-			// primal solution
-			*slab->primal.dof,
-			*u0_on_primal,
-			// dual solution
-			*slab->dual.dof,
-			*slab->dual.constraints,
-			*dual.u0
-		);
-		
-		u0_on_primal = nullptr;
-	}
-	else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+	// determine u0_on_primal depending on dual time type support points
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
 		if ( n > 1 ) {
 			// n > 1:
 			//   get u_h(t0) from:    Omega_h^primal x I_{n-1} (t_{n-1})
@@ -1230,7 +1213,6 @@ dual_assemble_rhs(
 			// (1) interpolate_to_different_mesh (in primal):
 			//     - needs the same fe: dof1.get_fe() = dof2.get_fe()
 			//     - allow different triangulations: dof1.get_tria() != dof2.get_tria()
-
 			
 			dealii::VectorTools::interpolate_to_different_mesh(
 				// solution on I_{n-1}:
@@ -1291,13 +1273,28 @@ dual_assemble_rhs(
 			primal_um_on_t0 = nullptr;
 		}
 	}
-	else {
-		AssertThrow(
-			false,
-			dealii::ExcMessage(
-				"parameter_set->dual_time_quadrature unknown"
-			)
+	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+		//   get u_h(t0) from:    Omega_h^primal x I_{n}            => u->x[0]
+		//   (1) (1) evaluate primal solution u->x[0] at t0 (u(t0)) => u0_on_primal
+		//   (2) interpolated to: Omega_h^dual x I_{n} (t0)   => dual.u0
+		
+		// (1) evaluate primal solution u->x[0] at t0 (u(t0))
+		primal_get_u_t_on_slab(slab, u, t0, u0_on_primal);
+		
+		// (2) interpolate primal -> dual:
+		//     - needs the same tria: dof1.get_tria() == dof2.get_tria()
+		//     - allow different FE-spaces: dof1.get_fe() != dof2.get_fe()
+		dealii::FETools::interpolate(
+			// primal solution
+			*slab->primal.dof,
+			*u0_on_primal,
+			// dual solution
+			*slab->dual.dof,
+			*slab->dual.constraints,
+			*dual.u0
 		);
+		
+		u0_on_primal = nullptr;
 	}
 	
 	// init vector and run assemble J(v)(e) = (v,e)
@@ -1319,26 +1316,7 @@ dual_assemble_rhs(
 	*dual.Je0 *= 1./primal_L2_L2_error_u;
 	DTM::pout << " (done)" << std::endl;
 	
-	// choose dual time quadrature (G1 or GL2)
-	if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
-		////////////////////////////////////////////////////////////////////////
-		// beta_1,1 = 0 => beta_1,1 * Je^1 = 0
-		//
-		
-		////////////////////////////////////////////////////////////////////////
-		// construct vector b = (tau_n * Je^0) + (0 * Je^1)  + (M - 0* A) z^1
-		//
-		DTM::pout << "dwr-heat: construct linear system rhs vector b = (M - 0* A) z^1 + (tau * Je^0) + (0 * Je^1) ...";
-		
-		dual.b = std::make_shared< dealii::Vector<double> > ();
-		dual.b->reinit( slab->dual.dof->n_dofs() );
-		
-		// add 2 M z^1 
-		dual.M->vmult(*dual.b, *z->x[1]);
-		*dual.b *= 2.0;
-		dual.b->add(slab->tau_n(), *dual.Je0 );
-	}
-	else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
 		///////////////////////////////
 		// u_h(t1) = u_h(t1)|_{I_{n}}
 		//
@@ -1378,7 +1356,9 @@ dual_assemble_rhs(
 		// construct vector b = tau_n/2. * ( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
 		//
 		
-		DTM::pout << "dwr-heat: construct linear system rhs vector b = (M - tau_n/2 A) z^1 + tau/2 * ( Je^0 + Je^1 ) ...";
+		DTM::pout
+			<< "dwr-heat: construct linear system rhs vector "
+			<< "b = (M - tau_n/2 A) z^1 + tau/2 * ( Je^0 + Je^1 ) ...";
 		
 		dual.b = std::make_shared< dealii::Vector<double> > ();
 		dual.b->reinit( slab->dual.dof->n_dofs() );
@@ -1390,17 +1370,31 @@ dual_assemble_rhs(
 		
 		dual.b->add(slab->tau_n()/2., *dual.Je0 );
 		dual.b->add(slab->tau_n()/2., *dual.Je1 );
+		
+		DTM::pout << " (done)" << std::endl;
 	}
-	else {
-		AssertThrow(
-			false,
-			dealii::ExcMessage(
-				"parameter_set->dual_time_quadrature unknown"
-			)
-		);
+	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+		////////////////////////////////////////////////////////////////////////
+		// beta_1,1 = 0 => beta_1,1 * Je^1 = 0
+		//
+		
+		////////////////////////////////////////////////////////////////////////
+		// construct vector b = (tau_n * Je^0) + (0 * Je^1)  + (M - 0* A) z^1
+		//
+		DTM::pout
+			<< "dwr-heat: construct linear system rhs vector "
+			<< "b = (M - 0* A) z^1 + (tau * Je^0) + (0 * Je^1) ...";
+		
+		dual.b = std::make_shared< dealii::Vector<double> > ();
+		dual.b->reinit( slab->dual.dof->n_dofs() );
+		
+		// add 2 M z^1
+		dual.M->vmult(*dual.b, *z->x[1]);
+		*dual.b *= 2.0;
+		dual.b->add(slab->tau_n(), *dual.Je0 );
+		
+		DTM::pout << " (done)" << std::endl;
 	}
-	
-	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -1526,21 +1520,14 @@ dual_do_backward_TMS(
 		// local time variables: \f$ t0, t1 \in I_n = (t_m, t_n) \f$
 		const double tm = slab->t_m;
 		double t0{0};
-		// choose dual time quadrature (G1 or GL2)
-		if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
-			t0 = tm + slab->tau_n()/2.;
-		}
-		else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+		
+		if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
 			t0 = slab->t_m;
 		}
-		else {
-			AssertThrow(
-				false,
-				dealii::ExcMessage(
-					"parameter_set->dual_time_quadrature unknown"
-				)
-			);
+		else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+			t0 = tm + slab->tau_n()/2.;
 		}
+		
 		const double t1 = slab->t_n;
 		const double tn = slab->t_n;
 		
@@ -1553,20 +1540,7 @@ dual_do_backward_TMS(
 			// for 0 < n < N interpolate between two (different) spatial meshes
 			// the solution z(t_m)|_{I_{n+1}}  to  z(t_n)|_{I_n}
 			
-			// choose dual time quadrature (G1 or GL2)
-			if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
-				dealii::VectorTools::interpolate_to_different_mesh(
-					// solution on I_{n+1}:
-					*std::next(slab)->dual.dof,
-					*dual.zm,
-					// solution on I_n:
-					*slab->dual.dof,
-					*slab->dual.constraints,
-					*z->x[1]
-				);
-				dual.zm = nullptr;
-			}
-			else if (parameter_set->dual_time_quadrature.compare("GL2") == 0) {
+			if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
 				dealii::VectorTools::interpolate_to_different_mesh(
 					// solution on I_{n+1}:
 					*std::next(slab)->dual.dof,
@@ -1577,13 +1551,17 @@ dual_do_backward_TMS(
 					*z->x[1]
 				);
 			}
-			else {
-				AssertThrow(
-					false,
-					dealii::ExcMessage(
-						"parameter_set->dual_time_quadrature unknown"
-					)
+			else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+				dealii::VectorTools::interpolate_to_different_mesh(
+					// solution on I_{n+1}:
+					*std::next(slab)->dual.dof,
+					*dual.zm,
+					// solution on I_n:
+					*slab->dual.dof,
+					*slab->dual.constraints,
+					*z->x[1]
 				);
+				dual.zm = nullptr;
 			}
 		} // end if (n < N)
 		
@@ -1603,15 +1581,13 @@ dual_do_backward_TMS(
 		// prepare next I_n slab problem:
 		//
 		
-		// only needed for dual time quadrature G1,
-		// for GL2 z->[0]=zm
-		if (parameter_set->dual_time_quadrature.compare("G1") == 0) {
+		if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
 			// Evaluate dual solution z(tm) (at left time-point) and save as dual.zm,
 			// which is used to be interpolated to the "next" grid at tm.
 			dual.zm = std::make_shared< dealii::Vector<double> > ();
 			dual.zm->reinit( slab->dual.dof->n_dofs() );
 			*dual.zm = 0.;
-			dual_get_z_t_on_slab_Q_G1(slab, z, tm, dual.zm);
+			dual_get_z_t_on_slab(slab, z, tm, dual.zm);
 		}
 		
 		--n;
@@ -1647,7 +1623,7 @@ dual_do_backward_TMS(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_get_z_t_on_slab_Q_GL2(
+dual_get_z_t_on_slab(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const double &t,
@@ -1665,37 +1641,16 @@ dual_get_z_t_on_slab_Q_GL2(
 	const double _t{ (t - slab->t_m) / slab->tau_n() };
 	
 	// trial basis functions evaluation on reference interval
-	const double xi0{ 1. - _t };
-	const double xi1{ _t };
-	
-	z_result->equ(xi0, *z->x[0]);
-	z_result->add(xi1, *z->x[1]);
-}
-
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_get_z_t_on_slab_Q_G1(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const typename DTM::types::storage_data_vectors<2>::iterator &z,
-	const double &t,
-	std::shared_ptr< dealii::Vector<double> > &z_result
-) {
-	Assert( (t >= slab->t_m), dealii::ExcInvalidState() );
-	Assert( (t <= slab->t_n), dealii::ExcInvalidState() );
-	
-	z_result = std::make_shared< dealii::Vector<double> > ();
-	z_result->reinit(
-		slab->dual.dof->n_dofs()
-	);
-	
-	// get time _t on reference time interval I_hat = (0,1)
-	const double _t{ (t - slab->t_m) / slab->tau_n() };
-	
-	// trial basis functions evaluation on reference interval
-	const double xi0{ -2.0*_t + 2. };
-	const double xi1{ 2.0*_t - 1. };
+	double xi0{0.};
+	double xi1{0.};
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
+		xi0 = 1.-_t;
+		xi1 = _t;
+	}
+	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+		xi0 = -2.*_t+2.;
+		xi1 = 2.*_t-1.;
+	}
 	
 	z_result->equ(xi0, *z->x[0]);
 	z_result->add(xi1, *z->x[1]);
@@ -1812,7 +1767,9 @@ dual_do_data_output(
 	);
 	
 	std::ostringstream filename;
-	filename << "dual-dwr_loop-" << dwr_loop;
+	filename
+		<< "dual-dwr_loop-"
+		<< std::setw(setw_value_dwr_loops) << std::setfill('0') << dwr_loop+1;
 	
 	double &t{dual.data_output_time_value};
 	
@@ -1917,8 +1874,8 @@ compute_error_indicators() {
 		std::make_shared< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > ();
 	
 	error_estimator.dwr->estimate(
-		function.epsilon,
 		function.density,
+		function.epsilon,
 		function.f,
 		function.u_D,
 		function.u_0,

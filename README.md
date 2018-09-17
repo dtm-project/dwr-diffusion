@@ -23,10 +23,14 @@ make
 
 ### Who do I talk to? ###
 
-* Principial Author: Dr.-Ing. Dipl.-Ing. Uwe Koecher (koecher@hsu-hamburg.de)
+* Principial Author
+    * Dr.-Ing. Dipl.-Ing. Uwe Koecher (koecher@hsu-hamburg.de)
+* Contributors
+    * Marius P. Bruchhaeuser (bruchhaeuser@hsu-hamburg.de)
+
 
 ### License ###
-Copyright (C) 2012-2018 by Uwe Koecher and Marius Paul Bruchhäuser
+Copyright (C) 2012-2018 by Uwe Koecher and contributors
 
 This file is part of DTM++.
 

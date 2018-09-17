@@ -28,5 +28,6 @@
 #define __ExactSolutions_hh
 
 #include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
+#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser1.tpl.hh>
 
 #endif

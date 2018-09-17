@@ -1,14 +1,13 @@
 /**
- * @file ErrorEstimators.hh
+ * @file Force_KoecherBruchhaeuser1.tpl.hh
  *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- *
- * @date 2018-03-13, UK
- * @date 2017-11-08, UK, MPB
+ * 
+ * @date 2018-09-14, MPB, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
+/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -25,10 +24,39 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ErrorEstimators_hh
-#define __ErrorEstimators_hh
+#ifndef __Force_KoecherBruchhaeuser1_tpl_hh
+#define __Force_KoecherBruchhaeuser1_tpl_hh
 
-// Project includes
-#include <heat/ErrorEstimator/ErrorEstimator_DWR__cGp_dG0__cGq_cG1.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+
+namespace heat {
+namespace force {
+
+template<int dim>
+class KoecherBruchhaeuser1 : public dealii::Function<dim> {
+public:
+	KoecherBruchhaeuser1(
+		const double &a,
+		const double &epsilon
+	) : dealii::Function<dim> (1), a(a), epsilon(epsilon) { };
+	
+	virtual ~KoecherBruchhaeuser1() = default;
+	
+	/// get value (of a specific component) from a function evaluation
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
+
+private:
+	const double a;
+	const double epsilon;
+};
+
+}}
 
 #endif

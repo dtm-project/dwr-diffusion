@@ -1,14 +1,15 @@
 /**
- * @file ErrorEstimators.hh
+ * @file Force_KoecherBruchhaeuser1.inst.in
  *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
+ * 
+ * @date 2018-09-14, MPB
  *
- * @date 2018-03-13, UK
- * @date 2017-11-08, UK, MPB
+ * @brief Instantiation file
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -25,10 +26,15 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ErrorEstimators_hh
-#define __ErrorEstimators_hh
+#ifndef __Force_KoecherBruchhaeuser1_inst_in
+#define __Force_KoecherBruchhaeuser1_inst_in
 
-// Project includes
-#include <heat/ErrorEstimator/ErrorEstimator_DWR__cGp_dG0__cGq_cG1.tpl.hh>
+namespace heat {
+namespace force {
+
+template class KoecherBruchhaeuser1<2>;
+template class KoecherBruchhaeuser1<3>;
+
+}} // namespaces
 
 #endif
