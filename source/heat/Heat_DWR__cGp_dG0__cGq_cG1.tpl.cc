@@ -151,6 +151,8 @@ run() {
 			<< "***************************************************************"
 			<< "*****************" << std::endl
 			<< "dwr loop = " << dwr_loop+1 << std::endl;
+		// convergence_table
+		primal.convergence_table.add_value("DWR-loop", dwr_loop+1);
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -173,6 +175,9 @@ run() {
 		if ((dwr_loop+1) < parameter_set->dwr.loops)
 			refine_and_coarsen_space_time_grid();
 	}
+	
+	// finish convergence_table and write into tex-file
+	write_convergence_table_to_tex_file();
 }
 
 
@@ -1358,7 +1363,7 @@ dual_assemble_rhs(
 		
 		DTM::pout
 			<< "dwr-heat: construct linear system rhs vector "
-			<< "b = (M - tau_n/2 A) z^1 + tau/2 * ( Je^0 + Je^1 ) ...";
+			<< "b = (M - tau/2 A) z^1 + tau/2 * ( Je^0 + Je^1 ) ...";
 		
 		dual.b = std::make_shared< dealii::Vector<double> > ();
 		dual.b->reinit( slab->dual.dof->n_dofs() );
@@ -1902,6 +1907,21 @@ compute_effectivity_index() {
 	
 	const double I_eff{std::abs(eta/primal_L2_L2_error_u)};
 	DTM::pout << "I_eff = " << I_eff << std::endl;
+	
+	unsigned int K_max{0};
+	unsigned int slabs_size{0};
+	slabs_size = grid->slabs.size();
+	auto slab{grid->slabs.begin()};
+	auto ends{grid->slabs.end()};
+	for (; slab != ends; ++slab) {
+		K_max = (K_max > slab->tria->n_global_active_cells()) ? K_max : slab->tria->n_global_active_cells();
+	}
+	// convergence_table
+	primal.convergence_table.add_value("N_max", slabs_size);
+	primal.convergence_table.add_value("K_max", K_max);
+	primal.convergence_table.add_value("primal_L2_L2_error_u", primal_L2_L2_error_u);
+	primal.convergence_table.add_value("eta", eta);
+	primal.convergence_table.add_value("I_eff", I_eff);
 }
 
 
@@ -2114,6 +2134,57 @@ refine_and_coarsen_space_time_grid() {
 		
 		DTM::pout << "\t#Kmax (before refinement) = " << K_max << std::endl;
 	}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+write_convergence_table_to_tex_file() {
+// 	primal.convergence_table.set_precision("DWR-loop", 5);
+	primal.convergence_table.set_precision("primal_L2_L2_error_u", 5);
+	primal.convergence_table.set_precision("eta", 5);
+	primal.convergence_table.set_precision("I_eff", 3);
+	
+	primal.convergence_table.set_scientific("primal_L2_L2_error_u", true);
+	primal.convergence_table.set_scientific("eta", true);
+	
+	std::cout << std::endl;
+	primal.convergence_table.write_text(std::cout);
+	
+	// Set tex captions and formation of respective columns
+	primal.convergence_table.set_tex_caption("DWR-loop","DWR-loop");
+	primal.convergence_table.set_tex_caption("N_max","$N_{\\text{max}}$");
+	primal.convergence_table.set_tex_caption("K_max","$K_{\\text{max}}$");
+	primal.convergence_table.set_tex_caption("primal_L2_L2_error_u","$\\|e\\|_{(0,T)\\times\\Omega}$");
+	primal.convergence_table.set_tex_caption("eta","$\\eta$");
+	primal.convergence_table.set_tex_caption("I_eff","I$_{\\text{eff}}$");
+	primal.convergence_table.set_tex_format("DWR-loop","c");
+	primal.convergence_table.set_tex_format("N_max","r");
+	primal.convergence_table.set_tex_format("K_max","r");
+	primal.convergence_table.set_tex_format("primal_L2_L2_error_u","c");
+	primal.convergence_table.set_tex_format("eta","c");
+	primal.convergence_table.set_tex_format("I_eff","c");
+	
+	std::vector<std::string> new_order;
+	new_order.push_back("DWR-loop");
+	new_order.push_back("N_max");
+	new_order.push_back("K_max");
+	new_order.push_back("primal_L2_L2_error_u");
+	new_order.push_back("eta");
+	new_order.push_back("I_eff");
+	primal.convergence_table.set_column_order (new_order);
+		
+	primal.convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate);
+	primal.convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate_log2);
+
+	
+	// Write .tex-file
+	std::string conv_filename = "convergence";
+	conv_filename += "-table";
+	conv_filename += ".tex";
+	std::ofstream table_file(conv_filename.c_str());
+	primal.convergence_table.write_tex(table_file);
 }
 
 } // namespace
