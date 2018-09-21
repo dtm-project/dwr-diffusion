@@ -8,7 +8,7 @@ subsection Problem Specification
     
     # primal problem
     set primal space type = cG
-    set primal p = 3
+    set primal p = 1
     set primal space type support points = canonical
     
     set primal time type = dG
@@ -18,7 +18,7 @@ subsection Problem Specification
     
     # dual problem
     set dual space type = cG
-    set dual q = 4
+    set dual q = 2
     set dual space type support points = canonical
     
     set dual time type = cG
@@ -46,11 +46,11 @@ end
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
-    set time step size = 0.1
+    set time step size = 0.01
 end
 
 subsection DWR
-    set loops = 20
+    set loops = 1
     
     # space strategy: global, fixed_fraction or Schwegler
     set refine and coarsen space strategy = fixed_fraction

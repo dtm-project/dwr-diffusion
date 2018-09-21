@@ -49,20 +49,44 @@ value(
 	const double Nenner = 1. + a*( (x[0]-x0)*(x[0]-x0) + (x[1]-x1)*(x[1]-x1) );
 	
 	double dtu =
-		( (10.*M_PI / (t0*t0+1)) * Nenner
-		- std::atan(t0)*( ( a * (x[0]-x0) * M_PI * std::sin(2.*M_PI*t) )
-		- ( a * (x[1]-x1) * M_PI * std::cos(2.*M_PI*t)) ) )/
-		(Nenner*Nenner);
+		// Quotient rule (f'*g - f*g') / g^2 with f=atan(t0), g=Nenner
+// 		( (10.*M_PI / (t0*t0+1)) * Nenner
+// 		- std::atan(t0)*( ( a * (x[0]-x0) * M_PI * std::sin(2.*M_PI*t) )
+// 		- ( a * (x[1]-x1) * M_PI * std::cos(2.*M_PI*t)) ) )/
+// 		(Nenner*Nenner);
+		
+		// Product rule f'*g + f*g' with f=atan(t0), g=1/Nenner 
+// 		( (10.*M_PI / (1. + t0*t0)) * (1. / Nenner) )
+// 		+
+// 		(std::atan(t0) * ( ( a*( (x[1]-x1)*M_PI*std::cos(2.*M_PI*t)-(x[0]-x0)*M_PI*std::sin(2.*M_PI*t) ) )/
+// 		(Nenner*Nenner) ) );
+		
+		// MAPLE
+		( 10.*M_PI / ( Nenner*(25.*M_PI*M_PI*(2.*t-1)*(2.*t-1)+1) ) )
+		-
+		( ( std::atan(t0)*( a*M_PI*(x[0]-x0)*std::sin(2.*M_PI*t)-a*M_PI*(x[1]-x1)*std::cos(2.*M_PI*t) ) )/
+		(Nenner*Nenner) );
 	
 	const double u_xx =
-		std::atan(t0)*
-		(-2.*a*( 1./(Nenner*Nenner)
-		+ (x[0]-x0) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[0]-x0)) ) );
+// 		std::atan(t0)*
+// 		(-2.*a*( 1./(Nenner*Nenner)
+// 		+ (x[0]-x0) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[0]-x0)) ) );
+
+		// MAPLE
+		( ( 8.*std::atan(t0)*a*a*(x[0]-x0)*(x[0]-x0) ) / ( Nenner*Nenner*Nenner ) )
+		-
+		( ( 2.*std::atan(t0)*a ) / ( Nenner*Nenner ) );
+		
 		
 	const double u_yy =
-		std::atan(t0)*
-		(-2.*a*( 1./(Nenner*Nenner)
-		+ (x[1]-x1) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[1]-x1)) ) );
+// 		std::atan(t0)*
+// 		(-2.*a*( 1./(Nenner*Nenner)
+// 		+ (x[1]-x1) * (-2./(Nenner*Nenner*Nenner)*2.*a*(x[1]-x1)) ) );
+
+		// MAPLE
+		( ( 8.*std::atan(t0)*a*a*(x[1]-x1)*(x[1]-x1) ) / ( Nenner*Nenner*Nenner ) )
+		-
+		( ( 2.*std::atan(t0)*a ) / ( Nenner*Nenner ) );
 	
 	return dtu - epsilon * (u_xx+u_yy);
 }
