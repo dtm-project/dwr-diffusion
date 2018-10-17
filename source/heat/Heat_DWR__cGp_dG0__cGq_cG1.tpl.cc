@@ -2051,10 +2051,14 @@ refine_and_coarsen_space_time_grid() {
 			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("fixed_fraction") == 0) {
 				// mark for refinement with fixed fraction
 				// (similar but not identical to Hartmann Ex. Sec. 1.4.2)
+				const double top_fraction{ slab->refine_in_time ?
+					parameter_set->dwr.refine_and_coarsen.space.top_fraction1 :
+					parameter_set->dwr.refine_and_coarsen.space.top_fraction2
+				};
 				dealii::GridRefinement::refine_and_coarsen_fixed_fraction(
 					*slab->tria,
 					*eta_it->x[0],
-					parameter_set->dwr.refine_and_coarsen.space.top_fraction,
+					top_fraction,
 					parameter_set->dwr.refine_and_coarsen.space.bottom_fraction,
 					slab->tria->n_global_active_cells() *
 						parameter_set->dwr.refine_and_coarsen.space.max_growth_factor_n_active_cells

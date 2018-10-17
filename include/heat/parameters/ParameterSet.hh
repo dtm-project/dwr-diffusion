@@ -96,7 +96,8 @@ struct ParameterSet {
 			struct {
 				std::string strategy; // global, fixed-fraction, Schwegler
 				
-				double top_fraction;
+				double top_fraction1;
+				double top_fraction2;
 				double bottom_fraction;
 				unsigned int max_growth_factor_n_active_cells;
 				

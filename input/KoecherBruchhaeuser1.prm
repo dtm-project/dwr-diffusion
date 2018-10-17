@@ -24,7 +24,7 @@ subsection Problem Specification
     set dual time type = cG
     set dual s = 1
 #    set dual time type support points = Gauss-Lobatto
-    set primal time type support points = Gauss
+    set dual time type support points = Gauss
 end
 
 subsection Mesh Specification
@@ -46,23 +46,24 @@ end
 subsection Time Integration
     set initial time   = 0.0
     set final time     = 1.0
-    set time step size = 0.0625
+    set time step size = 0.03125
 end
 
 subsection DWR
-    set loops = 3
+    set loops = 4
     
     # space strategy: global, fixed_fraction or Schwegler
     set refine and coarsen space strategy = fixed_fraction
 #    set refine and coarsen space strategy = global
-    set refine and coarsen space top fraction = 0.5
+    set refine and coarsen space top fraction1 = 0.25
+    set refine and coarsen space top fraction2 = 0.15
     set refine and coarsen space bottom fraction = 0.0
     set refine and coarsen space max growth factor n_active_cells = 3
     
     # time strategy: global, fixed_fraction
-    set refine and coarsen time strategy = global
-#    set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.4
+#    set refine and coarsen time strategy = global
+    set refine and coarsen time strategy = fixed_fraction
+    set refine and coarsen time top fraction = 0.7
 end
 
 subsection Parameter Specification
