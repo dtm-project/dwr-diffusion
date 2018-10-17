@@ -35,7 +35,6 @@
 
 // PROJECT includes
 #include <heat/parameters/ParameterSet.hh>
-
 #include <heat/grid/Grid_DWR.tpl.hh>
 #include <heat/ErrorEstimator/ErrorEstimators.hh>
 #include <heat/types/error_functional.hh>
@@ -47,6 +46,7 @@
 #include <DTM++/types/storage_data_vectors.tpl.hh>
 
 // DEAL.II includes
+#include <deal.II/base/convergence_table.h>
 #include <deal.II/base/function.h>
 #include <deal.II/base/parameter_handler.h>
 
@@ -120,6 +120,9 @@ protected:
 		double data_output_time_value;
 		double data_output_trigger;
 		bool data_output_trigger_type_fixed;
+		
+		// Convergence Table
+		dealii::ConvergenceTable convergence_table;
 	} primal;
 	
 	virtual void primal_reinit_storage();
@@ -264,6 +267,8 @@ protected:
 	virtual void compute_effectivity_index();
 	
 	virtual void refine_and_coarsen_space_time_grid();
+	
+	virtual void write_convergence_table_to_tex_file();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// other
