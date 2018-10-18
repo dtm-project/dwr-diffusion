@@ -328,7 +328,7 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
 	// init storage containers for vector data:
-	// NOTE: * primal space: time dG(0) method
+	// NOTE: * primal space: time dG(0) method (having 1 independent solution)
 	//       * primal solution dof vectors: u
 	//
 	
@@ -1035,22 +1035,14 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
-	// init storage containers for vector data
+	// init storage containers for vector data:
+	// NOTE: * dual space: time cG(1) method (having 2 independent solutions)
+	//       * dual solution dof vectors: z
 	//
 	
-	////////////////////////////////////////////////////////////////////////////
-	// get number of time steps
-	//
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	// get number of time steps N
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
-	
-	////////////////////////////////////////////////////////////////////////////
-	// dual space: time cG(1) method ( here: cG(1)-Q_{Gauss-Lobatto(2)} )
-	//
-	
-	////////////////////////////////////////////////////////////////////////////
-	// dual solution dof vectors z (on dual solution space)
-	//
 	
 	dual.storage.z = std::make_shared< DTM::types::storage_data_vectors<2> > ();
 	dual.storage.z->resize(N);
@@ -1059,10 +1051,8 @@ dual_reinit_storage() {
 		auto slab = grid->slabs.begin();
 		for (auto &element : *dual.storage.z) {
 			for (unsigned int j{0}; j < element.x.size(); ++j) {
-				// create shared_ptr to Vector<double>
 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
 				
-				// init. Vector<double> with n_dofs components
 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
 				Assert(slab->dual.dof.use_count(), dealii::ExcNotInitialized());
 				Assert(
@@ -1070,6 +1060,7 @@ dual_reinit_storage() {
 					dealii::ExcMessage("Error: slab->dual.dof->n_dofs() == 0")
 				);
 				
+				// initialise dealii::Vector<double> with n_dofs components:
 				element.x[j]->reinit(
 					slab->dual.dof->n_dofs()
 				);
