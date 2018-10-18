@@ -490,7 +490,7 @@ primal_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// apply Dirichlet boundary values
+	// apply inhomogeneous Dirichlet boundary values
 	//
 	
 	DTM::pout << "dwr-heat: dealii::MatrixTools::apply_boundary_values...";
@@ -538,7 +538,7 @@ primal_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// distribute constraints on solution
+	// distribute hanging nodes constraints on solution
 	//
 	
 	DTM::pout << "dwr-heat: primal.constraints->distribute...";
@@ -1406,8 +1406,7 @@ dual_solve_slab_problem(
 	}
 	
 	////////////////////////////////////////////////////////////////////////////
-	// apply homog. Dirichlet boundary and homg. Neumann boundary condition on
-	// respective parts of the boundary
+	// apply homogeneous Dirichlet boundary values
 	//
 	
 	DTM::pout << "dwr-heat: dealii::MatrixTools::apply_boundary_values...";
@@ -1441,7 +1440,7 @@ dual_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// solve linear system directly
+	// solve linear system with direct solver
 	//
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
