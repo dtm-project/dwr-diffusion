@@ -1122,26 +1122,6 @@ dual_assemble_system(
 		assemble_stiffness_cell_terms.assemble();
 		DTM::pout << " (done)" << std::endl;
 	}
-	
-	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
-	dual.K->reinit(*slab->dual.sp);
-	
-	*dual.K = 0;
-	
-	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
-		// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
-		DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
-		dual.K->add(slab->tau_n()/2., *dual.A);
-		dual.K->add(1., *dual.M);
-	}
-	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
-		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
-		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
-		dual.K->add(slab->tau_n(),*dual.A);
-		dual.K->add(2., *dual.M);
-	}
-	
-	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -1157,7 +1137,7 @@ dual_assemble_rhs(
 	const double &t1
 ) {
 	////////////////////////////////////////////////////////////////////////////
-	// TODO: this is only for global L2(L2) goal functional
+	// NOTE: this is only for global L2(L2) goal functional
 	//
 	
 	Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
@@ -1338,6 +1318,10 @@ dual_assemble_rhs(
 		*dual.Je1 *= 1./primal_L2_L2_error_u;
 		DTM::pout << " (done)" << std::endl;
 		
+		
+		
+		
+		
 		////////////////////////////////////////////////////////////////////////////
 		// construct vector b = tau_n/2. * ( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
 		//
@@ -1391,6 +1375,35 @@ dual_solve_slab_problem(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z
 ) {
+	////////////////////////////////////////////////////////////////////////////
+	// construct system matrix K = mu_1 * M + mu_2 * tau * A
+	//
+	
+	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
+	dual.K->reinit(*slab->dual.sp);
+	
+	*dual.K = 0;
+	
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
+		// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
+		DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
+		dual.K->add(slab->tau_n()/2., *dual.A);
+		dual.K->add(1., *dual.M);
+	}
+	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
+		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
+		dual.K->add(slab->tau_n(),*dual.A);
+		dual.K->add(2., *dual.M);
+	}
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	
+	
+	
+	
+	
 	////////////////////////////////////////////////////////////////////////////
 	// apply homog. Dirichlet boundary and homg. Neumann boundary condition on
 	// respective parts of the boundary
