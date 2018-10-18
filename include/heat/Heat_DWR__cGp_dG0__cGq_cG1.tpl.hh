@@ -100,18 +100,29 @@ protected:
 	struct {
 		// storage container
 		struct {
-			/// primal solutions list (time dG(r)-Q_{G(r+1)} method)
+			/// primal solution dof list
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > u;
 		} storage;
 		
+		/// temporary storage for primal solution u at \f$ t_m \f$
 		std::shared_ptr< dealii::Vector<double> > um; // dof on t_m
+		
+		/// temporary storage for primal solution u at \f$ t_n \f$
 		std::shared_ptr< dealii::Vector<double> > un; // dof on t_n
 		
+		/// temporary storage for primal mass matrix
 		std::shared_ptr< dealii::SparseMatrix<double> > M;
+		
+		/// temporary storage for primal stiffness matrix
 		std::shared_ptr< dealii::SparseMatrix<double> > A;
+		
+		/// temporary storage for primal right hand side assembly
 		std::shared_ptr< dealii::Vector<double> > f0;
 		
+		/// temporary storage for primal system matrix
 		std::shared_ptr< dealii::SparseMatrix<double> > K;
+		
+		/// temporary storage for primal system right hand side
 		std::shared_ptr< dealii::Vector<double> > b;
 		
 		// Data Output
@@ -179,21 +190,35 @@ protected:
 	struct {
 		// storage container
 		struct {
+			/// dual solution dof list
 			std::shared_ptr< DTM::types::storage_data_vectors<2> > z;
 		} storage;
 		
-		std::shared_ptr< dealii::SparseMatrix<double> > M;
-		std::shared_ptr< dealii::SparseMatrix<double> > A;
-		
-		std::shared_ptr< dealii::Vector<double> > u0;
-		std::shared_ptr< dealii::Vector<double> > Je0;
-		
-		std::shared_ptr< dealii::Vector<double> > u1;
-		std::shared_ptr< dealii::Vector<double> > Je1;
-		
+		/// temporary storage for dual solution z at \f$ t_m \f$
 		std::shared_ptr< dealii::Vector<double> > zm;
 		
+		/// temporary storage for dual mass matrix
+		std::shared_ptr< dealii::SparseMatrix<double> > M;
+		
+		/// temporary storage for dual stiffness matrix
+		std::shared_ptr< dealii::SparseMatrix<double> > A;
+		
+		/// temporary storage for dual solution z on \f$ \hat t_0 \f$
+		std::shared_ptr< dealii::Vector<double> > u0;
+		
+		/// temporary storage for dual solution z on \f$ \hat t_1 \f$
+		std::shared_ptr< dealii::Vector<double> > u1;
+		
+		/// temporary storage for dual right hand side assembly
+		std::shared_ptr< dealii::Vector<double> > Je0;
+		
+		/// temporary storage for dual right hand side assembly
+		std::shared_ptr< dealii::Vector<double> > Je1;
+		
+		/// temporary storage for dual system matrix
 		std::shared_ptr< dealii::SparseMatrix<double> > K;
+		
+		/// temporary storage for dual system right hand side
 		std::shared_ptr< dealii::Vector<double> > b;
 		
 		// Data Output
@@ -252,10 +277,11 @@ protected:
 	
 	struct {
 		struct {
+			/// error indicator \f$ \eta_{I_n} \f$  list
 			std::shared_ptr< DTM::types::storage_data_vectors<1> > eta;
 		} storage;
 		
-		// error estimator
+		/// error estimator
 		std::shared_ptr< heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator<dim> > dwr;
 	} error_estimator;
 	
@@ -264,7 +290,6 @@ protected:
 	virtual void compute_effectivity_index();
 	
 	virtual void refine_and_coarsen_space_time_grid();
-	
 	
 	////////////////////////////////////////////////////////////////////////////
 	// other
