@@ -1131,13 +1131,12 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_assemble_rhs(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<1>::iterator &u,
-	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const unsigned int &n,
 	const double &t0,
 	const double &t1
 ) {
 	////////////////////////////////////////////////////////////////////////////
-	// NOTE: this is only for global L2(L2) goal functional
+	// NOTE: this is only for a global L2(L2) goal functional
 	//
 	
 	Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
@@ -1152,12 +1151,10 @@ dual_assemble_rhs(
 	);
 	
 	////////////////////////////////////////////////////////////////////////////
-	// NOTE: forward problem is dG(0) (constant in time and JUMPS in t_m = t0)
-	// NOTE: we need the reconstruction on dual cG(1)-Q_GL(2) here
+	// NOTE: forward problem is dG(0) (constant in time and JUMPS in t_m = t0),
+	//       therefore we need the reconstruction on dual cG(1)-Q_GL(2) here.
 	//
-	
-	///////////////////////////////
-	// u_h(t0) = u_h(t0)|_{I_{n-1}}
+	// NOTE: u_h(t0) = u_h(t0)|_{I_{n-1}}
 	//
 	
 	// interpolate primal solution u_h(t0) to dual solution space
@@ -1317,12 +1314,54 @@ dual_assemble_rhs(
 		
 		*dual.Je1 *= 1./primal_L2_L2_error_u;
 		DTM::pout << " (done)" << std::endl;
-		
-		
-		
-		
-		
-		////////////////////////////////////////////////////////////////////////////
+	}
+	////////////////////////////////////////////////////////////////////////
+	// NOTE: for parameter_set->fe.dual.time_type_support_points.compare("Gauss")
+	//       we have \f$ \beta_{1,1} = 0 \f$ and therefore we do not need
+	//       to assemble anything for Je^1!
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_solve_slab_problem(
+	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
+	const typename DTM::types::storage_data_vectors<2>::iterator &z
+) {
+	////////////////////////////////////////////////////////////////////////////
+	// construct system matrix K
+	//
+	
+	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
+	dual.K->reinit(*slab->dual.sp);
+	
+	*dual.K = 0;
+	
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
+		// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
+		DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
+		dual.K->add(slab->tau_n()/2., *dual.A);
+		dual.K->add(1., *dual.M);
+	}
+	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
+		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
+		dual.K->add(slab->tau_n(),*dual.A);
+		dual.K->add(2., *dual.M);
+	}
+	else {
+		AssertThrow(false, dealii::ExcNotImplemented());
+	}
+	
+	DTM::pout << " (done)" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// construct system right hand side vector b
+	//
+	
+	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
+		////////////////////////////////////////////////////////////////////////
 		// construct vector b = tau_n/2. * ( Je^0 + Je^1 ) + (M - tau_n/2 A) z^1
 		//
 		
@@ -1345,12 +1384,9 @@ dual_assemble_rhs(
 	}
 	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
 		////////////////////////////////////////////////////////////////////////
-		// beta_1,1 = 0 => beta_1,1 * Je^1 = 0
+		// construct vector b = (tau_n * Je^0) + (0 * Je^1)  + (M - 0 * A) z^1
 		//
 		
-		////////////////////////////////////////////////////////////////////////
-		// construct vector b = (tau_n * Je^0) + (0 * Je^1)  + (M - 0* A) z^1
-		//
 		DTM::pout
 			<< "dwr-heat: construct linear system rhs vector "
 			<< "b = (M - 0* A) z^1 + (tau * Je^0) + (0 * Je^1) ...";
@@ -1365,44 +1401,9 @@ dual_assemble_rhs(
 		
 		DTM::pout << " (done)" << std::endl;
 	}
-}
-
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_solve_slab_problem(
-	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
-	const typename DTM::types::storage_data_vectors<2>::iterator &z
-) {
-	////////////////////////////////////////////////////////////////////////////
-	// construct system matrix K = mu_1 * M + mu_2 * tau * A
-	//
-	
-	dual.K = std::make_shared< dealii::SparseMatrix<double> > ();
-	dual.K->reinit(*slab->dual.sp);
-	
-	*dual.K = 0;
-	
-	if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
-		// construct cG(1)-Q_GL(2) system matrix K = M + tau/2 A
-		DTM::pout << "dwr-heat: construct system matrix K = M + tau/2 A...";
-		dual.K->add(slab->tau_n()/2., *dual.A);
-		dual.K->add(1., *dual.M);
+	else {
+		AssertThrow(false, dealii::ExcNotImplemented());
 	}
-	else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
-		// construct cG(1)-Q_G(2) system matrix K = 2 M + tau A
-		DTM::pout << "dwr-heat: construct system matrix K = 2 M + tau A...";
-		dual.K->add(slab->tau_n(),*dual.A);
-		dual.K->add(2., *dual.M);
-	}
-	
-	DTM::pout << " (done)" << std::endl;
-	
-	
-	
-	
-	
 	
 	////////////////////////////////////////////////////////////////////////////
 	// apply homog. Dirichlet boundary and homg. Neumann boundary condition on
@@ -1566,7 +1567,7 @@ dual_do_backward_TMS(
 		
 		// assemble slab problem
 		dual_assemble_system(slab);
-		dual_assemble_rhs(slab,u,z,n,t0,t1);
+		dual_assemble_rhs(slab,u,n,t0,t1);
 		
 		// solve slab problem (i.e. apply boundary values and solve for z0)
 		dual_solve_slab_problem(slab,z);
