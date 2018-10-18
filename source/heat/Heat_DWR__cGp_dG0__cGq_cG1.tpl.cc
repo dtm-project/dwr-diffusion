@@ -555,7 +555,7 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_do_forward_TMS(
 	const unsigned int dwr_loop) {
 	////////////////////////////////////////////////////////////////////////////
-	// prepare TMS loop
+	// prepare time marching scheme (TMS) loop
 	//
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -596,8 +596,9 @@ primal_do_forward_TMS(
 		*function.u_0,
 		*primal.um
 	);
-	// call hanging nodes to make the result continuous again (Note: after the 
-	// first dwr-loop the initial grid could have hanging nodes)
+	// NOTE: after the first dwr-loop the initial triangulation could have
+	//       hanging nodes. Therefore,
+	// distribute hanging node constraints to make the result continuous again:
 	slab->primal.constraints->distribute(*primal.um);
 	
 	// output "initial value solution" at initial time t0
@@ -694,6 +695,7 @@ primal_do_forward_TMS(
 		
 		primal.M = nullptr;
 		primal.A = nullptr;
+		
 		primal.f0 = nullptr;
 		
 		primal.K = nullptr;
@@ -1469,7 +1471,7 @@ Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_do_backward_TMS(
 	const unsigned int dwr_loop) {
 	////////////////////////////////////////////////////////////////////////////
-	// prepare TMS loop
+	// prepare time marching scheme (TMS) loop
 	//
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -1494,10 +1496,10 @@ dual_do_backward_TMS(
 	auto u = std::prev(primal.storage.u->end());
 	
 	////////////////////////////////////////////////////////////////////////////
-	// final condition z_kh(T)
+	// final condition z_{\tau,h}(T)
 	//
 	
-	// NOTE: for goal functional || u - u_kh ||_L2(L2) -> z(T) = 0
+	// NOTE: for goal functional || u - u_{\tau,h} ||_L2(L2) -> z(T) = 0
 	*z->x[1] = 0;
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -1574,6 +1576,7 @@ dual_do_backward_TMS(
 		////////////////////////////////////////////////////////////////////////
 		// do postprocessing on the solution
 		//
+		
 		dual_do_data_output(slab,z,dwr_loop);
 		
 		////////////////////////////////////////////////////////////////////////
@@ -1591,7 +1594,6 @@ dual_do_backward_TMS(
 		
 		--n;
 		--slab;
-		
 		--u;
 		--z;
 		
@@ -1616,6 +1618,13 @@ dual_do_backward_TMS(
 		<< "*******************************************************************"
 		<< "*************" << std::endl
 		<< std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// allow garbage collector to clean up memory
+	//
+	
+	if (dual.zm.use_count())
+		dual.zm = nullptr;
 }
 
 
