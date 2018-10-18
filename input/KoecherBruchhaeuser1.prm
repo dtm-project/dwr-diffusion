@@ -71,7 +71,7 @@ subsection Parameter Specification
     # Mass density function rho
     set density function = ConstantFunction
     set density options  = "1.0"
-
+    
     # Diffusion coefficient function epsilon
     set epsilon function = ConstantFunction
     set epsilon options  = "1.0"
@@ -122,4 +122,3 @@ subsection Output Quantities
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
 end
-

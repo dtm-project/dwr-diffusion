@@ -1,9 +1,9 @@
 /**
  * @file main.cc
- * 
+ *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * 
+ *
  * @date 2018-07-26, DTM::Problem, UK
  * @date 2018-07-25, tested and running instationary version, UK, MPB
  * @date 2018-03-06, new implementation, UK
@@ -13,7 +13,6 @@
  * @date 2015-11-11, UK
  *
  * @brief DTM++.Project/DWR/DWR-Heat: Solve the heat-eq with DWR.
- * 
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
@@ -61,7 +60,6 @@
 #include <fstream>
 #include <memory>
 
-
 int main(int argc, char *argv[]) {
 	// Init MPI (or MPI+X)
 	dealii::Utilities::MPI::MPI_InitFinalize mpi(argc, argv, MPIX_THREADS);
@@ -76,14 +74,17 @@ int main(int argc, char *argv[]) {
 	const unsigned int MyPID(dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD));
 	const unsigned int NumProc(dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
 	
-	////////////////////////////////////////////////////////////////////////
-	// Restrict usage to a single process (NumProc == 1) only.
+	////////////////////////////////////////////////////////////////////////////
+	// Restrict usage of dwr-heat to a single process only.
+	// NOTE: we use the deal.II MPI framework to control non-distributed
+	//       threading facilities precisely and to give a general approach
+	//       which can be extended to a MPI-version.
 	//
 	
 	AssertThrow(NumProc == 1, dealii::ExcMessage("MPI mode not supported."));
 	
 	//
-	////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
 	
 	try {
 		////////////////////////////////////////////////////////////////////////
@@ -101,18 +102,17 @@ int main(int argc, char *argv[]) {
 		DTM::pout
 			<< "Hej, here is process " << MyPID+1 << " from " << NumProc << std::endl;
 		
-		// Check if an input parameter file is given.
+		// Check input arguments
 		AssertThrow(
 			!(argc < 2),
 			dealii::ExcMessage (
 				std::string ("===>\tUSAGE: ./dwr-heat <Input_Parameter_File.prm>"))
 		);
 		
-		// Check if the given input parameter file can be opened.
+		// Check if the given input parameter file can be opened
 		const std::string input_parameter_filename(argv[1]);
 		{
 			std::ifstream input_parameter_file(input_parameter_filename.c_str());
-			// Test if an Input Parameter File is potentially given.
 			AssertThrow(
 				input_parameter_file,
 				dealii::ExcMessage (
@@ -154,12 +154,14 @@ int main(int argc, char *argv[]) {
 			
 			switch (dimension) {
 			case 2: {
-				problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
+				problem =
+					std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
 				break;
 			}
 			
 			case 3: {
-				problem = std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<3> > ();
+				problem =
+					std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<3> > ();
 				break;
 			}
 			
