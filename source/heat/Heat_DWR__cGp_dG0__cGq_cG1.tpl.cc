@@ -131,8 +131,8 @@ run() {
 		std::floor(std::log10(parameter_set->dwr.loops))+1
 	);
 	
-	init_functions();
 	init_grid();
+	init_functions();
 	
 	// DWR loop:
 	DTM::pout
@@ -178,8 +178,65 @@ run() {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// internal functions
+// protected member functions (internal use only)
 //
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+init_grid() {
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	
+	////////////////////////////////////////////////////////////////////////////
+	// init grid from input parameter file spec.
+	//
+	{
+		heat::grid::Selector<dim> selector;
+		selector.create_grid(
+			parameter_set->Grid_Class,
+			parameter_set->Grid_Class_Options,
+			parameter_set->TriaGenerator,
+			parameter_set->TriaGenerator_Options,
+			grid
+		);
+		
+		Assert(grid.use_count(), dealii::ExcNotInitialized());
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// initialize slabs of grid
+	//
+	
+	Assert((parameter_set->fe.primal.p), dealii::ExcInvalidState());
+	Assert(
+		(parameter_set->fe.primal.p < parameter_set->fe.dual.q),
+		dealii::ExcInvalidState()
+	);
+	
+	Assert((parameter_set->t0 >= 0), dealii::ExcInvalidState());
+	Assert((parameter_set->t0 < parameter_set->T), dealii::ExcInvalidState());
+	Assert((parameter_set->tau_n > 0), dealii::ExcInvalidState());
+	
+	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	grid->initialize_slabs(
+		parameter_set->fe.primal.p,
+		parameter_set->fe.dual.q,
+		parameter_set->t0,
+		parameter_set->T,
+		parameter_set->tau_n
+	);
+	
+	grid->generate();
+	
+	grid->refine_global(
+		parameter_set->global_refinement
+	);
+	
+	DTM::pout
+		<< "grid: number of slabs = " << grid->slabs.size()
+		<< std::endl;
+}
+
 
 template<int dim>
 void
@@ -257,63 +314,6 @@ init_functions() {
 		
 		Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
 	}
-}
-
-
-template<int dim>
-void
-Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-init_grid() {
-	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
-	
-	////////////////////////////////////////////////////////////////////////////
-	// init grid from input parameter file spec.
-	//
-	{
-		heat::grid::Selector<dim> selector;
-		selector.create_grid(
-			parameter_set->Grid_Class,
-			parameter_set->Grid_Class_Options,
-			parameter_set->TriaGenerator,
-			parameter_set->TriaGenerator_Options,
-			grid
-		);
-		
-		Assert(grid.use_count(), dealii::ExcNotInitialized());
-	}
-	
-	////////////////////////////////////////////////////////////////////////////
-	// initialize slabs of grid
-	//
-	
-	Assert((parameter_set->fe.primal.p), dealii::ExcInvalidState());
-	Assert(
-		(parameter_set->fe.primal.p < parameter_set->fe.dual.q),
-		dealii::ExcInvalidState()
-	);
-	
-	Assert((parameter_set->t0 >= 0), dealii::ExcInvalidState());
-	Assert((parameter_set->t0 < parameter_set->T), dealii::ExcInvalidState());
-	Assert((parameter_set->tau_n > 0), dealii::ExcInvalidState());
-	
-	Assert(grid.use_count(), dealii::ExcNotInitialized());
-	grid->initialize_slabs(
-		parameter_set->fe.primal.p,
-		parameter_set->fe.dual.q,
-		parameter_set->t0,
-		parameter_set->T,
-		parameter_set->tau_n
-	);
-	
-	grid->generate();
-	
-	grid->refine_global(
-		parameter_set->global_refinement
-	);
-	
-	DTM::pout
-		<< "grid: number of slabs = " << grid->slabs.size()
-		<< std::endl;
 }
 
 
