@@ -327,22 +327,14 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
-	// init storage containers for vector data
+	// init storage containers for vector data:
+	// NOTE: * primal space: time dG(0) method
+	//       * primal solution dof vectors: u
 	//
 	
-	////////////////////////////////////////////////////////////////////////////
-	// get number of time steps
-	//
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	// get number of time steps N
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
-	
-	////////////////////////////////////////////////////////////////////////////
-	// primal space: time dG(0) method ( here: dG(0)-Q_{Gauss(1)} )
-	//
-	
-	////////////////////////////////////////////////////////////////////////////
-	// primal solution dof vectors u (on primal solution space)
-	//
 	
 	primal.storage.u = std::make_shared< DTM::types::storage_data_vectors<1> > ();
 	primal.storage.u->resize(N);
@@ -351,10 +343,8 @@ primal_reinit_storage() {
 		auto slab = grid->slabs.begin();
 		for (auto &element : *primal.storage.u) {
 			for (unsigned int j{0}; j < element.x.size(); ++j) {
-				// create shared_ptr to Vector<double>
 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
 				
-				// init. Vector<double> with n_dofs components
 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
 				Assert(slab->primal.dof.use_count(), dealii::ExcNotInitialized());
 				Assert(
@@ -362,6 +352,7 @@ primal_reinit_storage() {
 					dealii::ExcMessage("Error: slab->primal.dof->n_dofs() == 0")
 				);
 				
+				// initialise dealii::Vector<double> with n_dofs components:
 				element.x[j]->reinit(
 					slab->primal.dof->n_dofs()
 				);
