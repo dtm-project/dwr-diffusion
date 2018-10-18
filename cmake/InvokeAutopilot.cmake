@@ -188,6 +188,7 @@ add_custom_target(
 
 add_custom_target(
 	kdev_include_paths
+	COMMAND ./bash/set-git-assume_unchanged-kdev_include_paths.sh
 	COMMAND ./bash/set-kdev_include_paths.sh
 	COMMENT "./bash/set-kdev_include_paths.sh invoked"
 )
@@ -195,6 +196,7 @@ add_custom_target(
 add_custom_target(
 	clean-kdev_include_paths
 	COMMAND ./bash/clean-kdev_include_paths.sh
+	COMMAND ./bash/clean-git-assume_unchanged-kdev_include_paths.sh
 	COMMENT "./bash/clean-kdev_include_paths.sh invoked"
 )
 
@@ -292,6 +294,11 @@ FILE(
 #      ${_make_command} distclean      - to clean the directory from _all_ generated
 #                               files (includes clean, runclean and the removal
 #                               of the generated build system)
+#
+#      ${_make_command} kdev_include_paths - to set .kdev_include_paths files
+#                                   appropriately for using KDevelop without a
+#                                   setting up a project file
+#
 #
 #      ${_make_command} doc            - to build the documentation via doxygen
 #
