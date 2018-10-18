@@ -106,8 +106,12 @@ ParameterSet(
 			"refine and coarsen space strategy"
 		);
 		
-		dwr.refine_and_coarsen.space.top_fraction = handler->get_double(
-			"refine and coarsen space top fraction"
+		dwr.refine_and_coarsen.space.top_fraction1 = handler->get_double(
+			"refine and coarsen space top fraction1"
+		);
+		
+		dwr.refine_and_coarsen.space.top_fraction2 = handler->get_double(
+			"refine and coarsen space top fraction2"
 		);
 		
 		dwr.refine_and_coarsen.space.bottom_fraction = handler->get_double(

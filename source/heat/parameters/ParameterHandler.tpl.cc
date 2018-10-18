@@ -211,8 +211,14 @@ ParameterHandler() {
 		);
 		
 		declare_entry(
-			"refine and coarsen space top fraction",
+			"refine and coarsen space top fraction1",
 			"1.0",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"refine and coarsen space top fraction2",
+			"0.5",
 			dealii::Patterns::Double()
 		);
 		
