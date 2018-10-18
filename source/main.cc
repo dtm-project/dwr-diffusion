@@ -13,6 +13,11 @@
  * @date 2015-11-11, UK
  *
  * @brief DTM++.Project/DWR/DWR-Heat: Solve the heat-eq with DWR.
+ * 
+ * @mainpage Hello TODO: short description
+ * 
+ * 
+ * 
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
