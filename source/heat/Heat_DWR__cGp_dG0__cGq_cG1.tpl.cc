@@ -1833,18 +1833,13 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 eta_reinit_storage() {
 	////////////////////////////////////////////////////////////////////////////
-	// init storage containers for vector data
+	// init storage containers for vector data:
+	// NOTE: * error indicators \f$ \eta \f$ (one per slab)
 	//
 	
-	////////////////////////////////////////////////////////////////////////////
-	// get number of time steps
-	//
 	Assert(grid.use_count(), dealii::ExcNotInitialized());
+	// get number of time steps N
 	const unsigned int N{static_cast<unsigned int>(grid->slabs.size())};
-	
-	////////////////////////////////////////////////////////////////////////////
-	// error indicators vector eta = sum of eta_K
-	//
 	
 	error_estimator.storage.eta = std::make_shared< DTM::types::storage_data_vectors<1> > ();
 	error_estimator.storage.eta->resize(N);
@@ -1853,10 +1848,8 @@ eta_reinit_storage() {
 		auto slab = grid->slabs.begin();
 		for (auto &element : *error_estimator.storage.eta) {
 			for (unsigned int j{0}; j < element.x.size(); ++j) {
-				// create shared_ptr to Vector<double>
 				element.x[j] = std::make_shared< dealii::Vector<double> > ();
 				
-				// init. Vector<double> with n_dofs components
 				Assert(slab != grid->slabs.end(), dealii::ExcInternalError());
 				Assert(slab->tria.use_count(), dealii::ExcNotInitialized());
 				Assert(
@@ -1864,6 +1857,9 @@ eta_reinit_storage() {
 					dealii::ExcMessage("Error: slab->tria->n_global_active_cells() == 0")
 				);
 				
+				// initialise dealii::Vector<double> with
+				//   slab->tria->n_global_active_cells
+				// components:
 				element.x[j]->reinit(
 					slab->tria->n_global_active_cells()
 				);
