@@ -1915,7 +1915,8 @@ compute_effectivity_index() {
 	for (; slab != ends; ++slab) {
 		K_max = (K_max > slab->tria->n_global_active_cells()) ? K_max : slab->tria->n_global_active_cells();
 	}
-	// convergence_table
+	
+	// push local variables to convergence_table to avoid additional costs later.
 	convergence_table.add_value("N_max", slabs_size);
 	convergence_table.add_value("K_max", K_max);
 	convergence_table.add_value("primal_L2_L2_error_u", primal_L2_L2_error_u);
@@ -2058,13 +2059,15 @@ refine_and_coarsen_space_time_grid() {
 			DTM::pout << "\t#K = " << n_active_cells_on_slab << std::endl;
 			K_max = (K_max > n_active_cells_on_slab) ? K_max : n_active_cells_on_slab;
 			
-			if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("global") == 0) {
+			if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare(
+				"global") == 0) {
 				// global refinement in space
 				slab->tria->refine_global(1);
 			}
-			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("fixed_fraction") == 0) {
-				// mark for refinement with fixed fraction
-				// (similar but not identical to Hartmann Ex. Sec. 1.4.2)
+			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare(
+				"fixed_fraction") == 0) {
+				// mark for refinement strategy with fixed fraction
+				// (similar but not identical to Hartmann Diploma thesis Ex. Sec. 1.4.2)
 				const double top_fraction{ slab->refine_in_time ?
 					parameter_set->dwr.refine_and_coarsen.space.top_fraction1 :
 					parameter_set->dwr.refine_and_coarsen.space.top_fraction2
@@ -2081,8 +2084,9 @@ refine_and_coarsen_space_time_grid() {
 				// execute refinement in space under the conditions of mesh smoothing
 				slab->tria->execute_coarsening_and_refinement();
 			}
-			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare("Schwegler") == 0) {
-				// mark for refinement with strategy from K. Schwegler PhD thesis
+			else if (parameter_set->dwr.refine_and_coarsen.space.strategy.compare(
+				"Schwegler") == 0) {
+				// mark for refinement strategy from K. Schwegler PhD thesis
 				
 				Assert(
 					((parameter_set->dwr.refine_and_coarsen.space.theta1 > 1.)
@@ -2159,7 +2163,6 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 write_convergence_table_to_tex_file() {
-// 	convergence_table.set_precision("DWR-loop", 5);
 	convergence_table.set_precision("primal_L2_L2_error_u", 5);
 	convergence_table.set_precision("eta", 5);
 	convergence_table.set_precision("I_eff", 3);
@@ -2174,7 +2177,9 @@ write_convergence_table_to_tex_file() {
 	convergence_table.set_tex_caption("DWR-loop","DWR-loop");
 	convergence_table.set_tex_caption("N_max","$N_{\\text{max}}$");
 	convergence_table.set_tex_caption("K_max","$K_{\\text{max}}$");
-	convergence_table.set_tex_caption("primal_L2_L2_error_u","$\\|e\\|_{(0,T)\\times\\Omega}$");
+	convergence_table.set_tex_caption(
+		"primal_L2_L2_error_u","$\\|e\\|_{(0,T)\\times\\Omega}$"
+	);
 	convergence_table.set_tex_caption("eta","$\\eta$");
 	convergence_table.set_tex_caption("I_eff","I$_{\\text{eff}}$");
 	convergence_table.set_tex_format("DWR-loop","c");
@@ -2192,10 +2197,15 @@ write_convergence_table_to_tex_file() {
 	new_order.push_back("eta");
 	new_order.push_back("I_eff");
 	convergence_table.set_column_order (new_order);
-		
-	convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate);
-	convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate_log2);
-
+	
+	convergence_table.evaluate_convergence_rates(
+		"primal_L2_L2_error_u",
+		dealii::ConvergenceTable::reduction_rate
+	);
+	convergence_table.evaluate_convergence_rates(
+		"primal_L2_L2_error_u",
+		dealii::ConvergenceTable::reduction_rate_log2
+	);
 	
 	// write TeX/LaTeX file of the convergence table with deal.II
 	{
@@ -2204,7 +2214,7 @@ write_convergence_table_to_tex_file() {
 		convergence_table.write_tex(out);
 	}
 	
-	// read/write TeX/LaTeX file to make pdflatex *.tex working
+	// read/write TeX/LaTeX file to make pdflatex *.tex working for our headers
 	{
 		std::ifstream in("convergence-table.tex");
 		
@@ -2214,11 +2224,11 @@ write_convergence_table_to_tex_file() {
 		std::string line;
 		std::getline(in, line);
 		out << line << std::endl;
+		// add the missing amsmath latex package
 		out << "\\usepackage{amsmath}" << std::endl;
 		
 		for ( ; std::getline(in, line) ; )
 			out << line << std::endl;
-		
 		out.close();
 	}
 }
