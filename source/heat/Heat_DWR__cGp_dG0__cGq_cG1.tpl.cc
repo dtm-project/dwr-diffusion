@@ -31,8 +31,6 @@
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
 // PROJECT includes
-#include <DTM++/base/LogStream.hh>
-
 #include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 #include <heat/grid/Grid_DWR_Selector.tpl.hh>
@@ -41,8 +39,8 @@
 #include <heat/Diffusion/Diffusion_Selector.tpl.hh>
 #include <heat/Force/Force_Selector.tpl.hh>
 
-#include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
 #include <heat/InitialValue/InitialValue_Selector.tpl.hh>
+#include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
 
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 
@@ -58,17 +56,15 @@ using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
 #include <heat/assembler/L2_Je_global_L2L2_Assembly.tpl.hh>
 
 // DEAL.II includes
-#include <deal.II/fe/mapping_q.h>
-#include <deal.II/lac/sparse_direct.h>
-
 #include <deal.II/fe/fe_tools.h>
+#include <deal.II/fe/mapping_q.h>
+
 #include <deal.II/grid/grid_refinement.h>
+
+#include <deal.II/lac/sparse_direct.h>
 
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
-
-// C++ includes
-#include <algorithm>
 
 namespace heat {
 
