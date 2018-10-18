@@ -147,7 +147,7 @@ run() {
 			<< "***************************************************************"
 			<< "*****************" << std::endl
 			<< "dwr loop = " << dwr_loop+1 << std::endl;
-		// convergence_table
+		
 		convergence_table.add_value("DWR-loop", dwr_loop+1);
 		
 		grid->set_boundary_indicators();
@@ -168,11 +168,12 @@ run() {
 		compute_error_indicators();
 		compute_effectivity_index();
 		
+		// do space-time mesh refinements and coarsenings only if we have
+		// another dwr-loop
 		if ((dwr_loop+1) < parameter_set->dwr.loops)
 			refine_and_coarsen_space_time_grid();
 	}
 	
-	// finish convergence_table and write into tex-file
 	write_convergence_table_to_tex_file();
 }
 
@@ -279,18 +280,6 @@ init_functions() {
 		Assert(function.f.use_count(), dealii::ExcNotInitialized());
 	}
 	
-	// dirichlet boundary function u_D:
-	{
-		heat::dirichlet_boundary::Selector<dim> selector;
-		selector.create_function(
-			parameter_set->dirichlet_boundary_u_D_function,
-			parameter_set->dirichlet_boundary_u_D_options,
-			function.u_D
-		);
-		
-		Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
-	}
-	
 	// initial value function u_0:
 	{
 		heat::initial_value::Selector<dim> selector;
@@ -301,6 +290,18 @@ init_functions() {
 		);
 		
 		Assert(function.u_0.use_count(), dealii::ExcNotInitialized());
+	}
+	
+	// dirichlet boundary function u_D:
+	{
+		heat::dirichlet_boundary::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->dirichlet_boundary_u_D_function,
+			parameter_set->dirichlet_boundary_u_D_options,
+			function.u_D
+		);
+		
+		Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
 	}
 	
 	// exact solution function u_E (if any)
