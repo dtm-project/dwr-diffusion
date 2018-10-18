@@ -1,9 +1,9 @@
 /**
  * @file Heat_DWR__cGp_dG0__cGq_cG1.tpl.cc
- * 
+ *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * 
+ *
  * @date 2018-07-19, finialised dwr-loop, UK
  * @date 2018-03-08, primal problem, UK
  * @date 2018-03-06, new implementation, UK
@@ -152,7 +152,7 @@ run() {
 			<< "*****************" << std::endl
 			<< "dwr loop = " << dwr_loop+1 << std::endl;
 		// convergence_table
-		primal.convergence_table.add_value("DWR-loop", dwr_loop+1);
+		convergence_table.add_value("DWR-loop", dwr_loop+1);
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -1917,11 +1917,11 @@ compute_effectivity_index() {
 		K_max = (K_max > slab->tria->n_global_active_cells()) ? K_max : slab->tria->n_global_active_cells();
 	}
 	// convergence_table
-	primal.convergence_table.add_value("N_max", slabs_size);
-	primal.convergence_table.add_value("K_max", K_max);
-	primal.convergence_table.add_value("primal_L2_L2_error_u", primal_L2_L2_error_u);
-	primal.convergence_table.add_value("eta", eta);
-	primal.convergence_table.add_value("I_eff", I_eff);
+	convergence_table.add_value("N_max", slabs_size);
+	convergence_table.add_value("K_max", K_max);
+	convergence_table.add_value("primal_L2_L2_error_u", primal_L2_L2_error_u);
+	convergence_table.add_value("eta", eta);
+	convergence_table.add_value("I_eff", I_eff);
 }
 
 
@@ -2145,30 +2145,30 @@ template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 write_convergence_table_to_tex_file() {
-// 	primal.convergence_table.set_precision("DWR-loop", 5);
-	primal.convergence_table.set_precision("primal_L2_L2_error_u", 5);
-	primal.convergence_table.set_precision("eta", 5);
-	primal.convergence_table.set_precision("I_eff", 3);
+// 	convergence_table.set_precision("DWR-loop", 5);
+	convergence_table.set_precision("primal_L2_L2_error_u", 5);
+	convergence_table.set_precision("eta", 5);
+	convergence_table.set_precision("I_eff", 3);
 	
-	primal.convergence_table.set_scientific("primal_L2_L2_error_u", true);
-	primal.convergence_table.set_scientific("eta", true);
+	convergence_table.set_scientific("primal_L2_L2_error_u", true);
+	convergence_table.set_scientific("eta", true);
 	
 	std::cout << std::endl;
-	primal.convergence_table.write_text(std::cout);
+	convergence_table.write_text(std::cout);
 	
 	// Set tex captions and formation of respective columns
-	primal.convergence_table.set_tex_caption("DWR-loop","DWR-loop");
-	primal.convergence_table.set_tex_caption("N_max","$N_{\\text{max}}$");
-	primal.convergence_table.set_tex_caption("K_max","$K_{\\text{max}}$");
-	primal.convergence_table.set_tex_caption("primal_L2_L2_error_u","$\\|e\\|_{(0,T)\\times\\Omega}$");
-	primal.convergence_table.set_tex_caption("eta","$\\eta$");
-	primal.convergence_table.set_tex_caption("I_eff","I$_{\\text{eff}}$");
-	primal.convergence_table.set_tex_format("DWR-loop","c");
-	primal.convergence_table.set_tex_format("N_max","r");
-	primal.convergence_table.set_tex_format("K_max","r");
-	primal.convergence_table.set_tex_format("primal_L2_L2_error_u","c");
-	primal.convergence_table.set_tex_format("eta","c");
-	primal.convergence_table.set_tex_format("I_eff","c");
+	convergence_table.set_tex_caption("DWR-loop","DWR-loop");
+	convergence_table.set_tex_caption("N_max","$N_{\\text{max}}$");
+	convergence_table.set_tex_caption("K_max","$K_{\\text{max}}$");
+	convergence_table.set_tex_caption("primal_L2_L2_error_u","$\\|e\\|_{(0,T)\\times\\Omega}$");
+	convergence_table.set_tex_caption("eta","$\\eta$");
+	convergence_table.set_tex_caption("I_eff","I$_{\\text{eff}}$");
+	convergence_table.set_tex_format("DWR-loop","c");
+	convergence_table.set_tex_format("N_max","r");
+	convergence_table.set_tex_format("K_max","r");
+	convergence_table.set_tex_format("primal_L2_L2_error_u","c");
+	convergence_table.set_tex_format("eta","c");
+	convergence_table.set_tex_format("I_eff","c");
 	
 	std::vector<std::string> new_order;
 	new_order.push_back("DWR-loop");
@@ -2177,18 +2177,36 @@ write_convergence_table_to_tex_file() {
 	new_order.push_back("primal_L2_L2_error_u");
 	new_order.push_back("eta");
 	new_order.push_back("I_eff");
-	primal.convergence_table.set_column_order (new_order);
+	convergence_table.set_column_order (new_order);
 		
-	primal.convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate);
-	primal.convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate_log2);
+	convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate);
+	convergence_table.evaluate_convergence_rates("primal_L2_L2_error_u",dealii::ConvergenceTable::reduction_rate_log2);
 
 	
-	// Write .tex-file
-	std::string conv_filename = "convergence";
-	conv_filename += "-table";
-	conv_filename += ".tex";
-	std::ofstream table_file(conv_filename.c_str());
-	primal.convergence_table.write_tex(table_file);
+	// write TeX/LaTeX file of the convergence table with deal.II
+	{
+		std::string filename = "convergence-table.tex";
+		std::ofstream out(filename.c_str());
+		convergence_table.write_tex(out);
+	}
+	
+	// read/write TeX/LaTeX file to make pdflatex *.tex working
+	{
+		std::ifstream in("convergence-table.tex");
+		
+		std::string filename = "my-convergence-table.tex";
+		std::ofstream out(filename.c_str());
+		
+		std::string line;
+		std::getline(in, line);
+		out << line << std::endl;
+		out << "\\usepackage{amsmath}" << std::endl;
+		
+		for ( ; std::getline(in, line) ; )
+			out << line << std::endl;
+		
+		out.close();
+	}
 }
 
 } // namespace

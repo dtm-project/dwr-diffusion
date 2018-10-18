@@ -120,9 +120,6 @@ protected:
 		double data_output_time_value;
 		double data_output_trigger;
 		bool data_output_trigger_type_fixed;
-		
-		// Convergence Table
-		dealii::ConvergenceTable convergence_table;
 	} primal;
 	
 	virtual void primal_reinit_storage();
@@ -268,13 +265,16 @@ protected:
 	
 	virtual void refine_and_coarsen_space_time_grid();
 	
-	virtual void write_convergence_table_to_tex_file();
 	
 	////////////////////////////////////////////////////////////////////////////
 	// other
 	//
 	
 	unsigned int setw_value_dwr_loops;
+	
+	// Convergence Table
+	dealii::ConvergenceTable convergence_table;
+	virtual void write_convergence_table_to_tex_file();
 };
 
 } // namespace
