@@ -446,20 +446,6 @@ primal_assemble_rhs(
 		true // auto mode
 	);
 	DTM::pout << " (done)" << std::endl;
-	
-	// construct vector b = M um + tau_n f0
-	DTM::pout << "dwr-heat: construct linear system rhs vector...";
-	
-	primal.b = std::make_shared< dealii::Vector<double> > ();
-	primal.b->reinit( slab->primal.dof->n_dofs() );
-	
-	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
-	Assert(primal.um.use_count(), dealii::ExcNotInitialized());
-	primal.M->vmult(*primal.b, *primal.um);
-	
-	primal.b->add(slab->tau_n(), *primal.f0);
-	
-	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -486,6 +472,22 @@ primal_solve_slab_problem(
 	
 	DTM::pout << " (done)" << std::endl;
 	
+	////////////////////////////////////////////////////////////////////////////
+	// construct system right hand side vector b = M um + tau_n f0
+	//
+	
+	DTM::pout << "dwr-heat: construct linear system rhs vector...";
+	
+	primal.b = std::make_shared< dealii::Vector<double> > ();
+	primal.b->reinit( slab->primal.dof->n_dofs() );
+	
+	Assert(primal.M.use_count(), dealii::ExcNotInitialized());
+	Assert(primal.um.use_count(), dealii::ExcNotInitialized());
+	primal.M->vmult(*primal.b, *primal.um);
+	
+	primal.b->add(slab->tau_n(), *primal.f0);
+	
+	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
 	// apply Dirichlet boundary values
@@ -524,7 +526,7 @@ primal_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// solve linear system directly
+	// solve linear system with direct solver
 	//
 	
 	DTM::pout << "dwr-heat: setup direct lss and solve...";
