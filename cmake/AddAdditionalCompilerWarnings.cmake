@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2015 by Uwe Koecher
+# Copyright (C) 2012-2018 by Uwe Koecher
 # 
 # This file is part of DTM++.
 # 
@@ -35,3 +35,4 @@ ADD_DEFINITIONS(-Wpedantic)
 #ADD_DEFINITIONS(-Werror)        # Compilation breaks, if warnings are present
 ADD_DEFINITIONS(-Wfatal-errors) # Compilation breaks directly after first error
 ################################################################################
+

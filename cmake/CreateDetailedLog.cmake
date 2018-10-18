@@ -1,4 +1,4 @@
-# Copyright (C) 2012-2015 by Uwe Koecher
+# Copyright (C) 2012-2018 by Uwe Koecher
 # 
 # This file is part of DTM++.
 # 
@@ -74,3 +74,4 @@ _detailed(
 ENDIF()
 
 _detailed("#\n###\n")
+
