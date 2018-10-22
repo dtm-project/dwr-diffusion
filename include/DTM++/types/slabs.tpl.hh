@@ -1,13 +1,10 @@
 /**
  * @file slabs.tpl.hh
- * 
  * @author Uwe Koecher (UK)
- * 
  * @date 2018-03-06, UK
- * 
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */ 
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -44,12 +41,13 @@ namespace dwr {
 /// slab: collects data structures and functions of a space-time slab for dwr
 template <int dim>
 struct s_slab {
+	/// deal.II Triangulation<dim> for \f$ \Omega_h \f$ on \f$ I_n \f$.
 	std::shared_ptr< dealii::Triangulation<dim> > tria;
+	
 	double t_m; ///< left endpoint of \f$ I_n=(t_m, t_n) \f$
 	double t_n; ///< right endpoint of \f$ I_n=(t_m, t_n) \f$
 	
-	bool refine_in_time;
-	
+	// additional data for slab
 	struct {
 		std::shared_ptr< dealii::DoFHandler<dim> > dof;
 		std::shared_ptr< dealii::FiniteElement<dim> > fe;
@@ -68,8 +66,19 @@ struct s_slab {
 		std::shared_ptr< dealii::SparsityPattern > sp;
 	} dual;
 	
+	bool refine_in_time; // flag for marking: refinement in time of this slab
+	bool coarsen_in_time; // flag for marking: coarsen in time of this slab
+	
+	// additional member functions
+	
+	/// get \f$ \tau_n = t_n - t_m \f$ of this slab
 	double tau_n() const { return (t_n-t_m); };
+	
 	void set_refine_in_time_flag() { refine_in_time=true; };
+	void clear_refine_in_time_flag() { refine_in_time=false; };
+	
+	void set_coarsen_in_time_flag() { coarsen_in_time=true; };
+	void clear_coarsen_in_time_flag() { coarsen_in_time=false; };
 };
 
 template <int dim>
