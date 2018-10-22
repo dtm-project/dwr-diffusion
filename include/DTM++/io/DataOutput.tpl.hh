@@ -55,17 +55,18 @@ class DataOutput {
 public:
 	DataOutput();
 	
-	constexpr DataOutput(DataOutput &copy)  :
-	mpi_comm(copy.mpi_comm),
-	format(copy.format),
-	dof(copy.dof),
-	data_field_names(copy.data_field_names),
-	dci_field(copy.dci_field),
-	data_file_counter(copy.data_file_counter),
-	setw_value(copy.setw_value),
-	process_id(copy.process_id),
-	data_output_patches(copy.data_output_patches),
-	xdmf_entries_data(copy.xdmf_entries_data)
+	constexpr DataOutput(DataOutput &copy) :
+		mpi_comm(copy.mpi_comm),
+		format(copy.format),
+		dof(copy.dof),
+		data_field_names(copy.data_field_names),
+		data_field_names_process_id(copy.data_field_names_process_id),
+		dci_field(copy.dci_field),
+		data_file_counter(copy.data_file_counter),
+		setw_value(copy.setw_value),
+		process_id(copy.process_id),
+		data_output_patches(copy.data_output_patches),
+		xdmf_entries_data(copy.xdmf_entries_data)
 	{};
 	
 	virtual ~DataOutput() = default;
