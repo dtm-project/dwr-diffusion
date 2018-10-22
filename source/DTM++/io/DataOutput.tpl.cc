@@ -310,7 +310,6 @@ write_data(
 }
 
 
-
 template<int dim>
 void
 DataOutput<dim>::

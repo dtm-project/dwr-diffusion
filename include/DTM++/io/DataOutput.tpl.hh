@@ -86,7 +86,6 @@ public:
 	
 	virtual void set_data_output_patches(unsigned int data_output_patches = 1);
 	
-	/// Set output number width.
 	virtual void set_setw(const unsigned int setw_value = 4);
 	
 	virtual void set_data_field_names(
