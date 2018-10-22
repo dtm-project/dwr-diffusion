@@ -1,11 +1,10 @@
 /**
  * @file storage_data_vectors.tpl.hh
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- * 
+ *
  * @date 2018-03-07, included to DTM++, UK
  * @date 2018-03-05, updated data structures and types, UK
- * @date 2017-07-27, Heat/DWR, UK, MPB
+ * @date 2017-07-27
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -43,6 +42,7 @@ namespace data {
 
 template <int N>
 struct s_vectors {
+	/// internal storage: N shared pointers to the data containers
 	std::array< std::shared_ptr< dealii::Vector<double> >, N > x;
 };
 
@@ -51,7 +51,7 @@ using vectors = struct s_vectors<N>;
 
 }}
 
-/// storage container data type: list for shared_ptr to vectors
+/// storage container for data vectors
 template <int N>
 using storage_data_vectors = std::list< storage::data::vectors<N> >;
 
