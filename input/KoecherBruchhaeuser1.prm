@@ -53,8 +53,8 @@ subsection DWR
     set loops = 4
     
     # space strategy: global, fixed_fraction or Schwegler
-    set refine and coarsen space strategy = fixed_fraction
 #    set refine and coarsen space strategy = global
+    set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction1 = 0.25
     set refine and coarsen space top fraction2 = 0.15
     set refine and coarsen space bottom fraction = 0.0
@@ -78,26 +78,26 @@ subsection Parameter Specification
     
     # Force f
     set force function = Force_KoecherBruchhaeuser1
-    #                     a   epsilon
-    set force options  = "50. 1."
-    
-    ############################################################################
-    # Boundary value function
-    set dirichlet boundary u_D function = DirichletBoundary_KoecherBruchhaeuser1
-    #                                      a
-    set dirichlet boundary u_D options  = "50."
+    #                     s  a   rho epsilon
+    set force options  = "1. 50. 1.  1."
     
     ############################################################################
     # Initial value function
     set initial value u0 function = InitialValue_KoecherBruchhaeuser1
-    #                                a
-    set initial value u0 options  = "50."
+    #                                s  a
+    set initial value u0 options  = "1. 50."
+    
+    ############################################################################
+    # Boundary value function
+    set dirichlet boundary u_D function = DirichletBoundary_KoecherBruchhaeuser1
+    #                                      s a
+    set dirichlet boundary u_D options  = "1. 50."
     
     ############################################################################
     # Exact solution function (if any)
     set exact solution function = ExactSolution_KoecherBruchhaeuser1
-    #                              a
-    set exact solution options  = "50."
+    #                              s  a
+    set exact solution options  = "1. 50."
 end
 
 subsection Output Quantities

@@ -1,13 +1,12 @@
 /**
  * @file DirichletBoundary_KoecherBruchhaeuser1.tpl.hh
- *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- *
- * @date 2018-09-14, KoecherBruchhaeuser1, MPB, UK
+ * @date 2018-10-23, UK
+ * @date 2018-09-14, MPB
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -37,11 +36,14 @@ namespace dirichlet_boundary {
 template<int dim>
 class KoecherBruchhaeuser1 : public dealii::Function<dim> {
 public:
-	KoecherBruchhaeuser1(const double &a) : dealii::Function<dim> (1), a(a) {};
+	KoecherBruchhaeuser1(
+		const double &s,
+		const double &a
+	) : dealii::Function<dim> (1), s(s), a(a)
+	{};
 	
 	virtual ~KoecherBruchhaeuser1() = default;
 	
-	/// get value (of a specific component) from a function evaluation
 	virtual
 	double
 	value(
@@ -50,6 +52,7 @@ public:
 	) const;
 
 private:
+	const double s;
 	const double a;
 };
 

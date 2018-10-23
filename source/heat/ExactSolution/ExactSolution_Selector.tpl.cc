@@ -155,7 +155,7 @@ create_function(
 	// 
 	if (_type.compare("ExactSolution_KoecherBruchhaeuser1") == 0) {
 		AssertThrow(
-			options.size() == 1,
+			options.size() == 2,
 			dealii::ExcMessage(
 				"exact_solution options invalid, "
 				"please check your input file data."
@@ -163,13 +163,15 @@ create_function(
 		);
 		
 		function = std::make_shared< heat::exact_solution::KoecherBruchhaeuser1<dim> >(
-			std::stod(options.at(0)) // a
+			std::stod(options.at(0)), // s
+			std::stod(options.at(1))  // a
 		);
 		
 		DTM::pout
 			<< "exact_solution selector: created KoecherBruchhaeuser1 "
 			<< "as exact_solution function, with " << std::endl
-			<< "\ta = " << std::stod(options.at(0)) << std::endl
+			<< "\ts = " << std::stod(options.at(0)) << std::endl
+			<< "\ta = " << std::stod(options.at(1)) << std::endl
 			<< std::endl;
 		
 		return;

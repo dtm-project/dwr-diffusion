@@ -1,13 +1,12 @@
 /**
  * @file ExactSolution_KoecherBruchhaeuser1.tpl.cc
- *
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * 
- * @date 2018-09-14, MPB, UK
+ * @date 2018-10-23, UK
+ * @date 2018-09-14, MPB
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -26,10 +25,6 @@
 
 #include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser1.tpl.hh>
 
-// DEAL.II includes
-
-// C++ includes
-
 namespace heat {
 namespace exact_solution {
 
@@ -40,17 +35,34 @@ value(
 	const dealii::Point<dim> &x,
 	[[maybe_unused]]const unsigned int c
 ) const {
-	Assert(c==0, dealii::ExcMessage("you want to get component value which is not implemented"));
-	Assert(dim==2, dealii::ExcNotImplemented());
-	
-	const double t{this->get_time()};
-	
-	const double x0 = 0.5+0.25*std::cos(2.*M_PI*t);
-	const double x1 = 0.5+0.25*std::sin(2.*M_PI*t);
-	
-	return std::atan(10.*M_PI_2 * (2.*t-1.)) / (
-		1. + a*( (x[0]-x0)*(x[0]-x0) + (x[1]-x1)*(x[1]-x1) )
+	Assert(
+		c==0,
+		dealii::ExcMessage(
+			"you want to get component value which is not implemented"
+		)
 	);
+	Assert(dim==2, dealii::ExcNotImplemented());
+	Assert(this->get_time() >= 0., dealii::ExcNotImplemented());
+	
+	// get \f$ t \in [0, 1.0) \f$
+	const double t{this->get_time() - std::floor(this->get_time())};
+	
+	const double omega{2.*M_PI};
+	const double x0 = .5 + .25*std::cos(omega*t);
+	const double y0 = .5 + .25*std::sin(omega*t);
+	
+	////////////////////////////////////////////////////////////////////////////
+	const double u1{
+		s * std::atan( 10.*M_PI_2 * (2.*t-1.) )
+	};
+	
+	////////////////////////////////////////////////////////////////////////////
+	const double u2{
+		1./(1. + a*(x[0]-x0)*(x[0]-x0) + a*(x[1]-y0)*(x[1]-y0))
+	};
+	
+	////////////////////////////////////////////////////////////////////////////
+	return u1 * u2;
 }
 
 }} //namespaces
