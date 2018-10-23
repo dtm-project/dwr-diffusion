@@ -1,12 +1,10 @@
 /**
  * @file boundary_id.hh
- * 
+ *
  * @author Uwe Koecher (UK)
- * 
+ *
  * @date 2018-03-07, UK
  * @date 2017-11-08, UK
- *
- * @brief boundary_id
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
