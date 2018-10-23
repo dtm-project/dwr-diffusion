@@ -1,13 +1,11 @@
 /**
  * @file Forces.hh
  * @author Uwe Koecher (UK)
- * 
+ *
  * @date 2018-03-08, included from ewave, UK
  * @date 2017-10-25, UK
  * @date 2017-02-10, xwave, UK
  * @date 2016-05-30, biot, UK
- * 
- * @brief Collects all Force functions.
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -34,5 +32,6 @@
 
 #include <heat/Force/Force_Hartmann142.tpl.hh>
 #include <heat/Force/Force_KoecherBruchhaeuser1.tpl.hh>
+#include <heat/Force/Force_KoecherBruchhaeuser2.tpl.hh>
 
 #endif

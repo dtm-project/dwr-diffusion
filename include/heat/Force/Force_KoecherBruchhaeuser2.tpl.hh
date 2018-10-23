@@ -1,10 +1,11 @@
 /**
- * @file ExactSolutions.hh
+ * @file Force_KoecherBruchhaeuser2.tpl.hh
  * @author Uwe Koecher (UK)
- * @date 2018-07-20, UK
+ * @author Marius Paul Bruchhaeuser (MPB)
+ * @date 2018-10-23, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -21,11 +22,41 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolutions_hh
-#define __ExactSolutions_hh
+#ifndef __Force_KoecherBruchhaeuser2_tpl_hh
+#define __Force_KoecherBruchhaeuser2_tpl_hh
 
-#include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
-#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser1.tpl.hh>
-#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser2.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+
+namespace heat {
+namespace force {
+
+template<int dim>
+class KoecherBruchhaeuser2 : public dealii::Function<dim> {
+public:
+	KoecherBruchhaeuser2(
+		const double &a,
+		const double &rho,
+		const double &epsilon
+	) : dealii::Function<dim> (1), a(a), rho(rho), epsilon(epsilon)
+	{ };
+	
+	virtual ~KoecherBruchhaeuser2() = default;
+	
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
+
+private:
+	const double a;
+	const double rho;
+	const double epsilon;
+};
+
+}}
 
 #endif

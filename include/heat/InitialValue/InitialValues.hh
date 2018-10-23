@@ -1,14 +1,10 @@
 /**
  * @file InitialValues.hh
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- * 
  * @date 2018-07-20, UK
- * 
- * @brief Collects all InitialValue functions.
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher, Marius Paul Bruchhaeuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -30,5 +26,6 @@
 
 #include <heat/InitialValue/InitialValue_Hartmann142.tpl.hh>
 #include <heat/InitialValue/InitialValue_KoecherBruchhaeuser1.tpl.hh>
+#include <heat/InitialValue/InitialValue_KoecherBruchhaeuser2.tpl.hh>
 
 #endif

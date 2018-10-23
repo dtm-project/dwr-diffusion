@@ -177,6 +177,30 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
+	if (_type.compare("DirichletBoundary_KoecherBruchhaeuser2") == 0) {
+		AssertThrow(
+			options.size() == 1,
+			dealii::ExcMessage(
+				"dirichlet_boundary options invalid, "
+				"please check your input file data."
+			)
+		);
+		
+		function = std::make_shared< heat::dirichlet_boundary::KoecherBruchhaeuser2<dim> >(
+			std::stod(options.at(0)) // a
+		);
+		
+		DTM::pout
+			<< "dirichlet_boundary selector: created KoecherBruchhaeuser2 "
+			<< "as dirichlet_boundary function, with " << std::endl
+			<< "\ta = " << std::stod(options.at(0)) << std::endl
+			<< std::endl;
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// 
 	AssertThrow(
 		false,
 		dealii::ExcMessage("dirichlet_boundary function unknown, please check your input file data.")

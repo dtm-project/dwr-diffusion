@@ -1,7 +1,7 @@
 /**
- * @file ExactSolutions.hh
+ * @file Force_KoecherBruchhaeuser2.inst.in
  * @author Uwe Koecher (UK)
- * @date 2018-07-20, UK
+ * @date 2018-10-23, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -21,11 +21,15 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolutions_hh
-#define __ExactSolutions_hh
+#ifndef __Force_KoecherBruchhaeuser2_inst_in
+#define __Force_KoecherBruchhaeuser2_inst_in
 
-#include <heat/ExactSolution/ExactSolution_Hartmann142.tpl.hh>
-#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser1.tpl.hh>
-#include <heat/ExactSolution/ExactSolution_KoecherBruchhaeuser2.tpl.hh>
+namespace heat {
+namespace force {
+
+template class KoecherBruchhaeuser2<2>;
+template class KoecherBruchhaeuser2<3>;
+
+}} // namespaces
 
 #endif
