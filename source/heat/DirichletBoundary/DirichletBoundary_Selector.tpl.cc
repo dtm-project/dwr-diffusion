@@ -30,7 +30,7 @@
 #include <DTM++/base/LogStream.hh>
 
 #include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
-#include <heat/DirichletBoundary/DirichletBoundarys.hh>
+#include <heat/DirichletBoundary/DirichletBoundaries.hh>
 
 // C++ includes
 #include <vector>
