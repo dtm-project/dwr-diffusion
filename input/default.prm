@@ -1,4 +1,4 @@
-# Problem: Hartmann Sec. 1.4.2, Diploma-thesis
+# Problem: Koecher and Bruchhaeuser 2018 Test Case 2
 
 # Overall space dimension:
 set dim = 2
@@ -8,23 +8,23 @@ subsection Problem Specification
     
     # primal problem
     set primal space type = cG
-    set primal space type support points = canonical
     set primal p = 1
+    set primal space type support points = canonical
     
     set primal time type = dG
-    set primal time type support points = Gauss-Radau
-#    set primal time type support points = Gauss
     set primal r = 0
+#    set primal time type support points = Gauss-Radau
+    set primal time type support points = Gauss
     
     # dual problem
     set dual space type = cG
-    set dual space type support points = canonical
     set dual q = 2
+    set dual space type support points = canonical
     
     set dual time type = cG
-    set dual time type support points = Gauss-Lobatto
-#    set primal time type support points = Gauss
     set dual s = 1
+#    set dual time type support points = Gauss-Lobatto
+    set dual time type support points = Gauss
 end
 
 subsection Mesh Specification
@@ -40,74 +40,74 @@ subsection Mesh Specification
     
     ############################################################################
     # Global refinement of the initial mesh
-    set global refinement = 1
+    set global refinement = 3
 end
 
 subsection Time Integration
-    set initial time   = 0.0
-    set final time     = 1.0
-    set time step size = 0.1
+    set initial time   = 0.25
+    set final time     = 1.25
+    set time step size = 0.01
 end
 
 subsection DWR
-    set loops = 8
+    set loops = 6
     
     # space strategy: global, fixed_fraction or Schwegler
+#    set refine and coarsen space strategy = global
     set refine and coarsen space strategy = fixed_fraction
-    set refine and coarsen space top fraction = 0.8
+    set refine and coarsen space top fraction1 = 0.25
+    set refine and coarsen space top fraction2 = 0.15
     set refine and coarsen space bottom fraction = 0.0
     set refine and coarsen space max growth factor n_active_cells = 3
     
-    set refine and coarsen space Schwegler theta1 = 1.2
-    set refine and coarsen space Schwegler theta2 = 1.2
-    
     # time strategy: global, fixed_fraction
+#    set refine and coarsen time strategy = global
     set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.5
+    set refine and coarsen time top fraction = 0.7
 end
 
 subsection Parameter Specification
     ############################################################################
     # Mass density function rho
     set density function = ConstantFunction
-    set density options  = "1.0"
-
+    set density options  = "0.8"
+    
     # Diffusion coefficient function epsilon
     set epsilon function = ConstantFunction
-    set epsilon options  = "1.0"
+    set epsilon options  = "1.2"
     
     # Force f
-    set force function = Force_Hartmann142
-    #                     a   epsilon
-    set force options  = "50. 1."
-    
-    ############################################################################
-    # Boundary value function
-    set dirichlet boundary u_D function = DirichletBoundary_Hartmann142
-    #                                      a
-    set dirichlet boundary u_D options  = "50."
+    set force function = Force_KoecherBruchhaeuser2
+    #                     s       a   rho epsilon
+    set force options  = "-.3333  50. 0.8 1.2"
     
     ############################################################################
     # Initial value function
-    set initial value u0 function = InitialValue_Hartmann142
-    #                                a
-    set initial value u0 options  = "50."
+    set initial value u0 function = InitialValue_KoecherBruchhaeuser2
+    #                                s      a
+    set initial value u0 options  = "-.3333 50."
+    
+    ############################################################################
+    # Boundary value function
+    set dirichlet boundary u_D function = DirichletBoundary_KoecherBruchhaeuser2
+    #                                      s      a
+    set dirichlet boundary u_D options  = "-.3333 50."
     
     ############################################################################
     # Exact solution function (if any)
-    set exact solution function = ExactSolution_Hartmann142
-    #                              a   
-    set exact solution options  = "50."
+    set exact solution function = ExactSolution_KoecherBruchhaeuser2
+    #                              s      a
+    set exact solution options  = "-.3333 50."
 end
 
 subsection Output Quantities
     ############################################################################
     # primal solution output control
-    set primal data output dwr loop = all     # use none, all, last or number
+    set primal data output dwr loop = last     # use none, all, last or number
     
 #    set primal data output trigger type = I_n   # I_n mode: one output per I_n
     set primal data output trigger type = fixed # fixed mode: fixed output trigger time
-    set primal data output trigger time      = 0.01 # use fixed trigger value (fixed mode only)
+    set primal data output trigger time      = 0.005 # use fixed trigger value (fixed mode only)
     
     set primal data output patches auto mode = true # use < primal p > data output patches (auto mode)
     set primal data output patches           = 1    # use this (no auto mode)
@@ -117,9 +117,8 @@ subsection Output Quantities
     set dual data output dwr loop = none      # use none, all, last or number
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
-    set dual data output trigger time      = 0.01
+    set dual data output trigger time      = 0.005
     
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
 end
-
