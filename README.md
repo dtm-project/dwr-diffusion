@@ -11,7 +11,7 @@ up and running.
 ### How do I get set up? ###
 
 * Dependencies
-deal.II v8.5.1 at least, installed via candi, cf. https://github.com/dealii/candi
+deal.II v9.0.0 at least, installed via candi, cf. https://github.com/dealii/candi
 
 * Configuration
 cmake .
@@ -24,7 +24,7 @@ make
 ### Who do I talk to? ###
 
 * Principial Author
-    * Dr.-Ing. Dipl.-Ing. Uwe Koecher (koecher@hsu-hamburg.de)
+    * Dr.-Ing. Dipl.-Ing. Uwe Koecher (koecher@hsu-hamburg.de, dtmproject@uwe.koecher.cc)
 * Contributors
     * Marius P. Bruchhaeuser (bruchhaeuser@hsu-hamburg.de)
 
