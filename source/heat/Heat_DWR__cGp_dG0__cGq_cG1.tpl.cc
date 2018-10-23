@@ -1007,7 +1007,7 @@ primal_do_data_output(
 	// check if data for t=T was written
 	if (std::next(slab) == grid->slabs.end()) {
 	if (primal.data_output_trigger_type_fixed) {
-		if ( t > slab->t_n ) {
+		if ((t > slab->t_n) && (std::abs(t - slab->t_n) < slab->tau_n()/4.)) {
 			// overshoot of time variable; manually set to t = T and do data output
 			t = slab->t_n;
 			
@@ -1801,12 +1801,12 @@ dual_do_data_output(
 	// check if data for t=0 (t_0) was written
 	if (slab == grid->slabs.begin()) {
 	if (dual.data_output_trigger_type_fixed) {
-		if ( t < slab->t_m ) {
+		if ((t < slab->t_m) && (std::abs(t - slab->t_m) < slab->tau_n()/4.)) {
 			// undershoot of time variable; manually set t = 0 and do data output
 			t = slab->t_m;
 			
 			const double _t{ (t - slab->t_m) / slab->tau_n() };
-		
+			
 			const double xi0{ 1. - _t };
 			const double xi1{ _t };
 			

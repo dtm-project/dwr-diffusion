@@ -127,10 +127,10 @@ protected:
 		
 		// Data Output
 		std::shared_ptr< DTM::DataOutput<dim> > data_output;
-		int data_output_dwr_loop;
+		int    data_output_dwr_loop;
 		double data_output_time_value;
 		double data_output_trigger;
-		bool data_output_trigger_type_fixed;
+		bool   data_output_trigger_type_fixed;
 	} primal;
 	
 	virtual void primal_reinit_storage();
@@ -223,10 +223,10 @@ protected:
 		
 		// Data Output
 		std::shared_ptr< DTM::DataOutput<dim> > data_output;
-		int data_output_dwr_loop;
+		int    data_output_dwr_loop;
 		double data_output_time_value;
 		double data_output_trigger;
-		bool data_output_trigger_type_fixed;
+		bool   data_output_trigger_type_fixed;
 	} dual;
 	
 	virtual void dual_reinit_storage();

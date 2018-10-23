@@ -117,7 +117,7 @@ subsection Output Quantities
     set dual data output dwr loop = none      # use none, all, last or number
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
-    set dual data output trigger time      = 0.01
+    set dual data output trigger time      = 0.005
     
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
