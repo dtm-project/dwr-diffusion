@@ -27,8 +27,8 @@
 
 #include <DTM++/base/LogStream.hh>
 
-#include <heat/Force/Forces.hh>
 #include <heat/Force/Force_Selector.tpl.hh>
+#include <heat/Force/Forces.hh>
 
 // MPI includes
 

@@ -3,14 +3,14 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhäuser (MPB)
  *
- * @date 2018-07-30, dwr, MPB
+ * @date 2018-07-30, Density_Selector, contributed by MPB from Force_Selector (UK)
  * @date 2018-07-26, dwr, UK
  * @date 2018-05-28, piot/ewave, UK
  * @date 2016-05-30, UK
  * @date 2016-02-11, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher,  Marius Paul Bruchhäuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -30,10 +30,6 @@
 #include <DTM++/base/LogStream.hh>
 
 #include <heat/Density/Density_Selector.tpl.hh>
-
-// MPI includes
-
-// DEAL.II includes
 
 // C++ includes
 #include <vector>

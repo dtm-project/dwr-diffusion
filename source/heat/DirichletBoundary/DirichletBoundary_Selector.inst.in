@@ -2,16 +2,11 @@
  * @file DirichletBoundary_Selector.inst.in
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhäuser (MPB)
- * 
- * @date 2018-07-30, dwr, MPB
- * @date 2018-07-26, dwr, UK
- * @date 2016-05-30, UK
- * @date 2016-02-11, UK
  *
- * @brief Instantiation file
+ * @date 2018-07-30, DirichletBoundary, contributed by MPB from Force_Selector (UK)
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher,  Marius Paul Bruchhäuser          */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
