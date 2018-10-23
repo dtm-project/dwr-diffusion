@@ -44,13 +44,13 @@ subsection Mesh Specification
 end
 
 subsection Time Integration
-    set initial time   = 0.0
-    set final time     = 2.0
+    set initial time   = 0.25
+    set final time     = 1.25
     set time step size = 0.01
 end
 
 subsection DWR
-    set loops = 4
+    set loops = 6
     
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
@@ -70,34 +70,34 @@ subsection Parameter Specification
     ############################################################################
     # Mass density function rho
     set density function = ConstantFunction
-    set density options  = "1.0"
+    set density options  = "0.8"
     
     # Diffusion coefficient function epsilon
     set epsilon function = ConstantFunction
-    set epsilon options  = "1.0"
+    set epsilon options  = "1.2"
     
     # Force f
     set force function = Force_KoecherBruchhaeuser2
-    #                     s  a   rho epsilon
-    set force options  = "1. 50. 1.  1."
+    #                     s       a   rho epsilon
+    set force options  = "-.3333  50. 0.8 1.2"
     
     ############################################################################
     # Initial value function
     set initial value u0 function = InitialValue_KoecherBruchhaeuser2
-    #                                s  a
-    set initial value u0 options  = "1. 50."
+    #                                s      a
+    set initial value u0 options  = "-.3333 50."
     
     ############################################################################
     # Boundary value function
     set dirichlet boundary u_D function = DirichletBoundary_KoecherBruchhaeuser2
-    #                                      s a
-    set dirichlet boundary u_D options  = "1. 50."
+    #                                      s      a
+    set dirichlet boundary u_D options  = "-.3333 50."
     
     ############################################################################
     # Exact solution function (if any)
     set exact solution function = ExactSolution_KoecherBruchhaeuser2
-    #                              s  a
-    set exact solution options  = "1. 50."
+    #                              s      a
+    set exact solution options  = "-.3333 50."
 end
 
 subsection Output Quantities
