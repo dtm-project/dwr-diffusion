@@ -122,3 +122,4 @@ subsection Output Quantities
     set dual data output patches auto mode = true # use < dual q > data output patches (auto mode)
     set dual data output patches           = 1    # use this (no auto mode)
 end
+
