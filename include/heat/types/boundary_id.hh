@@ -33,7 +33,19 @@ namespace types {
 
 enum class boundary_id : unsigned int {
 	forbidden = 0,
+	
+	/**
+	 * Colour for marking \f$ \Gamma_D \f$ from the partition
+	 * \f$ \partial \Omega = \Gamma_D \cup \Gamma_N \f$ with
+	 * \f$ \Gamma_D \neq \emptyset \f$.
+	 */
 	Dirichlet = 2 << 0,
+	
+	/**
+	 * Colour for marking \f$ \Gamma_N \f$ from the partition
+	 * \f$ \partial \Omega = \Gamma_D \cup \Gamma_N \f$ with
+	 * \f$ \Gamma_D \neq \emptyset \f$.
+	 */
 	Neumann   = 2 << 1
 };
 
