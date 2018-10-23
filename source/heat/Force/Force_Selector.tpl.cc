@@ -185,7 +185,7 @@ create_function(
 	// 
 	if (_type.compare("Force_KoecherBruchhaeuser2") == 0) {
 		AssertThrow(
-			options.size() == 3,
+			options.size() == 4,
 			dealii::ExcMessage(
 				"force options invalid, "
 				"please check your input file data."
@@ -193,17 +193,19 @@ create_function(
 		);
 		
 		function = std::make_shared< heat::force::KoecherBruchhaeuser2<dim> >(
-			std::stod(options.at(0)), // a
-			std::stod(options.at(1)), // rho
-			std::stod(options.at(2))  // epsilon
+			std::stod(options.at(0)), // s
+			std::stod(options.at(1)), // a
+			std::stod(options.at(2)), // rho
+			std::stod(options.at(3))  // epsilon
 		);
 		
 		DTM::pout
 			<< "force selector: created KoecherBruchhaeuser2 "
 			<< "as force function, with " << std::endl
-			<< "\ta = " << std::stod(options.at(0)) << " , and " << std::endl
-			<< "\trho = " << std::stod(options.at(1)) << " , and " << std::endl
-			<< "\tepsilon = " << std::stod(options.at(2)) << " . " << std::endl
+			<< "\ts = " << std::stod(options.at(0)) << " , and " << std::endl
+			<< "\ta = " << std::stod(options.at(1)) << " , and " << std::endl
+			<< "\trho = " << std::stod(options.at(2)) << " , and " << std::endl
+			<< "\tepsilon = " << std::stod(options.at(3)) << " . " << std::endl
 			<< std::endl;
 		
 		return;

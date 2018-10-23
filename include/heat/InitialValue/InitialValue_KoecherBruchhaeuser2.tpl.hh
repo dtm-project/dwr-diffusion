@@ -35,7 +35,12 @@ namespace initial_value {
 template<int dim>
 class KoecherBruchhaeuser2 : public dealii::Function<dim> {
 public:
-	KoecherBruchhaeuser2(const double &a) : dealii::Function<dim> (1), a(a) {};
+	KoecherBruchhaeuser2(
+		const double &s,
+		const double &a
+	) : dealii::Function<dim> (1), s(s), a(a)
+	{};
+	
 	virtual ~KoecherBruchhaeuser2() = default;
 	
 	virtual
@@ -46,6 +51,7 @@ public:
 	) const;
 
 private:
+	const double s;
 	const double a;
 };
 

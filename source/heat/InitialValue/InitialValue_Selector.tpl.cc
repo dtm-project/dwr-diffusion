@@ -179,7 +179,7 @@ create_function(
 	// 
 	if (_type.compare("InitialValue_KoecherBruchhaeuser2") == 0) {
 		AssertThrow(
-			options.size() == 1,
+			options.size() == 2,
 			dealii::ExcMessage(
 				"initial_value options invalid, "
 				"please check your input file data."
@@ -187,13 +187,15 @@ create_function(
 		);
 		
 		function = std::make_shared< heat::initial_value::KoecherBruchhaeuser2<dim> >(
-			std::stod(options.at(0)) // a
+			std::stod(options.at(0)), // s
+			std::stod(options.at(1))  // a
 		);
 		
 		DTM::pout
 			<< "initial_value selector: created KoecherBruchhaeuser2 "
 			<< "as initial_value function, with " << std::endl
-			<< "\ta = " << std::stod(options.at(0)) << std::endl
+			<< "\ts = " << std::stod(options.at(0)) << std::endl
+			<< "\ta = " << std::stod(options.at(1)) << std::endl
 			<< std::endl;
 		
 		return;

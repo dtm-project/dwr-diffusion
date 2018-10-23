@@ -36,10 +36,11 @@ template<int dim>
 class KoecherBruchhaeuser2 : public dealii::Function<dim> {
 public:
 	KoecherBruchhaeuser2(
+		const double &s,
 		const double &a,
 		const double &rho,
 		const double &epsilon
-	) : dealii::Function<dim> (1), a(a), rho(rho), epsilon(epsilon)
+	) : dealii::Function<dim> (1), s(s), a(a), rho(rho), epsilon(epsilon)
 	{ };
 	
 	virtual ~KoecherBruchhaeuser2() = default;
@@ -52,6 +53,7 @@ public:
 	) const;
 
 private:
+	const double s;
 	const double a;
 	const double rho;
 	const double epsilon;
