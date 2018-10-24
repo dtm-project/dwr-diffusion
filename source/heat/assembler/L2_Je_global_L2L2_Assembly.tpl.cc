@@ -3,7 +3,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhäuser (MPB)
  * @author G. Kanschat, W. Bangerth and the deal.II authors
- * 
+ *
  * @date 2018-03-09, derived from L2_Je_global_L2L2_Assembly and MPB code, UK
  * @date 2018-03-08, included from ewave, UK
  * @date 2017-10-26, auto mode, UK
@@ -12,7 +12,7 @@
  * @date 2012-08-31
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -100,7 +100,6 @@ Je_global_L2L2Assembly<dim>::Je_global_L2L2Assembly(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// Constructor.
 template<int dim>
 Assembler<dim>::
 Assembler(
@@ -178,7 +177,6 @@ void Assembler<dim>::assemble(
 }
 
 
-/// Local assemble on cell.
 template<int dim>
 void Assembler<dim>::local_assemble_cell(
 	const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
@@ -240,7 +238,6 @@ void Assembler<dim>::local_assemble_cell(
 }
 
 
-/// Copy local assembly to global matrix.
 template<int dim>
 void Assembler<dim>::copy_local_to_global_cell(
 	const Assembly::CopyData::Je_global_L2L2Assembly<dim> &copydata) {

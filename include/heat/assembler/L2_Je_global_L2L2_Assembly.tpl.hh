@@ -15,7 +15,7 @@
  * NOTE: I(u_kh(t)) is the interpolated primal function on the dual solution space
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
+/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -32,11 +32,8 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-
 #ifndef __L2_Je_global_L2L2_Assembly_tpl_hh
 #define __L2_Je_global_L2L2_Assembly_tpl_hh
-
-// PROJECT includes
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
@@ -60,7 +57,6 @@
 #include <functional>
 #include <memory>
 #include <vector>
-
 
 namespace heat {
 namespace Assemble {
@@ -112,9 +108,6 @@ struct Je_global_L2L2Assembly {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/** Assembler.
- *
- */
 template<int dim>
 class Assembler {
 public:
@@ -150,7 +143,7 @@ protected:
 	void copy_local_to_global_cell(
 		const Assembly::CopyData::Je_global_L2L2Assembly<dim> &copydata
 	);
-	
+
 private:
 	std::shared_ptr< dealii::DoFHandler<dim> > dof;
 	std::shared_ptr< dealii::FiniteElement<dim> > fe;
