@@ -1897,6 +1897,7 @@ compute_error_indicators() {
 		function.epsilon,
 		function.f,
 		function.u_D,
+		function.u_N,
 		function.u_0,
 		grid,
 		parameter_set,
