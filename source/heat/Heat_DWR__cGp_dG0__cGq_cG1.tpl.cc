@@ -1303,12 +1303,11 @@ dual_assemble_rhs(
 		u0_on_primal = nullptr;
 	}
 	
-	// init vector and run assemble J(v)(e) = (v,e)
+	// assemble J(v)(e) = (v,e)
 	DTM::pout << "dwr-heat: assemble Je0...";
 	dual.Je0 = std::make_shared< dealii::Vector<double> > ();
 	dual.Je0->reinit( slab->dual.dof->n_dofs() );
 	
-	*dual.Je0 = 0;
 	assemble_Je->assemble(
 		dual.Je0,
 		t0,
@@ -1339,12 +1338,11 @@ dual_assemble_rhs(
 			*dual.u1
 		);
 		
-		// init vector and run assemble J(v)(e) = ((v,e))
+		// assemble J(v)(e) = (v,e)
 		DTM::pout << "dwr-heat: assemble Je1...";
 		dual.Je1 = std::make_shared< dealii::Vector<double> > ();
 		dual.Je1->reinit( slab->dual.dof->n_dofs() );
 		
-		*dual.Je1 = 0;
 		assemble_Je->assemble(
 			dual.Je1,
 			t1,

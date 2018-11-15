@@ -120,7 +120,7 @@ public:
 	
 	~Assembler() = default;
 	
-	/** Assemble vector. Vector must be initialized before!
+	/** Assemble vector.
 	 *  If @param n_quadrature_points = 0 is given,
 	 *  the dynamic default fe.tensor_degree()+1 will be used.
 	 */

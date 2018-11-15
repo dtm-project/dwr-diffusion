@@ -130,6 +130,7 @@ void Assembler<dim>::assemble(
 	// init
 	Je = _Je;
 	Assert( Je.use_count(), dealii::ExcNotInitialized() );
+	*Je = 0.;
 	
 	function.u_E = _u_E;
 	Assert( function.u_E.use_count(), dealii::ExcNotInitialized() );
@@ -182,12 +183,11 @@ void Assembler<dim>::local_assemble_cell(
 	const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 	Assembly::Scratch::Je_global_L2L2Assembly<dim> &scratch,
 	Assembly::CopyData::Je_global_L2L2Assembly<dim> &copydata) {
-	
-	// reinit scratch and data to current cell
+	// reinit fe_values and init local to global dof mapping
 	scratch.fe_values.reinit(cell);
 	cell->get_dof_indices(copydata.local_dof_indices);
 	
-	// initialize local matrix with zeros
+	// initialize local vector
 	copydata.vi_Jei_vector = 0;
 	
 	// assemble cell terms
@@ -199,7 +199,7 @@ void Assembler<dim>::local_assemble_cell(
 		for (scratch.component=0;
 			scratch.component < scratch.fe_values.get_fe().n_components();
 			++scratch.component) {
-			// loop over all basis functions to get the shape values
+			// prefetch data
 			for (scratch.k=0; scratch.k < scratch.fe_values.get_fe().dofs_per_cell;
 				++scratch.k) {
 				scratch.phi[scratch.k] =
@@ -215,7 +215,7 @@ void Assembler<dim>::local_assemble_cell(
 				scratch.component
 			);
 			
-			// loop over all basis functions to get u_h
+			// prefetch calulation of u_h
 			scratch.u_h = 0;
 			for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
 				++scratch.j) {
@@ -224,7 +224,7 @@ void Assembler<dim>::local_assemble_cell(
 					scratch.phi[scratch.j];
 			}
 			
-			// loop over all basis function combinitions to get the assembly
+			// assemble
 			for (scratch.i=0; scratch.i < scratch.fe_values.get_fe().dofs_per_cell;
 				 ++scratch.i) {
 				copydata.vi_Jei_vector[scratch.i] += (
