@@ -541,7 +541,7 @@ estimate(
 					//       Thus, we need to substract 1/2 of the assembly for
 					//       all face assemblies, such that the contributions on
 					//       boundary faces must be weighted with a factor of 2.0
-					//       during the assembly in assemble_error_on_boundary_face() .
+					//       during the assembly in assemble_error_on_dirichlet_boundary_face() .
 					(*eta->x[0])[cell_no] -= (1./2.) * face_integrals[cell->face(face_no)];
 				}
 			}
@@ -803,7 +803,7 @@ assemble_local_error(
 				static_cast<dealii::types::boundary_id> (
 					heat::types::boundary_id::Dirichlet) ) {
 				// only on Dirichlet type boundary face
-				assemble_error_on_boundary_face(
+				assemble_error_on_dirichlet_boundary_face(
 					cell,
 					scratch.face_no,
 					scratch.face,
@@ -1024,7 +1024,7 @@ assemble_error_on_cell(
 template<int dim>
 void
 ErrorEstimator<dim>::
-assemble_error_on_boundary_face(
+assemble_error_on_dirichlet_boundary_face(
 		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,

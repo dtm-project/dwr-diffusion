@@ -301,7 +301,7 @@ protected:
 		Assembly::CopyData::ErrorEstimateOnCell<dim> &copydata
 	);
 	
-	virtual void assemble_error_on_boundary_face(
+	virtual void assemble_error_on_dirichlet_boundary_face(
 		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
