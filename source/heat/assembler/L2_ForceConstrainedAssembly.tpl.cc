@@ -8,8 +8,6 @@
  * @date 2017-09-13, xwave/ewave, UK
  * @date 2015-05-19, AWAVE/C++.11, UK
  * @date 2012-08-31
- *
- * @brief Purpose: Assemble L2-function.
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -48,9 +46,7 @@ ForceConstrainedAssembly<dim>::ForceConstrainedAssembly(
 	const dealii::Quadrature<dim> &quad,
 	const dealii::UpdateFlags &uflags) :
 	fe_values(mapping, fe, quad, uflags),
-	phi(fe.dofs_per_cell),
-	JxW(0),
-	f(0) {
+	phi(fe.dofs_per_cell) {
 }
 
 
@@ -97,7 +93,6 @@ ForceConstrainedAssembly<dim>::ForceConstrainedAssembly(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// Constructor.
 template<int dim>
 Assembler<dim>::
 Assembler(
@@ -111,7 +106,6 @@ Assembler(
 	fe(fe),
 	mapping(mapping),
 	constraints(constraints) {
-	// init update flags
 	uflags =
 		dealii::update_quadrature_points |
 		dealii::update_values |
@@ -132,11 +126,15 @@ void Assembler<dim>::assemble(
 	const double time,
 	const unsigned int q,
 	const bool quadrature_points_auto_mode) {
+	// init. global vector
+	Assert(f.use_count(), dealii::ExcNotInitialized());
+	*f = 0;
+	
 	// check
-	Assert( function.f.use_count(), dealii::ExcNotInitialized() );
+	Assert(function.f.use_count(), dealii::ExcNotInitialized());
 	function.f->set_time(time);
 	
-	// assemble matrix
+	// setup quadrature
 	const dealii::QGauss<dim> quad{
 		(quadrature_points_auto_mode ? (fe->tensor_degree()+1) : q)
 	};
@@ -170,24 +168,27 @@ void Assembler<dim>::assemble(
 			this,
 			std::placeholders::_1
 		),
-		Assembly::Scratch::ForceConstrainedAssembly<dim> (*fe, *mapping, quad, uflags),
+		Assembly::Scratch::ForceConstrainedAssembly<dim> (
+			*fe,
+			*mapping,
+			quad,
+			uflags
+		),
 		Assembly::CopyData::ForceConstrainedAssembly<dim> (*fe)
 	);
 }
 
 
-/// Local assemble on cell.
 template<int dim>
 void Assembler<dim>::local_assemble_cell(
 	const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 	Assembly::Scratch::ForceConstrainedAssembly<dim> &scratch,
 	Assembly::CopyData::ForceConstrainedAssembly<dim> &copydata) {
-	
-	// reinit scratch and data to current cell
+	// reinit fe_values and init local to global dof mapping
 	scratch.fe_values.reinit(cell);
 	cell->get_dof_indices(copydata.local_dof_indices);
 	
-	// initialize local matrix with zeros
+	// initialize local vector
 	copydata.fi_vi_vector = 0;
 	
 	// assemble cell terms
@@ -203,7 +204,7 @@ void Assembler<dim>::local_assemble_cell(
 				scratch.component
 			);
 			
-			// loop over all basis functions to get the shape values
+			// prefetch data
 			for (scratch.k=0; scratch.k < scratch.fe_values.get_fe().dofs_per_cell;
 				++scratch.k) {
 				scratch.phi[scratch.k] =
@@ -214,7 +215,7 @@ void Assembler<dim>::local_assemble_cell(
 					);
 			}
 			
-			// loop over all basis function combinitions to get the assembly
+			// assemble
 			for (scratch.i=0; scratch.i < scratch.fe_values.get_fe().dofs_per_cell;
 				 ++scratch.i) {
 				copydata.fi_vi_vector[scratch.i] += (
@@ -228,7 +229,6 @@ void Assembler<dim>::local_assemble_cell(
 }
 
 
-/// Copy local assembly to global matrix.
 template<int dim>
 void Assembler<dim>::copy_local_to_global_cell(
 	const Assembly::CopyData::ForceConstrainedAssembly<dim> &copydata) {

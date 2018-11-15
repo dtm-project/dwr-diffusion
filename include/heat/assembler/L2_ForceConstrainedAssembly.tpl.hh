@@ -8,8 +8,6 @@
  * @date 2017-09-13, xwave/ewave, UK
  * @date 2015-05-19, AWAVE/C++.11, UK
  * @date 2012-08-31
- *
- * @brief Purpose: Assemble L2-function.
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
@@ -32,8 +30,6 @@
 
 #ifndef __L2_ForceConstrainedAssembly_tpl_hh
 #define __L2_ForceConstrainedAssembly_tpl_hh
-
-// PROJECT includes
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
@@ -107,9 +103,6 @@ struct ForceConstrainedAssembly {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/** Assembler.
- *
- */
 template<int dim>
 class Assembler {
 public:
@@ -127,7 +120,7 @@ public:
 		std::shared_ptr< dealii::Function<dim> > force
 	);
 	
-	/** Assemble vector. Vector must be initialized before!
+	/** Assemble vector.
 	 *  If @param n_quadrature_points = 0 is given,
 	 *  the dynamic default fe.tensor_degree()+1 will be used.
 	 */

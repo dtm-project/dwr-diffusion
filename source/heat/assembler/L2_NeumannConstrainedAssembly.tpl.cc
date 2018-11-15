@@ -108,7 +108,6 @@ NeumannConstrainedAssembly<dim>::NeumannConstrainedAssembly(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/// Constructor.
 template<int dim>
 Assembler<dim>::
 Assembler(
@@ -122,7 +121,6 @@ Assembler(
 	fe(fe),
 	mapping(mapping),
 	constraints(constraints) {
-	// init update flags
 	uflags_face =
 		dealii::update_quadrature_points |
 		dealii::update_values |
@@ -143,14 +141,15 @@ void Assembler<dim>::assemble(
 	const double time,
 	const unsigned int q,
 	const bool quadrature_points_auto_mode) {
+	// init. global vector
 	Assert(u_N.use_count(), dealii::ExcNotInitialized());
 	*u_N = 0;
 	
 	// check
-	Assert( function.u_N.use_count(), dealii::ExcNotInitialized() );
+	Assert(function.u_N.use_count(), dealii::ExcNotInitialized());
 	function.u_N->set_time(time);
 	
-	// assemble matrix
+	// setup quadrature
 	const dealii::QGauss<dim-1> quad_face{
 		(quadrature_points_auto_mode ? (fe->tensor_degree()+1) : q)
 	};
@@ -195,7 +194,6 @@ void Assembler<dim>::assemble(
 }
 
 
-/// Local assemble on cell.
 template<int dim>
 void Assembler<dim>::local_assemble_cell(
 	const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
@@ -204,7 +202,7 @@ void Assembler<dim>::local_assemble_cell(
 	// get global indices
 	cell->get_dof_indices(copydata.local_dof_indices);
 	
-	// initialize local vector with zeros
+	// initialize local vector
 	copydata.fi_vi_vector = 0;
 	
 	if (cell->at_boundary())
@@ -269,7 +267,6 @@ void Assembler<dim>::local_assemble_cell(
 }
 
 
-/// Copy local assembly to global matrix.
 template<int dim>
 void Assembler<dim>::copy_local_to_global_cell(
 	const Assembly::CopyData::NeumannConstrainedAssembly<dim> &copydata) {

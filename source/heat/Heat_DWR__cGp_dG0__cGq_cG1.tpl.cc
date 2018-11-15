@@ -456,7 +456,6 @@ primal_assemble_rhs(
 	assemble_f0->set_function(function.f);
 	
 	DTM::pout << "dwr-heat: assemble force f0...";
-	*primal.f0 = 0;
 	assemble_f0->assemble(
 		t0,
 		0,   // n_q_points: 0 -> p+1 in auto mode
@@ -481,7 +480,6 @@ primal_assemble_rhs(
 	assemble_u_N0->set_function(function.u_N);
 	
 	DTM::pout << "dwr-heat: assemble Neumann boundary terms u_N0...";
-	*primal.u_N0 = 0;
 	assemble_u_N0->assemble(
 		t0,
 		0,   // n_q_points: 0 -> p+1 in auto mode

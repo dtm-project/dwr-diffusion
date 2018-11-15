@@ -32,8 +32,6 @@
 #ifndef __L2_NeumannConstrainedAssembly_tpl_hh
 #define __L2_NeumannConstrainedAssembly_tpl_hh
 
-// PROJECT includes
-
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/function.h>
@@ -50,7 +48,6 @@
 // C++ includes
 #include <memory>
 #include <vector>
-
 
 namespace heat {
 namespace Assemble {
@@ -100,9 +97,6 @@ struct NeumannConstrainedAssembly {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/** Assembler.
- *
- */
 template<int dim>
 class Assembler {
 public:
