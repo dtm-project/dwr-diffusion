@@ -146,7 +146,121 @@ generate(
 	}
 	
 	////////////////////////////////////////////////////////////////////////////
-	// 
+	//
+	if (TriaGenerator_Type.compare("Lshape") == 0) {
+		AssertThrow(
+			((dim==2)||(dim==3)),
+			dealii::ExcMessage("dim = 2,3 needed for Lshape Grid")
+		);
+		
+		AssertThrow(
+			options.size() == 0,
+			dealii::ExcMessage(
+				"TriaGenerator Options invalid, "
+				"please check your input file data."
+			)
+		);
+		
+		Assert(tria.use_count(), dealii::ExcNotInitialized());
+		
+		{
+			////////////////////////////////////////////////////////////////////
+			std::vector< dealii::Point<dim> > vertices;
+			dealii::Point<dim> node;
+			
+			if (dim == 2) {
+				node[0]=0.0; node[1]=0.0; vertices.push_back(node); // 0
+				node[0]=0.5; node[1]=0.0; vertices.push_back(node); // 1
+				node[0]=1.0; node[1]=0.0; vertices.push_back(node); // 2
+				
+				node[0]=0.0; node[1]=0.5; vertices.push_back(node); // 3
+				node[0]=0.5; node[1]=0.5; vertices.push_back(node); // 4
+				node[0]=1.0; node[1]=0.5; vertices.push_back(node); // 5
+				
+				node[0]=0.0; node[1]=1.0; vertices.push_back(node); // 6
+				node[0]=0.5; node[1]=1.0; vertices.push_back(node); // 7
+			}
+			else if (dim == 3) {
+				node[2]=0.0;
+				node[0]=0.0; node[1]=0.0; vertices.push_back(node); // 0
+				node[0]=0.5; node[1]=0.0; vertices.push_back(node); // 1
+				node[0]=1.0; node[1]=0.0; vertices.push_back(node); // 2
+				
+				node[0]=0.0; node[1]=0.5; vertices.push_back(node); // 3
+				node[0]=0.5; node[1]=0.5; vertices.push_back(node); // 4
+				node[0]=1.0; node[1]=0.5; vertices.push_back(node); // 5
+				
+				node[0]=0.0; node[1]=1.0; vertices.push_back(node); // 6
+				node[0]=0.5; node[1]=1.0; vertices.push_back(node); // 7
+				
+				node[2]=0.5;
+				node[0]=0.0; node[1]=0.0; vertices.push_back(node); // 8
+				node[0]=0.5; node[1]=0.0; vertices.push_back(node); // 9
+				node[0]=1.0; node[1]=0.0; vertices.push_back(node); // 10
+				
+				node[0]=0.0; node[1]=0.5; vertices.push_back(node); // 11
+				node[0]=0.5; node[1]=0.5; vertices.push_back(node); // 12
+				node[0]=1.0; node[1]=0.5; vertices.push_back(node); // 13
+				
+				node[0]=0.0; node[1]=1.0; vertices.push_back(node); // 14
+				node[0]=0.5; node[1]=1.0; vertices.push_back(node); // 15
+			}
+			
+			////////////////////////////////////////////////////////////////////
+			std::vector< std::vector<unsigned int> > cell_vertices;
+			
+			if (dim == 2) {
+				std::vector<unsigned int> cell_indices = {0,0,0,0};
+				
+				cell_indices = {0, 1, 3, 4};
+				cell_vertices.push_back(cell_indices);
+				
+				cell_indices = {1, 2, 4, 5};
+				cell_vertices.push_back(cell_indices);
+				
+				cell_indices = {3, 4, 6, 7};
+				cell_vertices.push_back(cell_indices);
+			}
+			
+			if (dim == 3) {
+				std::vector<unsigned int> cell_indices = {0,0,0,0, 0,0,0,0};
+				
+				cell_indices = {0, 1, 3, 4, 0+8, 1+8, 3+8, 4+8};
+				cell_vertices.push_back(cell_indices);
+				
+				cell_indices = {1, 2, 4, 5, 1+8, 2+8, 4+8, 5+8};
+				cell_vertices.push_back(cell_indices);
+				
+				cell_indices = {3, 4, 6, 7, 3+8, 4+8, 6+8, 7+8};
+				cell_vertices.push_back(cell_indices);
+			}
+			
+			////////////////////////////////////////////////////////////////////
+			std::vector< dealii::CellData<dim> > cells;
+			cells.resize( cell_vertices.size() );
+			
+			for (unsigned int i=0; i < cells.size(); ++i) {
+				for (unsigned int j=0; j < dealii::GeometryInfo<dim>::vertices_per_cell; ++j) {
+					cells[i].vertices[j] = cell_vertices[i][j];
+				}
+			}
+			
+			tria->create_triangulation(vertices, cells, dealii::SubCellData());
+			
+		}
+		
+		DTM::pout << "DTM++: TriaGenerator: Successfully created Lshape grid."
+			<< std::endl;
+		
+		DTM::pout << "\tn_global_active_cells = "
+			<< tria->n_global_active_cells()
+			<< std::endl << std::endl;
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
 	AssertThrow(
 		false,
 		dealii::ExcMessage("TriaGenerator_Type unknown, please check your input file data.")
