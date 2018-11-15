@@ -801,7 +801,7 @@ assemble_local_error(
 		if (cell->face(scratch.face_no)->at_boundary()) {
 			if (cell->face(scratch.face_no)->boundary_id() ==
 				static_cast<dealii::types::boundary_id> (
-						heat::types::boundary_id::Dirichlet) ) {
+					heat::types::boundary_id::Dirichlet) ) {
 				// only on Dirichlet type boundary face
 				assemble_error_on_boundary_face(
 					cell,
@@ -809,6 +809,12 @@ assemble_local_error(
 					scratch.face,
 					copydata.face
 				);
+			}
+			else if (cell->face(scratch.face_no)->boundary_id() ==
+				static_cast<dealii::types::boundary_id> (
+					heat::types::boundary_id::Neumann) ) {
+				// homogeneous Neumann // TODO
+				face_integrals[cell->face(scratch.face_no)] = 0.0;
 			}
 			
 			continue;
