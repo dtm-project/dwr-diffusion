@@ -66,6 +66,18 @@ create_grid(
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
+	if ( !Grid_Class.compare("Grid_DWR_Dirichlet_and_Neumann_1") ) {
+		grid = std::make_shared< heat::grid::Grid_DWR_Dirichlet_and_Neumann_1<dim,1> > (
+			Grid_Class_Options,
+			TriaGenerator,
+			TriaGenerator_Options
+		);
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
 	AssertThrow(
 		false,
 		dealii::ExcMessage("Grid Class unknown, please check your input file data.")
