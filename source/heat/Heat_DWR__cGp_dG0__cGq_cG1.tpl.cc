@@ -304,6 +304,21 @@ init_functions() {
 		Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
 	}
 	
+	// neumann boundary function u_N = \epsilon \partial_n u(x,t):
+	{
+// 		heat::dirichlet_boundary::Selector<dim> selector;
+// 		selector.create_function(
+// 			parameter_set->dirichlet_boundary_u_D_function,
+// 			parameter_set->dirichlet_boundary_u_D_options,
+// 			function.u_D
+// 		);
+		
+		// TODO:
+		function.u_N = std::make_shared< dealii::Functions::ZeroFunction<dim> > (1);
+		
+		Assert(function.u_N.use_count(), dealii::ExcNotInitialized());
+	}
+	
 	// exact solution function u_E (if any)
 	{
 		heat::exact_solution::Selector<dim> selector;

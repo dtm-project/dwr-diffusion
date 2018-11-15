@@ -85,6 +85,7 @@ protected:
 		std::shared_ptr< dealii::Function<dim> > f;
 		
 		std::shared_ptr< dealii::Function<dim> > u_D;
+		std::shared_ptr< dealii::Function<dim> > u_N;
 		std::shared_ptr< dealii::Function<dim> > u_0;
 		
 		std::shared_ptr< dealii::Function<dim> > u_E;
