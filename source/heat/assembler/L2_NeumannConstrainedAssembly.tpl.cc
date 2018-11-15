@@ -139,8 +139,7 @@ Assembler<dim>::set_function(
 template<int dim>
 void Assembler<dim>::assemble(
 	const double time,
-	const unsigned int q,
-	const bool quadrature_points_auto_mode) {
+	const unsigned int q) {
 	// init. global vector
 	Assert(u_N.use_count(), dealii::ExcNotInitialized());
 	*u_N = 0;
@@ -149,14 +148,10 @@ void Assembler<dim>::assemble(
 	Assert(function.u_N.use_count(), dealii::ExcNotInitialized());
 	function.u_N->set_time(time);
 	
-	// setup quadrature
-	const dealii::QGauss<dim-1> quad_face{
-		(quadrature_points_auto_mode ? (fe->tensor_degree()+1) : q)
-	};
-	
-	if (!quad_face.size()) {
+	// setup quadrature; return if q==0
+	const dealii::QGauss<dim-1> quad_face{q};
+	if (!quad_face.size())
 		return;
-	}
 	
 	typedef dealii::FilteredIterator<
 		const typename dealii::DoFHandler<dim>::active_cell_iterator

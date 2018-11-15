@@ -352,7 +352,7 @@ ParameterHandler() {
 		
 		declare_entry(
 			"neumann assembler quadrature auto mode",
-			"false",
+			"true",
 			dealii::Patterns::Bool()
 		);
 		

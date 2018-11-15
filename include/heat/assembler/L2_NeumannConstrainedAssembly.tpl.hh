@@ -114,14 +114,9 @@ public:
 		std::shared_ptr< dealii::Function<dim> > u_N
 	);
 	
-	/** Assemble vector.
-	 *  If @param n_quadrature_points = 0 is given,
-	 *  the dynamic default fe.tensor_degree()+1 will be used.
-	 */
 	void assemble(
 		const double time,
-		const unsigned int n_quadrature_points = 0,
-		const bool quadrature_points_auto_mode = true
+		const unsigned int n_quadrature_points
 	);
 	
 protected:

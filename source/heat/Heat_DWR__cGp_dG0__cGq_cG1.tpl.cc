@@ -441,6 +441,7 @@ primal_assemble_rhs(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const double t0
 ) {
+	// Force assembly
 	primal.f0 = std::make_shared< dealii::Vector<double> > ();
 	primal.f0->reinit( slab->primal.dof->n_dofs() );
 	
@@ -458,13 +459,12 @@ primal_assemble_rhs(
 	DTM::pout << "dwr-heat: assemble force f0...";
 	assemble_f0->assemble(
 		t0,
-		0,   // n_q_points: 0 -> p+1 in auto mode
-		true // auto mode
+		parameter_set->force_assembler_n_quadrature_points
 	);
 	DTM::pout << " (done)" << std::endl;
 	
 	
-	// Neumann boundary assemblies
+	// Neumann boundary assembly
 	primal.u_N0 = std::make_shared< dealii::Vector<double> > ();
 	primal.u_N0->reinit( slab->primal.dof->n_dofs() );
 	
@@ -482,8 +482,7 @@ primal_assemble_rhs(
 	DTM::pout << "dwr-heat: assemble Neumann boundary terms u_N0...";
 	assemble_u_N0->assemble(
 		t0,
-		0,   // n_q_points: 0 -> p+1 in auto mode
-		true // auto mode
+		parameter_set->neumann_assembler_n_quadrature_points
 	);
 	DTM::pout << " (done)" << std::endl;
 }
