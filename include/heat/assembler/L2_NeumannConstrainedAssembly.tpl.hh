@@ -77,8 +77,8 @@ struct NeumannConstrainedAssembly {
 	double                    u_N;
 	
 	// other
+	unsigned int face_no;
 	unsigned int q;
-	unsigned int component;
 	unsigned int k;
 	unsigned int i;
 };

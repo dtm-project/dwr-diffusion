@@ -77,8 +77,8 @@ NeumannConstrainedAssembly<dim>::NeumannConstrainedAssembly(
 	phi(scratch.phi),
 	JxW(scratch.JxW),
 	u_N(scratch.u_N),
+	face_no(scratch.face_no),
 	q(scratch.q),
-	component(scratch.component),
 	k(scratch.k),
 	i(scratch.i) {
 }
@@ -208,10 +208,11 @@ void Assembler<dim>::local_assemble_cell(
 	copydata.fi_vi_vector = 0;
 	
 	if (cell->at_boundary())
-	for (unsigned int face_no(0);
-		face_no < dealii::GeometryInfo<dim>::faces_per_cell; ++face_no)
-	if ((cell->face(face_no)->at_boundary()) &&
-		(cell->face(face_no)->boundary_id() ==
+	for (scratch.face_no=0;
+		scratch.face_no < dealii::GeometryInfo<dim>::faces_per_cell;
+		++scratch.face_no)
+	if ((cell->face(scratch.face_no)->at_boundary()) &&
+		(cell->face(scratch.face_no)->boundary_id() ==
 		static_cast<dealii::types::boundary_id> (
 		heat::types::boundary_id::Neumann))) {
 		////////////////////////////////////////////////////////////////////////////
@@ -219,7 +220,7 @@ void Assembler<dim>::local_assemble_cell(
 		//
 		
 		// reinit scratch and data to current cell
-		scratch.fe_face_values.reinit(cell,face_no);
+		scratch.fe_face_values.reinit(cell,scratch.face_no);
 		
 		////////////////////////////////////////////////////////////////////////////
 		// assemble terms
