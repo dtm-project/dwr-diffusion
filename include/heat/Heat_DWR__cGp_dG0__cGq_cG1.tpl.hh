@@ -119,6 +119,7 @@ protected:
 		
 		/// temporary storage for primal right hand side assembly
 		std::shared_ptr< dealii::Vector<double> > f0;
+		std::shared_ptr< dealii::Vector<double> > u_N0;
 		
 		/// temporary storage for primal system matrix
 		std::shared_ptr< dealii::SparseMatrix<double> > K;

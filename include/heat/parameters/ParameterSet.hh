@@ -128,8 +128,9 @@ struct ParameterSet {
 	std::string dirichlet_boundary_u_D_options;
 	unsigned int dirichlet_assembler_n_quadrature_points;
 	
-	std::string normal_traction_boundary_t_N_function;
-	std::string normal_traction_boundary_t_N_options;
+	std::string neumann_boundary_u_N_function;
+	std::string neumann_boundary_u_N_options;
+	unsigned int neumann_assembler_n_quadrature_points;
 	
 	std::string initial_value_u0_function;
 	std::string initial_value_u0_options;
