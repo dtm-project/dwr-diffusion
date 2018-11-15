@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  *
+ * @date 2018-11-15, add inhomogeneous Neumann, MPB, UK
  * @date 2018-03-16, ErrorEstimator class for heat (final), UK, MPB
  * @date 2018-03-13, new development ErrorEstimator class for heat (begin), UK, MPB
  * @date 2018-03-13, fork from DTM++/dwr-poisson, UK
@@ -156,8 +157,10 @@ struct ErrorEstimateOnFace {
 	// function eval scratch:
 	double value_epsilon;
 	double value_u_D;
+	double value_u_N;
 	
 	double val_uh;
+	double val_grad_uh;
 	double val_grad_zh;
 	double val_face_jump_grad_u;
 	double val_z_Rz_j;
@@ -243,6 +246,7 @@ public:
 		std::shared_ptr< dealii::Function<dim> > epsilon,
 		std::shared_ptr< dealii::Function<dim> > f,
 		std::shared_ptr< dealii::Function<dim> > u_D,
+		std::shared_ptr< dealii::Function<dim> > u_N,
 		std::shared_ptr< dealii::Function<dim> > u_0,
 		std::shared_ptr< heat::Grid_DWR<dim,1> > grid,
 		std::shared_ptr< heat::dwr::ParameterSet > parameter_set,
@@ -301,7 +305,14 @@ protected:
 		Assembly::CopyData::ErrorEstimateOnCell<dim> &copydata
 	);
 	
-	virtual void assemble_error_on_boundary_face(
+	virtual void assemble_error_on_dirichlet_boundary_face(
+		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
+		const unsigned int face_no,
+		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
+		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata
+	);
+	
+	virtual void assemble_error_on_neumann_boundary_face(
 		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
@@ -355,6 +366,7 @@ protected:
 		std::shared_ptr< dealii::Function<dim> > epsilon;
 		std::shared_ptr< dealii::Function<dim> > f;
 		std::shared_ptr< dealii::Function<dim> > u_D;
+		std::shared_ptr< dealii::Function<dim> > u_N;
 		std::shared_ptr< dealii::Function<dim> > u_0;
 	} function;
 	

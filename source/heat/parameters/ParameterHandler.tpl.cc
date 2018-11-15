@@ -339,15 +339,27 @@ ParameterHandler() {
 		
 		
 		declare_entry(
-			"normal traction boundary t_N function",
+			"neumann boundary u_N function",
 			"invalid",
 			dealii::Patterns::Anything()
 		);
 		
 		declare_entry(
-			"normal traction boundary t_N options",
+			"neumann boundary u_N options",
 			"",
 			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"neumann assembler quadrature auto mode",
+			"false",
+			dealii::Patterns::Bool()
+		);
+		
+		declare_entry(
+			"neumann assembler quadrature points",
+			"0",
+			dealii::Patterns::Integer()
 		);
 		
 		

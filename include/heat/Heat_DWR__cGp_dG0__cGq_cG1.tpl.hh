@@ -85,6 +85,7 @@ protected:
 		std::shared_ptr< dealii::Function<dim> > f;
 		
 		std::shared_ptr< dealii::Function<dim> > u_D;
+		std::shared_ptr< dealii::Function<dim> > u_N;
 		std::shared_ptr< dealii::Function<dim> > u_0;
 		
 		std::shared_ptr< dealii::Function<dim> > u_E;
@@ -118,6 +119,7 @@ protected:
 		
 		/// temporary storage for primal right hand side assembly
 		std::shared_ptr< dealii::Vector<double> > f0;
+		std::shared_ptr< dealii::Vector<double> > u_N0;
 		
 		/// temporary storage for primal system matrix
 		std::shared_ptr< dealii::SparseMatrix<double> > K;

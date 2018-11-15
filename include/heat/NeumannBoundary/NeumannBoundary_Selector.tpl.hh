@@ -1,11 +1,16 @@
 /**
- * @file Grids.hh
+ * @file NeumannBoundary_Selector.tpl.hh
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-03-06, UK
+ * @author Marius Paul Bruchhäuser (MPB)
+ *
+ * @date 2018-11-15, NeumannBoundary, UK, MPB
+ * @date 2018-07-30, DirichletBoundary, contributed by MPB from Force_Selector (UK)
+ * @date 2018-07-26, dwr, UK
+ * @date 2016-05-30, UK
+ * @date 2016-02-11, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -22,12 +27,32 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __Grids_hh
-#define __Grids_hh
+#ifndef __NeumannBoundary_Selector_tpl_hh
+#define __NeumannBoundary_Selector_tpl_hh
 
-#include <heat/grid/Grid_DWR.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
 
-#include <heat/grid/Grid_DWR_PureDirichlet.tpl.hh>
-#include <heat/grid/Grid_DWR_Dirichlet_and_Neumann_1.tpl.hh>
+// C++ includes
+#include <memory>
+#include <string>
+
+namespace heat {
+namespace neumann_boundary {
+
+template<int dim>
+class Selector {
+public:
+	Selector() = default;
+	virtual ~Selector() = default;
+	
+	virtual void create_function(
+		const std::string &type,
+		const std::string &options,
+		std::shared_ptr< dealii::Function<dim> > &function
+	) const;
+};
+
+}}
 
 #endif

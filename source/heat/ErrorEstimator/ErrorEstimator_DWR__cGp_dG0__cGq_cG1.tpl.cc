@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  *
+ * @date 2018-11-15, add inhomogeneous Neumann, MPB, UK
  * @date 2018-07-19, bugfix: irregular face, UK, MPB
  * @date 2018-03-16, ErrorEstimator class for heat (final), UK, MPB
  * @date 2018-03-13, new development ErrorEstimator class for heat (begin), UK, MPB
@@ -172,7 +173,9 @@ ErrorEstimateOnFace<dim>::ErrorEstimateOnFace(const ErrorEstimateOnFace &scratch
 	// other
 	value_epsilon(scratch.value_epsilon),
 	value_u_D(scratch.value_u_D),
+	value_u_N(scratch.value_u_N),
 	val_uh(scratch.val_uh),
+	val_grad_uh(scratch.val_grad_uh),
 	val_grad_zh(scratch.val_grad_zh),
 	val_face_jump_grad_u(scratch.val_face_jump_grad_u),
 	val_z_Rz_j(scratch.val_z_Rz_j),
@@ -245,6 +248,7 @@ estimate(
 	std::shared_ptr< dealii::Function<dim> > _epsilon,
 	std::shared_ptr< dealii::Function<dim> > _f,
 	std::shared_ptr< dealii::Function<dim> > _u_D,
+	std::shared_ptr< dealii::Function<dim> > _u_N,
 	std::shared_ptr< dealii::Function<dim> > _u_0,
 	std::shared_ptr< heat::Grid_DWR<dim,1> > _grid,
 	std::shared_ptr< heat::dwr::ParameterSet > _parameter_set,
@@ -263,6 +267,9 @@ estimate(
 	
 	Assert(_u_D.use_count(), dealii::ExcNotInitialized());
 	function.u_D = _u_D;
+	
+	Assert(_u_N.use_count(), dealii::ExcNotInitialized());
+	function.u_N = _u_N;
 	
 	Assert(_u_0.use_count(), dealii::ExcNotInitialized());
 	function.u_0 = _u_0;
@@ -467,6 +474,9 @@ estimate(
 		// set time variable for force function f
 		function.f->set_time(t0);
 		
+		// set time variable for Neumann boundary function u_N
+		function.u_N->set_time(t0);
+		
 		dealii::WorkStream::run(
 			slab->dual.dof->begin_active(),
 			slab->dual.dof->end(),
@@ -541,7 +551,7 @@ estimate(
 					//       Thus, we need to substract 1/2 of the assembly for
 					//       all face assemblies, such that the contributions on
 					//       boundary faces must be weighted with a factor of 2.0
-					//       during the assembly in assemble_error_on_boundary_face() .
+					//       during the assembly in assemble_error_on_dirichlet_boundary_face() .
 					(*eta->x[0])[cell_no] -= (1./2.) * face_integrals[cell->face(face_no)];
 				}
 			}
@@ -801,9 +811,20 @@ assemble_local_error(
 		if (cell->face(scratch.face_no)->at_boundary()) {
 			if (cell->face(scratch.face_no)->boundary_id() ==
 				static_cast<dealii::types::boundary_id> (
-						heat::types::boundary_id::Dirichlet) ) {
+					heat::types::boundary_id::Dirichlet) ) {
 				// only on Dirichlet type boundary face
-				assemble_error_on_boundary_face(
+				assemble_error_on_dirichlet_boundary_face(
+					cell,
+					scratch.face_no,
+					scratch.face,
+					copydata.face
+				);
+			}
+			else if (cell->face(scratch.face_no)->boundary_id() ==
+				static_cast<dealii::types::boundary_id> (
+					heat::types::boundary_id::Neumann) ) {
+				// only on Neumann type boundary face:
+				assemble_error_on_neumann_boundary_face(
 					cell,
 					scratch.face_no,
 					scratch.face,
@@ -1018,7 +1039,7 @@ assemble_error_on_cell(
 template<int dim>
 void
 ErrorEstimator<dim>::
-assemble_error_on_boundary_face(
+assemble_error_on_dirichlet_boundary_face(
 		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
 		const unsigned int face_no,
 		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
@@ -1089,6 +1110,116 @@ assemble_error_on_boundary_face(
 			* (scratch.value_u_D - scratch.val_uh)
 			// epsilon(x_q) * grad z_h * n
 			* scratch.value_epsilon * scratch.val_grad_zh 
+			* tau_n
+			* scratch.JxW
+		);
+	}
+	
+	Assert(
+		std::isnan(face_integrals[copydata.face]),
+		dealii::ExcMessage("ErrorEstimator: you access the same boundary face at least two times")
+	);
+	face_integrals[copydata.face] = copydata.value;
+}
+
+
+template<int dim>
+void
+ErrorEstimator<dim>::
+assemble_error_on_neumann_boundary_face(
+		const typename dealii::DoFHandler<dim>::active_cell_iterator &cell,
+		const unsigned int face_no,
+		Assembly::Scratch::ErrorEstimateOnFace<dim> &scratch,
+		Assembly::CopyData::ErrorEstimateOnFace<dim> &copydata) {
+	
+	// cf. W. Bangerth, R. Rannacher: Adaptive Finite Element Methods for
+	// Differential Equations, Lectures in Mathematics, ETH Zürich, Birkhäuser,
+	// 2003, p.37 (inhomogeneous Neumann for stationary elliptic problem)
+	
+	Assert(
+		(cell->face(face_no).state() == dealii::IteratorState::valid),
+		dealii::ExcInternalError()
+	);
+	
+	scratch.fe_values_face.reinit(cell, face_no);
+	
+	// fetch local dof data ( K^+ / F^+ on Gamma_N )
+	cell->get_dof_indices(scratch.local_dof_indices);
+	
+	for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+		++scratch.j) {
+		scratch.local_u0[scratch.j] =
+			(*dual_u_on_t0)[ scratch.local_dof_indices[scratch.j] ];
+	}
+	
+	for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+		++scratch.j) {
+		scratch.local_z0[scratch.j] =
+			(*dual_z_on_t0)[ scratch.local_dof_indices[scratch.j] ];
+	}
+	
+	for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+		++scratch.j) {
+		scratch.local_Rz0[scratch.j] =
+			(*dual_Rz_on_t0)[ scratch.local_dof_indices[scratch.j] ];
+	}
+	
+	// initialize copydata
+	copydata.face = cell->face(face_no);
+	copydata.value = 0.;
+	
+	// assemble face terms
+	for (scratch.q=0; scratch.q < scratch.fe_values_face.n_quadrature_points;
+		++scratch.q) {
+		scratch.JxW = scratch.fe_values_face.JxW(scratch.q);
+		scratch.normal_vector = scratch.fe_values_face.normal_vector(scratch.q);
+		
+		// loop over all basis functions to get the shape values (K^+)
+		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.phi[scratch.j] =
+				scratch.fe_values_face.shape_value_component(scratch.j,scratch.q,0);
+		}
+		
+		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.grad_phi[scratch.j] =
+				scratch.fe_values_face.shape_grad(scratch.j,scratch.q);
+		}
+		
+		// fetch function value(s)
+		scratch.value_epsilon = function.epsilon->value(
+			scratch.fe_values_face.quadrature_point(scratch.q), 0
+		);
+		
+		scratch.value_u_N = function.u_N->value(
+			scratch.fe_values_face.quadrature_point(scratch.q), 0
+		);
+		
+		// compute
+		scratch.val_grad_uh=0.;
+		scratch.val_z_Rz_j=0.;
+		for (scratch.j=0; scratch.j < scratch.fe_values_face.get_fe().dofs_per_cell;
+			++scratch.j) {
+			scratch.val_grad_uh += scratch.local_u0[scratch.j]
+				* scratch.fe_values_face.shape_grad(scratch.j,scratch.q)
+				* scratch.normal_vector;
+			
+			scratch.val_z_Rz_j +=
+				(scratch.local_z0[scratch.j] - scratch.local_Rz0[scratch.j])
+				* scratch.phi[scratch.j];
+			
+		}
+		
+		// \int_{I_n} ... :
+		copydata.value += (
+			// finally we use 1/2 of all face values (interior and boundary faces!),
+			// thus we need to double the value in the assembly here
+			2.0
+			// u_N - epsilon * \partial_n u_h
+			* (scratch.value_u_N - scratch.value_epsilon * scratch.val_grad_uh)
+			// z_h - I_h z_h
+			* scratch.val_z_Rz_j
 			* tau_n
 			* scratch.JxW
 		);

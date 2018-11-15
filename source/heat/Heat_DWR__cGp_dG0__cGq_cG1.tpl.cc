@@ -41,6 +41,7 @@
 
 #include <heat/InitialValue/InitialValue_Selector.tpl.hh>
 #include <heat/DirichletBoundary/DirichletBoundary_Selector.tpl.hh>
+#include <heat/NeumannBoundary/NeumannBoundary_Selector.tpl.hh>
 
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 
@@ -52,6 +53,10 @@
 #include <heat/assembler/L2_ForceConstrainedAssembly.tpl.hh>
 template <int dim>
 using ForceAssembler = heat::Assemble::L2::ForceConstrained::Assembler<dim>;
+
+#include <heat/assembler/L2_NeumannConstrainedAssembly.tpl.hh>
+template <int dim>
+using NeumannAssembler = heat::Assemble::L2::NeumannConstrained::Assembler<dim>;
 
 #include <heat/assembler/L2_Je_global_L2L2_Assembly.tpl.hh>
 
@@ -304,6 +309,18 @@ init_functions() {
 		Assert(function.u_D.use_count(), dealii::ExcNotInitialized());
 	}
 	
+	// neumann boundary function u_N = \epsilon \partial_n u(x,t):
+	{
+		heat::neumann_boundary::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->neumann_boundary_u_N_function,
+			parameter_set->neumann_boundary_u_N_options,
+			function.u_N
+		);
+		
+		Assert(function.u_N.use_count(), dealii::ExcNotInitialized());
+	}
+	
 	// exact solution function u_E (if any)
 	{
 		heat::exact_solution::Selector<dim> selector;
@@ -446,6 +463,31 @@ primal_assemble_rhs(
 		true // auto mode
 	);
 	DTM::pout << " (done)" << std::endl;
+	
+	
+	// Neumann boundary assemblies
+	primal.u_N0 = std::make_shared< dealii::Vector<double> > ();
+	primal.u_N0->reinit( slab->primal.dof->n_dofs() );
+	
+	auto assemble_u_N0 = std::make_shared< NeumannAssembler<dim> > (
+		primal.u_N0,
+		slab->primal.dof,
+		slab->primal.fe,
+		slab->primal.mapping,
+		slab->primal.constraints
+	);
+	
+	Assert(function.u_N.use_count(), dealii::ExcNotInitialized());
+	assemble_u_N0->set_function(function.u_N);
+	
+	DTM::pout << "dwr-heat: assemble Neumann boundary terms u_N0...";
+	*primal.u_N0 = 0;
+	assemble_u_N0->assemble(
+		t0,
+		0,   // n_q_points: 0 -> p+1 in auto mode
+		true // auto mode
+	);
+	DTM::pout << " (done)" << std::endl;
 }
 
 
@@ -473,7 +515,7 @@ primal_solve_slab_problem(
 	DTM::pout << " (done)" << std::endl;
 	
 	////////////////////////////////////////////////////////////////////////////
-	// construct system right hand side vector b = M um + tau_n f0
+	// construct system right hand side vector b = M um + tau_n f0 + tau_n u_N0
 	//
 	
 	DTM::pout << "dwr-heat: construct linear system rhs vector...";
@@ -486,6 +528,7 @@ primal_solve_slab_problem(
 	primal.M->vmult(*primal.b, *primal.um);
 	
 	primal.b->add(slab->tau_n(), *primal.f0);
+	primal.b->add(slab->tau_n(), *primal.u_N0);
 	
 	DTM::pout << " (done)" << std::endl;
 	
@@ -1882,6 +1925,7 @@ compute_error_indicators() {
 		function.epsilon,
 		function.f,
 		function.u_D,
+		function.u_N,
 		function.u_0,
 		grid,
 		parameter_set,

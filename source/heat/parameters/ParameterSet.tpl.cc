@@ -197,13 +197,22 @@ ParameterSet(
 		}
 		
 		
-		normal_traction_boundary_t_N_function = handler->get(
-			"normal traction boundary t_N function"
+		neumann_boundary_u_N_function = handler->get(
+			"neumann boundary u_N function"
 		);
 		
-		normal_traction_boundary_t_N_options = handler->get(
-			"normal traction boundary t_N options"
+		neumann_boundary_u_N_options = handler->get(
+			"neumann boundary u_N options"
 		);
+		
+		neumann_assembler_n_quadrature_points = static_cast<unsigned int> (
+			handler->get_integer(
+				"neumann assembler quadrature points"
+			)
+		);
+		if (handler->get_bool("neumann assembler quadrature auto mode")) {
+			neumann_assembler_n_quadrature_points += fe.primal.p + 1;
+		}
 		
 		
 		initial_value_u0_function = handler->get(
