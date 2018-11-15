@@ -50,7 +50,7 @@ subsection Time Integration
 end
 
 subsection DWR
-    set loops = 3
+    set loops = 6
     
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
@@ -98,10 +98,7 @@ subsection Parameter Specification
     set neumann boundary u_N function = NeumannBoundary_KoecherBruchhaeuser2a
     #                                      s      a epsilon
     set neumann boundary u_N options  = "-.3333 50. 1.2"
-
-#    set neumann boundary u_N function = ConstantFunction
-#    set neumann boundary u_N options  = "1000."
-
+    set neumann assembler quadrature auto mode = true
     
     ############################################################################
     # Exact solution function (if any)
@@ -113,7 +110,7 @@ end
 subsection Output Quantities
     ############################################################################
     # primal solution output control
-    set primal data output dwr loop = all     # use none, all, last or number
+    set primal data output dwr loop = last      # use none, all, last or number
     
 #    set primal data output trigger type = I_n   # I_n mode: one output per I_n
     set primal data output trigger type = fixed # fixed mode: fixed output trigger time
@@ -124,7 +121,7 @@ subsection Output Quantities
     
     ############################################################################
     # dual solution output control
-    set dual data output dwr loop = all      # use none, all, last or number
+    set dual data output dwr loop = none      # use none, all, last or number
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.005

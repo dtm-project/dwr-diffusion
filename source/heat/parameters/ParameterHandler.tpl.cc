@@ -340,7 +340,7 @@ ParameterHandler() {
 		
 		declare_entry(
 			"neumann boundary u_N function",
-			"invalid",
+			"ZeroFunction",
 			dealii::Patterns::Anything()
 		);
 		
@@ -352,7 +352,7 @@ ParameterHandler() {
 		
 		declare_entry(
 			"neumann assembler quadrature auto mode",
-			"true",
+			"false",
 			dealii::Patterns::Bool()
 		);
 		
