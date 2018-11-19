@@ -66,6 +66,7 @@ using NeumannAssembler = heat::Assemble::L2::NeumannConstrained::Assembler<dim>;
 
 #include <deal.II/grid/grid_refinement.h>
 
+#include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/sparse_direct.h>
 
 #include <deal.II/numerics/matrix_tools.h>
@@ -139,21 +140,60 @@ run() {
 	init_grid();
 	init_functions();
 	
-	// DWR loop:
+	////////////////////////////////////////////////////////////////////////////
+	// DWR loop
+	//
+	
 	DTM::pout
 		<< std::endl
 		<< "*******************************************************************"
-		<< "*************" << std::endl
-		<< "dwr loops = " << parameter_set->dwr.loops << std::endl
+		<< "*************" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// setup solver/reduction control for outer dwr loop
+	std::shared_ptr< dealii::ReductionControl > solver_control_dwr;
+	solver_control_dwr = std::make_shared< dealii::ReductionControl >();
+	
+	if (!parameter_set->dwr.solver_control.in_use) {
+		solver_control_dwr->set_max_steps(parameter_set->dwr.loops-1);
+		solver_control_dwr->set_tolerance(0.);
+		solver_control_dwr->set_reduction(1.e-16);
+		
+		DTM::pout
+			<< std::endl
+			<< "dwr loops (fixed number) = " << solver_control_dwr->max_steps()
+			<< std::endl << std::endl;
+	}
+	else {
+		solver_control_dwr->set_max_steps(
+			parameter_set->dwr.solver_control.max_iterations
+		);
+		
+		solver_control_dwr->set_tolerance(
+			parameter_set->dwr.solver_control.tolerance
+		);
+		
+		solver_control_dwr->set_reduction(
+			parameter_set->dwr.solver_control.reduction_mode ?
+			parameter_set->dwr.solver_control.reduction :
+			parameter_set->dwr.solver_control.tolerance
+		);
+	}
+	
+	DTM::pout
+		<< std::endl
+		<< "dwr tolerance = " << solver_control_dwr->tolerance() << std::endl
+		<< "dwr reduction = " << solver_control_dwr->reduction() << std::endl
 		<< std::endl;
 	
-	for (unsigned int dwr_loop{0}; dwr_loop < parameter_set->dwr.loops; ++dwr_loop) {
+	dealii::SolverControl::State dwr_loop_state{dealii::SolverControl::State::iterate};
+	do {
 		DTM::pout
 			<< "***************************************************************"
 			<< "*****************" << std::endl
-			<< "dwr loop = " << dwr_loop+1 << std::endl;
+			<< "dwr loop = " << solver_control_dwr->last_step()+2 << std::endl;
 		
-		convergence_table.add_value("DWR-loop", dwr_loop+1);
+		convergence_table.add_value("DWR-loop", solver_control_dwr->last_step()+2);
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -161,12 +201,25 @@ run() {
 		// primal problem:
 		primal_reinit_storage();
 		primal_init_data_output();
-		primal_do_forward_TMS(dwr_loop);
+		primal_do_forward_TMS(solver_control_dwr->last_step()+1);
+		
+		// check if dwr has converged
+		dwr_loop_state = solver_control_dwr->check(
+			solver_control_dwr->last_step()+1,
+			primal_L2_L2_error_u // convergence criterium here
+		);
+		
+		if (dwr_loop_state == dealii::SolverControl::State::iterate) {
+			DTM::pout << "state iterate = true" << std::endl;
+		}
+		else {
+			DTM::pout << "state iterate = false" << std::endl;
+		}
 		
 		// dual problem
 		dual_reinit_storage();
 		dual_init_data_output();
-		dual_do_backward_TMS(dwr_loop);
+		dual_do_backward_TMS(solver_control_dwr->last_step());
 		
 		// error estimation
 		eta_reinit_storage();
@@ -175,9 +228,9 @@ run() {
 		
 		// do space-time mesh refinements and coarsenings only if we have
 		// another dwr-loop
-		if ((dwr_loop+1) < parameter_set->dwr.loops)
+		if (dwr_loop_state == dealii::SolverControl::State::iterate)
 			refine_and_coarsen_space_time_grid();
-	}
+	} while(dwr_loop_state == dealii::SolverControl::State::iterate);
 	
 	write_convergence_table_to_tex_file();
 }

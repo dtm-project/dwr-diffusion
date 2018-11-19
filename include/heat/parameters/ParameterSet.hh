@@ -90,6 +90,15 @@ struct ParameterSet {
 	
 	// dwr
 	struct {
+		struct {
+			bool in_use;
+			bool reduction_mode;
+			
+			unsigned int max_iterations;
+			double tolerance;
+			double reduction;
+		} solver_control;
+		
 		unsigned int loops;
 		
 		struct {

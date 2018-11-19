@@ -52,7 +52,7 @@ subsection Time Integration
 end
 
 subsection DWR
-    set loops = 6
+    set loops = 3
     
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
