@@ -91,6 +91,13 @@ struct ParameterSet {
 	// dwr
 	struct {
 		struct {
+			std::string type;
+			
+			std::string weight_function;
+			std::string weight_options;
+		} goal;
+		
+		struct {
 			bool in_use;
 			bool reduction_mode;
 			

@@ -198,6 +198,25 @@ ParameterHandler() {
 	
 	enter_subsection("DWR"); {
 		declare_entry(
+			"goal type",
+			"L2L2",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"goal weight function",
+			"ConstantFunction",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"goal weight options",
+			"1.0",
+			dealii::Patterns::Anything()
+		);
+		
+		
+		declare_entry(
 			"loops",
 			"2",
 			dealii::Patterns::Integer()

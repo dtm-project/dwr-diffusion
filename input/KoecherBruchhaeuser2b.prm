@@ -52,13 +52,17 @@ subsection Time Integration
 end
 
 subsection DWR
+#    set goal type = "L2L2"
+#    set goal weight function = "ConstantFunction"
+#    set goal weight options = "1.0"
+    
     set loops = 3
     set solver control in use = true
     set solver control reduction mode = true
     set solver control max iterations = 1000
     set solver control tolerance = 1.e-5
     set solver control reduction = 5.e-1
-
+    
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
     set refine and coarsen space strategy = fixed_fraction

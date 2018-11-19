@@ -99,6 +99,10 @@ ParameterSet(
 	handler->leave_subsection();
 	
 	handler->enter_subsection("DWR"); {
+		dwr.goal.type = handler->get("goal type");
+		dwr.goal.weight_function = handler->get("goal weight function");
+		dwr.goal.weight_options = handler->get("goal weight options");
+		
 		dwr.solver_control.in_use = handler->get_bool("solver control in use");
 		if (dwr.solver_control.in_use) {
 			dwr.solver_control.reduction_mode = handler->get_bool(
