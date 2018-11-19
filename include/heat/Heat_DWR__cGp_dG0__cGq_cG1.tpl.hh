@@ -297,6 +297,10 @@ protected:
 	// other
 	//
 	
+	virtual void do_data_output(
+		const unsigned int dwr_loop
+	);
+	
 	unsigned int setw_value_dwr_loops;
 	
 	// Convergence Table

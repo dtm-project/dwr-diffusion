@@ -193,6 +193,10 @@ run() {
 	solver_control_dwr->set_max_steps(solver_control_dwr->max_steps()-1);
 	unsigned int dwr_loop{solver_control_dwr->last_step()+1};
 	do {
+		if (dwr_loop > 0) {
+			// do space-time mesh refinements and coarsenings
+			refine_and_coarsen_space_time_grid();
+		}
 		
 		DTM::pout
 			<< "***************************************************************"
@@ -225,19 +229,17 @@ run() {
 		// dual problem
 		dual_reinit_storage();
 		dual_init_data_output();
-		dual_do_backward_TMS(solver_control_dwr->last_step());
+		dual_do_backward_TMS(dwr_loop);
 		
 		// error estimation
 		eta_reinit_storage();
 		compute_error_indicators();
 		compute_effectivity_index();
 		
-		// do space-time mesh refinements and coarsenings only if we have
-		// another dwr-loop
-		if (dwr_loop_state == dealii::SolverControl::State::iterate)
-			refine_and_coarsen_space_time_grid();
-		++dwr_loop;
-	} while(dwr_loop_state == dealii::SolverControl::State::iterate);
+	} while((dwr_loop_state == dealii::SolverControl::State::iterate) && ++dwr_loop);
+	
+	// post-processings (such as data output)
+	do_data_output(dwr_loop);
 	
 	write_convergence_table_to_tex_file();
 }
@@ -777,7 +779,7 @@ primal_do_forward_TMS(
 		primal_solve_slab_problem(slab,u,t0);
 		
 		////////////////////////////////////////////////////////////////////////
-		// do postprocessing on the solution
+		// do postprocessings on the solution
 		//
 		
 		// do error computations ( for global L2(L2) goal )
@@ -790,7 +792,7 @@ primal_do_forward_TMS(
 		*primal.un = 0;
 		primal.un->add(zeta0, *u->x[0]);
 		
-		// output solution at t_n
+		// output solution
 		primal_do_data_output(slab,u,dwr_loop,false);
 		
 		////////////////////////////////////////////////////////////////////////
@@ -2282,6 +2284,121 @@ refine_and_coarsen_space_time_grid() {
 	}
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// other: do_data_output (last mode)
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+do_data_output(
+	const unsigned int dwr_loop
+) {
+	// set up which dwr loop(s) are allowed to make data output:
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	if ( !parameter_set->data_output.primal.dwr_loop.compare("last") ) {
+		primal.data_output_dwr_loop = dwr_loop;
+	}
+	else {
+		return;
+	}
+	
+	// init. primal do_data_output
+	DTM::pout
+		<< "primal solution data output: patches = "
+		<< parameter_set->data_output.primal.patches
+		<< std::endl;
+	
+	std::vector<std::string> data_field_names;
+	data_field_names.push_back("u");
+	
+	std::vector< dealii::DataComponentInterpretation::DataComponentInterpretation > dci_field;
+	dci_field.push_back(dealii::DataComponentInterpretation::component_is_scalar);
+	
+	primal.data_output = std::make_shared< DTM::DataOutput<dim> >();
+	primal.data_output->set_data_field_names(data_field_names);
+	primal.data_output->set_data_component_interpretation_field(dci_field);
+	
+	primal.data_output->set_data_output_patches(
+		parameter_set->data_output.primal.patches
+	);
+	
+	DTM::pout
+		<< "primal solution data output: dwr loop = "
+		<< primal.data_output_dwr_loop
+		<< " (last)"
+		<< std::endl;
+	
+	// check if we use a fixed trigger interval, or, do output once on a I_n
+	if ( !parameter_set->data_output.primal.trigger_type.compare("fixed") ) {
+		primal.data_output_trigger_type_fixed = true;
+	}
+	else {
+		primal.data_output_trigger_type_fixed = false;
+	}
+	
+	// only for fixed
+	primal.data_output_trigger = parameter_set->data_output.primal.trigger;
+	
+	if (primal.data_output_trigger_type_fixed) {
+		DTM::pout
+			<< "primal solution data output: using fixed mode with trigger = "
+			<< primal.data_output_trigger
+			<< std::endl;
+	}
+	else {
+		DTM::pout
+			<< "primal solution data output: using I_n mode (trigger adapts to I_n automatically)"
+			<< std::endl;
+	}
+	
+	primal.data_output_time_value = parameter_set->t0;
+	
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = grid->slabs.begin();
+	auto u = primal.storage.u->begin();
+	
+	// primal: dG: additionally output interpolated u_0(t0)
+	{
+		// n == 1: initial value function u_0
+		primal.um = std::make_shared< dealii::Vector<double> >();
+		primal.um->reinit( slab->primal.dof->n_dofs() );
+		
+		primal.un = std::make_shared< dealii::Vector<double> >();
+		primal.un->reinit( slab->primal.dof->n_dofs() );
+		
+		function.u_0->set_time(slab->t_m);
+		
+		Assert(primal.um.use_count(), dealii::ExcNotInitialized());
+		dealii::VectorTools::interpolate(
+			*slab->primal.mapping,
+			*slab->primal.dof,
+			*function.u_0,
+			*primal.um
+		);
+		slab->primal.constraints->distribute(*primal.um);
+		
+		// output "initial value solution" at initial time t0
+		Assert(primal.un.use_count(), dealii::ExcNotInitialized());
+		*primal.un = *u->x[0];
+		
+		*u->x[0] = *primal.um;
+		primal_do_data_output(slab,u,dwr_loop,true);
+		
+		*u->x[0] = *primal.un;
+	}
+	
+	while (slab != grid->slabs.end()) {
+		primal_do_data_output(slab,u,dwr_loop,false);
+		
+		++slab;
+		++u;
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// other
 
 template<int dim>
 void
