@@ -45,6 +45,8 @@
 
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 
+#include <heat/ControlVolume/ControlVolume_Selector.tpl.hh>
+
 #include <heat/types/boundary_id.hh>
 
 #include <heat/assembler/L2_MassAssembly.tpl.hh>
@@ -389,6 +391,18 @@ init_functions() {
 		);
 		
 		Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
+	}
+	
+	// weight function for L2-L2 integrals (only for L2L2 goal type)
+	{
+		heat::control_volume::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->dwr.goal.weight_function,
+			parameter_set->dwr.goal.weight_options,
+			primal_L2_L2_error_weight
+		);
+		
+		Assert(primal_L2_L2_error_weight.use_count(), dealii::ExcNotInitialized());
 	}
 }
 
@@ -912,6 +926,7 @@ primal_do_error_L2(
 		_t = tq[q][0];
 		
 		function.u_E->set_time(_t * slab->tau_n() + slab->t_m);
+		primal_L2_L2_error_weight->set_time(_t * slab->tau_n() + slab->t_m);
 		
 		zeta0 = 1.;
 		
@@ -934,7 +949,8 @@ primal_do_error_L2(
 			*function.u_E,
 			difference_per_cell,
 			quad_cell,
-			dealii::VectorTools::L2_norm
+			dealii::VectorTools::L2_norm,
+			primal_L2_L2_error_weight.get()
 		);
 		
 		norm_sqr = difference_per_cell.norm_sqr();
@@ -1369,6 +1385,7 @@ dual_assemble_rhs(
 		dual.Je0,
 		t0,
 		function.u_E,
+		primal_L2_L2_error_weight,
 		dual.u0,
 		0,   // n_q_points: 0 -> q+1 in auto mode
 		true // auto mode
@@ -1404,6 +1421,7 @@ dual_assemble_rhs(
 			dual.Je1,
 			t1,
 			function.u_E,
+			primal_L2_L2_error_weight,
 			dual.u1,
 			0,   // n_q_points: 0 -> q+1 in auto mode
 			true // auto mode

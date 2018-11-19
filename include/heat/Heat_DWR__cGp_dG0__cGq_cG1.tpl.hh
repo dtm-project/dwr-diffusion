@@ -167,6 +167,7 @@ protected:
 	
 	// post-processing functions for L2(L2) error
 	double primal_L2_L2_error_u;
+	std::shared_ptr< dealii::Function<dim> > primal_L2_L2_error_weight;
 	virtual void primal_init_error_computations();
 	virtual void primal_do_error_L2(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,

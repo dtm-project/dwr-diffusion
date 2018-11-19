@@ -48,10 +48,7 @@ Je_global_L2L2Assembly<dim>::Je_global_L2L2Assembly(
 	const dealii::Quadrature<dim> &quad,
 	const dealii::UpdateFlags &uflags) :
 	fe_values(mapping, fe, quad, uflags),
-	phi(fe.dofs_per_cell),
-	JxW(0),
-	u_E(0),
-	u_h(0) {
+	phi(fe.dofs_per_cell) {
 }
 
 
@@ -68,6 +65,7 @@ Je_global_L2L2Assembly<dim>::Je_global_L2L2Assembly(
 	JxW(scratch.JxW),
 	u_E(scratch.u_E),
 	u_h(scratch.u_h),
+	weight(scratch.weight),
 	q(scratch.q),
 	component(scratch.component),
 	k(scratch.k),
@@ -124,6 +122,7 @@ void Assembler<dim>::assemble(
 	std::shared_ptr< dealii::Vector<double> > _Je,
 	const double time,
 	std::shared_ptr< dealii::Function<dim> > _u_E,
+	std::shared_ptr< dealii::Function<dim> > _weight,
 	std::shared_ptr< dealii::Vector<double> > _u_h,
 	const unsigned int q,
 	const bool quadrature_points_auto_mode) {
@@ -135,6 +134,10 @@ void Assembler<dim>::assemble(
 	function.u_E = _u_E;
 	Assert( function.u_E.use_count(), dealii::ExcNotInitialized() );
 	function.u_E->set_time(time);
+	
+	function.weight = _weight;
+	Assert( function.weight.use_count(), dealii::ExcNotInitialized() );
+	function.weight->set_time(time);
 	
 	u_h = _u_h;
 	Assert( u_h.use_count(), dealii::ExcNotInitialized() );
@@ -215,6 +218,11 @@ void Assembler<dim>::local_assemble_cell(
 				scratch.component
 			);
 			
+			scratch.weight = function.weight->value(
+				scratch.fe_values.quadrature_point(scratch.q),
+				scratch.component
+			);
+			
 			// prefetch calulation of u_h
 			scratch.u_h = 0;
 			for (scratch.j=0; scratch.j < scratch.fe_values.get_fe().dofs_per_cell;
@@ -230,7 +238,7 @@ void Assembler<dim>::local_assemble_cell(
 				copydata.vi_Jei_vector[scratch.i] += (
 					scratch.phi[scratch.i] *
 					(scratch.u_E - scratch.u_h) *
-					scratch.JxW
+					scratch.JxW * scratch.weight
 				);
 			} // for i
 		} // for component
