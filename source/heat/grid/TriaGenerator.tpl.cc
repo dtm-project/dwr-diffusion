@@ -147,6 +147,34 @@ generate(
 	
 	////////////////////////////////////////////////////////////////////////////
 	//
+	if (TriaGenerator_Type.compare("hyper_ball") == 0) {
+		AssertThrow(
+			options.size() == 4,
+			dealii::ExcMessage(
+				"TriaGenerator Options invalid, "
+				"please check your input file data."
+			)
+		);
+		
+		dealii::Point<dim> center;
+		for (unsigned int d{0}; d < dim; ++d) {
+			center[d] = std::stod(options.at(d));
+		}
+		const double radius{std::stod(options.at(3))};
+		Assert(radius>0, dealii::ExcMessage("radius must be > 0"));
+		
+		dealii::GridGenerator::hyper_ball(
+			*tria,
+			center,
+			radius,
+			false // attach_spherical_manifold_on_boundary_cells
+		);
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	//
 	if (TriaGenerator_Type.compare("Lshape") == 0) {
 		AssertThrow(
 			((dim==2)||(dim==3)),
