@@ -155,9 +155,9 @@ run() {
 	solver_control_dwr = std::make_shared< dealii::ReductionControl >();
 	
 	if (!parameter_set->dwr.solver_control.in_use) {
-		solver_control_dwr->set_max_steps(parameter_set->dwr.loops-1);
+		solver_control_dwr->set_max_steps(parameter_set->dwr.loops);
 		solver_control_dwr->set_tolerance(0.);
-		solver_control_dwr->set_reduction(1.e-16);
+		solver_control_dwr->set_reduction(0.);
 		
 		DTM::pout
 			<< std::endl
@@ -184,16 +184,20 @@ run() {
 		<< std::endl
 		<< "dwr tolerance = " << solver_control_dwr->tolerance() << std::endl
 		<< "dwr reduction = " << solver_control_dwr->reduction() << std::endl
+		<< "dwr max. iterations = " << solver_control_dwr->max_steps() << std::endl
 		<< std::endl;
 	
 	dealii::SolverControl::State dwr_loop_state{dealii::SolverControl::State::iterate};
+	solver_control_dwr->set_max_steps(solver_control_dwr->max_steps()-1);
+	unsigned int dwr_loop{solver_control_dwr->last_step()+1};
 	do {
+		
 		DTM::pout
 			<< "***************************************************************"
 			<< "*****************" << std::endl
-			<< "dwr loop = " << solver_control_dwr->last_step()+2 << std::endl;
+			<< "dwr loop = " << dwr_loop << std::endl;
 		
-		convergence_table.add_value("DWR-loop", solver_control_dwr->last_step()+2);
+		convergence_table.add_value("DWR-loop", dwr_loop+1);
 		
 		grid->set_boundary_indicators();
 		grid->distribute();
@@ -201,11 +205,11 @@ run() {
 		// primal problem:
 		primal_reinit_storage();
 		primal_init_data_output();
-		primal_do_forward_TMS(solver_control_dwr->last_step()+1);
+		primal_do_forward_TMS(dwr_loop);
 		
 		// check if dwr has converged
 		dwr_loop_state = solver_control_dwr->check(
-			solver_control_dwr->last_step()+1,
+			dwr_loop,
 			primal_L2_L2_error_u // convergence criterium here
 		);
 		
@@ -230,6 +234,7 @@ run() {
 		// another dwr-loop
 		if (dwr_loop_state == dealii::SolverControl::State::iterate)
 			refine_and_coarsen_space_time_grid();
+		++dwr_loop;
 	} while(dwr_loop_state == dealii::SolverControl::State::iterate);
 	
 	write_convergence_table_to_tex_file();

@@ -53,19 +53,24 @@ end
 
 subsection DWR
     set loops = 3
-    
+    set solver control in use = true
+    set solver control reduction mode = true
+    set solver control max iterations = 1000
+    set solver control tolerance = 1.e-5
+    set solver control reduction = 5.e-1
+
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
     set refine and coarsen space strategy = fixed_fraction
-    set refine and coarsen space top fraction1 = 0.25
-    set refine and coarsen space top fraction2 = 0.15
+    set refine and coarsen space top fraction1 = 0.5
+    set refine and coarsen space top fraction2 = 0.3
     set refine and coarsen space bottom fraction = 0.0
     set refine and coarsen space max growth factor n_active_cells = 3
     
     # time strategy: global, fixed_fraction
 #    set refine and coarsen time strategy = global
     set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.7
+    set refine and coarsen time top fraction = 0.5
 end
 
 subsection Parameter Specification
