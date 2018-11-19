@@ -53,12 +53,10 @@ end
 
 subsection DWR
     set goal type = "L2L2"
-#    set goal weight function = ConstantFunction
-#    set goal weight options = "1.0"
     
     set goal weight function = ControlVolume_hyper_rectangle
     #                          p1           p2           t1 t2
-    set goal weight options = "0.5 0.0 0.0  1.0 0.5 0.0  0.75 1.00"
+    set goal weight options = "0.6 0.1 0.0  0.9 0.4 0.0  0.75 1.00"
     
     set loops = 3
     set solver control in use = true
@@ -70,15 +68,15 @@ subsection DWR
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
     set refine and coarsen space strategy = fixed_fraction
-    set refine and coarsen space top fraction1 = 0.33333333
-    set refine and coarsen space top fraction2 = 0.15555556
+    set refine and coarsen space top fraction1 = 0.3
+    set refine and coarsen space top fraction2 = 0.15
     set refine and coarsen space bottom fraction = 0.0
-    set refine and coarsen space max growth factor n_active_cells = 3
+    set refine and coarsen space max growth factor n_active_cells = 4
     
     # time strategy: global, fixed_fraction
 #    set refine and coarsen time strategy = global
     set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.25
+    set refine and coarsen time top fraction = 0.3
 end
 
 subsection Parameter Specification
@@ -125,10 +123,10 @@ end
 subsection Output Quantities
     ############################################################################
     # primal solution output control
-    set primal data output dwr loop = all      # use none, all, last or number
+    set primal data output dwr loop = last      # use none, all, last or number
     
-    set primal data output trigger type = I_n   # I_n mode: one output per I_n
-#    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
+#    set primal data output trigger type = I_n   # I_n mode: one output per I_n
+    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
     set primal data output trigger time      = 0.005 # use fixed trigger value (fixed mode only)
     
     set primal data output patches auto mode = true # use < primal p > data output patches (auto mode)
