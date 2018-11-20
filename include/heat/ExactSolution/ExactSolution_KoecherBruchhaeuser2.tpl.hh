@@ -32,6 +32,19 @@
 namespace heat {
 namespace exact_solution {
 
+/**
+ * Implements the analytic solution \f$ u : \Omega \times I \to \mathbb{R} \f$,
+ * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
+ * \f[
+ * u(x,y,t) := \begin{cases}
+ * -s \frac{\arctan(10\frac{\pi}{2}(4t-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
+ * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \quad (t < 0.5) \,, \\
+ * s \frac{\arctan(10\frac{\pi}{2}(4(t-0.5)-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
+ * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \;\;\;\quad (t \geq 0.5) \,,
+ * \end{cases}
+ * \f]
+ * with the parameter values \f$ s =\frac{1}{3} \f$ and \f$ a = 50 \f$ for example.
+ */
 template<int dim>
 class KoecherBruchhaeuser2 : public dealii::Function<dim> {
 public:

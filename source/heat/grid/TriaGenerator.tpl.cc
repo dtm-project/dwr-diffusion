@@ -38,6 +38,27 @@
 // class declaration
 namespace heat {
 
+/**
+ * Lshape:
+ * \f[
+ * \begin{tikzpicture}
+ * \draw (0,2) -- (2,2) node[midway,above]{$\Gamma_D$};
+ * \draw (2,2) -- (2,0) node[midway,right]{$\Gamma_D$};
+ * \draw (2,0) -- (4,0) node[midway,above]{$\Gamma_D$};
+ * \draw (4,0) -- (4,-2) node[midway,right]{$\Gamma_D$};
+ * \draw (4,-2) -- (0,-2) node[midway,below]{$\Gamma_D$};
+ * \draw[red] (0,-2) -- (0,2) node[midway,left]{$\Gamma_N$};
+ * \fill (1,1) circle [radius=0.05];
+ * \draw (1,1) circle [radius=0.4];
+ * \draw (1,1) circle [radius=0.8];
+ * \fill[gray] (3,-1) circle [radius=0.05];
+ * \draw[gray] (3,-1) circle [radius=0.4];
+ * \draw[gray] (3,-1) circle [radius=0.8];
+ * \draw [every edge/.style = {draw, ->}] (1,0) edge [bend right] (2,-1);
+ * \end{tikzpicture}
+ * \f]
+ * 
+ */
 template<int dim>
 void
 TriaGenerator<dim>::
