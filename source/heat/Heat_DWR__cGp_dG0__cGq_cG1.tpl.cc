@@ -230,7 +230,8 @@ run() {
 		// dual problem
 		dual_reinit_storage();
 		dual_init_data_output();
-		dual_do_backward_TMS(dwr_loop);
+		dual_do_backward_TMS();
+		dual_do_data_output(dwr_loop,false);
 		
 		// error estimation
 		eta_reinit_storage();
@@ -241,6 +242,7 @@ run() {
 	// data output of the last (final) dwr loop solution
 	if (dwr_loop_state == dealii::SolverControl::State::success) {
 		primal_do_data_output(dwr_loop,true);
+		dual_do_data_output(dwr_loop,true);
 	}
 	
 	write_convergence_table_to_tex_file();
@@ -1177,7 +1179,6 @@ primal_do_data_output(
 	DTM::pout
 		<< "primal solution data output: dwr loop = "
 		<< primal.data_output_dwr_loop
-		<< " (last)"
 		<< std::endl;
 	
 	primal.data_output_time_value = parameter_set->t0;
@@ -1665,8 +1666,7 @@ dual_solve_slab_problem(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_do_backward_TMS(
-	const unsigned int dwr_loop) {
+dual_do_backward_TMS() {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare time marching scheme (TMS) loop
 	//
@@ -1771,12 +1771,6 @@ dual_do_backward_TMS(
 		dual_solve_slab_problem(slab,z);
 		
 		////////////////////////////////////////////////////////////////////////
-		// do postprocessing on the solution
-		//
-		
-		dual_do_data_output(slab,z,dwr_loop);
-		
-		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
 		//
 		
@@ -1871,6 +1865,13 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_init_data_output() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	
+	// set up which dwr loop(s) are allowed to make data output:
+	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
+		return;
+	}
+	
+	// may output data: initialise (mode: all, last or specific dwr loop)
 	DTM::pout
 		<< "dual solution data output: patches = "
 		<< parameter_set->data_output.dual.patches
@@ -1889,27 +1890,6 @@ dual_init_data_output() {
 	dual.data_output->set_data_output_patches(
 		parameter_set->data_output.dual.patches
 	);
-	
-	dual.data_output_dwr_loop = -3; // -2 => not initialized
-	// set up which dwr loop(s) are allowed to make data output:
-	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
-		dual.data_output_dwr_loop = -2;
-	}
-	else if ( !parameter_set->data_output.dual.dwr_loop.compare("all") ) {
-		dual.data_output_dwr_loop = -1;
-	}
-	else if ( !parameter_set->data_output.dual.dwr_loop.compare("last") ) {
-		Assert(parameter_set->dwr.loops > 0, dealii::ExcInternalError());
-		dual.data_output_dwr_loop = parameter_set->dwr.loops-1;
-	}
-	else {
-		dual.data_output_dwr_loop = std::stoi(parameter_set->data_output.dual.dwr_loop);
-	}
-	
-	DTM::pout
-		<< "dual solution data output: dwr loop = "
-		<< dual.data_output_dwr_loop
-		<< std::endl;
 	
 	// check if we use a fixed trigger interval, or, do output once on a I_n
 	if ( !parameter_set->data_output.dual.trigger_type.compare("fixed") ) {
@@ -1941,15 +1921,10 @@ dual_init_data_output() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_do_data_output(
+dual_do_data_output_on_slab(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const unsigned int dwr_loop) {
-	
-	if (!( (dual.data_output_dwr_loop == -1) ||
-		(dual.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
-		return;
-	
 	if (dual.data_output_trigger <= 0) return;
 	
 	// adapt trigger value for I_n output mode
@@ -2023,6 +1998,79 @@ dual_do_data_output(
 			);
 		}
 	}}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_do_data_output(
+	const unsigned int dwr_loop,
+	bool last
+) {
+	// set up which dwr loop(s) are allowed to make data output:
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
+		return;
+	}
+	
+	if (!parameter_set->data_output.dual.dwr_loop.compare("last")) {
+		// output only the last (final) dwr loop
+		if (last) {
+			dual.data_output_dwr_loop = dwr_loop;
+		}
+		else {
+			return;
+		}
+	}
+	else {
+		if (!parameter_set->data_output.dual.dwr_loop.compare("all")) {
+			// output all dwr loops
+			if (!last) {
+				dual.data_output_dwr_loop = dwr_loop;
+			}
+			else {
+				return;
+			}
+		}
+		else {
+			// output on a specific dwr loop
+			if (!last) {
+				dual.data_output_dwr_loop =
+					std::stoi(parameter_set->data_output.dual.dwr_loop)-1;
+			}
+			else {
+				return;
+			}
+		}
+		
+	}
+	
+	if (dual.data_output_dwr_loop < 0)
+		return;
+	
+	if ( static_cast<unsigned int>(dual.data_output_dwr_loop) != dwr_loop )
+		return;
+	
+	DTM::pout
+		<< "dual solution data output: dwr loop = "
+		<< dual.data_output_dwr_loop
+		<< std::endl;
+	
+	dual.data_output_time_value = parameter_set->T;
+	
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = std::prev(grid->slabs.end());
+	auto z = std::prev(dual.storage.z->end());
+	
+	unsigned int n{static_cast<unsigned int>(grid->slabs.size())};
+	while (n) {
+		dual_do_data_output_on_slab(slab,z,dwr_loop);
+		
+		--n;
+		--slab;
+		--z;
+	}
 }
 
 

@@ -255,9 +255,7 @@ protected:
 	);
 	
 	/// do the backward time marching process of the dual problem
-	virtual void dual_do_backward_TMS(
-		const unsigned int dwr_loop
-	);
+	virtual void dual_do_backward_TMS();
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
 	virtual void dual_get_z_t_on_slab(
@@ -270,10 +268,15 @@ protected:
 	// post-processing functions for data output
 	virtual void dual_init_data_output();
 	
-	virtual void dual_do_data_output(
+	virtual void dual_do_data_output_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const unsigned int dwr_loop
+	);
+	
+	virtual void dual_do_data_output(
+		const unsigned int dwr_loop,
+		bool last
 	);
 	
 	////////////////////////////////////////////////////////////////////////////
