@@ -108,7 +108,25 @@ struct Je_global_L2L2Assembly {
 } // namespace Assembly
 ////////////////////////////////////////////////////////////////////////////////
 
-
+/**
+ * The goal functional assembly is given by 
+ * \f[
+ * \boldsymbol J^{n,\iota} = ( j_{i} )_{i}\,,\quad
+ * j_{i} = \displaystyle \sum_{K \in \mathcal{T}_h}
+ * \displaystyle \sum_{i=1}^{N_u}
+ * \displaystyle \int_K
+ * \varphi^{i}(\boldsymbol x)\, j(\boldsymbol x, t_{n,\iota})
+ * \,\text{d} \boldsymbol x\,, \quad
+ * \text{with } 1 \leq i \leq N_u\,,
+ * \f]
+ * where  \f$ N_u \f$ denotes the degrees of freedom in space for a single 
+ * temporal degree of freedem of the fully discrete solution 
+ * \f$ u_{\tau, h}^{\text{dG}} \f$. Here, 
+ * \f$ j=\frac{u-u_{\tau h}^{\text{dG}}}{\|u-u_{\tau h}^{\text{dG}}\|_{\mathcal{Q}_c}}  \f$
+ * aims to control the space-time \f$ L^2 \f$-error on a contol volume
+ * \f$ \mathcal{Q}_c:=\Omega_c \times I_c \f$, with \f$ \Omega_c \subseteq \Omega \f$
+ * and \f$ I_c \subseteq I \f$.
+ */
 template<int dim>
 class Assembler {
 public:

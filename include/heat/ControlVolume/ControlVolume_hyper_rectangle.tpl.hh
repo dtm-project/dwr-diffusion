@@ -32,6 +32,10 @@
 namespace heat {
 namespace control_volume {
 
+/**
+ * Control volume \f$ \mathcal{Q}_c:=\Omega_c \times I_c \f$, with \f$ \Omega_c \subseteq \Omega \f$
+ * and \f$ I_c \subseteq I \f$.
+ */
 template<int dim>
 class hyper_rectangle : public dealii::Function<dim> {
 public:

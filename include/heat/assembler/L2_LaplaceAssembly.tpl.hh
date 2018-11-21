@@ -105,8 +105,21 @@ struct LaplaceAssembly{
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/** Assembler.
- *
+/**
+ * The stiffness matrix \f$ \boldsymbol A \f$ for the corresponding
+ * index sets \f$ 1 \le i \le N_u \f$ of test and \f$ 1 \le j \le N_u \f$ 
+ * for trial basis function is given by
+ * \f[
+ * \boldsymbol A = ( a_{i j} )_{i j}\,,\quad
+ * a_{i j} = \displaystyle \sum_{K \in \mathcal{T}_h}
+ * \displaystyle \sum_{i=1}^{N_u}  \displaystyle \sum_{j=1}^{N_u}
+ * \displaystyle \int_K
+ * \nabla\varphi^{i}(\boldsymbol x)\, \varepsilon(\boldsymbol x)\,\nabla\varphi^{j}(\boldsymbol x)\,
+ * \,\text{d} \boldsymbol x\,,
+ * \f]
+ * where  \f$ N_u \f$ denotes the degrees of freedom in space for a single 
+ * temporal degree of freedem of the fully discrete solution 
+ * \f$ u_{\tau, h}^{\text{dG}} \f$.
  */
 template<int dim>
 class Assembler {
