@@ -90,6 +90,22 @@ struct ParameterSet {
 	
 	// dwr
 	struct {
+		struct {
+			std::string type;
+			
+			std::string weight_function;
+			std::string weight_options;
+		} goal;
+		
+		struct {
+			bool in_use;
+			bool reduction_mode;
+			
+			unsigned int max_iterations;
+			double tolerance;
+			double reduction;
+		} solver_control;
+		
 		unsigned int loops;
 		
 		struct {

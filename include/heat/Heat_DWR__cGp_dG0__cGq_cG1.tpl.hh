@@ -153,9 +153,7 @@ protected:
 	);
 	
 	/// do the forward time marching process of the primal problem
-	virtual void primal_do_forward_TMS(
-		const unsigned int dwr_loop
-	);
+	virtual void primal_do_forward_TMS();
 	
 	/// evaluate solution dof vector u^primal(t) on primal solution space
 	virtual void primal_get_u_t_on_slab(
@@ -167,6 +165,7 @@ protected:
 	
 	// post-processing functions for L2(L2) error
 	double primal_L2_L2_error_u;
+	std::shared_ptr< dealii::Function<dim> > primal_L2_L2_error_weight;
 	virtual void primal_init_error_computations();
 	virtual void primal_do_error_L2(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
@@ -177,11 +176,16 @@ protected:
 	// post-processing functions for data output
 	virtual void primal_init_data_output();
 	
-	virtual void primal_do_data_output(
+	virtual void primal_do_data_output_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<1>::iterator &u,
 		const unsigned int dwr_loop,
 		const bool dG_initial_value
+	);
+	
+	virtual void primal_do_data_output(
+		const unsigned int dwr_loop,
+		bool last
 	);
 	
 	////////////////////////////////////////////////////////////////////////////
@@ -251,9 +255,7 @@ protected:
 	);
 	
 	/// do the backward time marching process of the dual problem
-	virtual void dual_do_backward_TMS(
-		const unsigned int dwr_loop
-	);
+	virtual void dual_do_backward_TMS();
 	
 	/// evaluate solution dof vector z^dual(t) on dual solution space
 	virtual void dual_get_z_t_on_slab(
@@ -266,10 +268,15 @@ protected:
 	// post-processing functions for data output
 	virtual void dual_init_data_output();
 	
-	virtual void dual_do_data_output(
+	virtual void dual_do_data_output_on_slab(
 		const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 		const typename DTM::types::storage_data_vectors<2>::iterator &z,
 		const unsigned int dwr_loop
+	);
+	
+	virtual void dual_do_data_output(
+		const unsigned int dwr_loop,
+		bool last
 	);
 	
 	////////////////////////////////////////////////////////////////////////////

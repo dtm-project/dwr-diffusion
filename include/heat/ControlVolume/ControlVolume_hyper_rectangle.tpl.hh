@@ -1,8 +1,8 @@
 /**
- * @file ExactSolution_KoecherBruchhaeuser2.tpl.hh
+ * @file ControlVolume_hyper_rectangle.tpl.hh
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-10-23, UK
+ * @date 2018-11-19, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
@@ -22,39 +22,28 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_KoecherBruchhaeuser2_tpl_hh
-#define __ExactSolution_KoecherBruchhaeuser2_tpl_hh
+#ifndef __ControlVolume_hyper_rectangle_tpl_hh
+#define __ControlVolume_hyper_rectangle_tpl_hh
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
 
 namespace heat {
-namespace exact_solution {
+namespace control_volume {
 
-/**
- * Implements the analytic solution \f$ u : \Omega \times I \to \mathbb{R} \f$,
- * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
- * \f[
- * u(x,y,t) := \begin{cases}
- * -s \frac{\arctan(10\frac{\pi}{2}(4t-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
- * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \quad (t < 0.5) \,, \\
- * s \frac{\arctan(10\frac{\pi}{2}(4(t-0.5)-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
- * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \;\;\;\quad (t \geq 0.5) \,,
- * \end{cases}
- * \f]
- * with the parameter values \f$ s =\frac{1}{3} \f$ and \f$ a = 50 \f$ for example.
- */
 template<int dim>
-class KoecherBruchhaeuser2 : public dealii::Function<dim> {
+class hyper_rectangle : public dealii::Function<dim> {
 public:
-	KoecherBruchhaeuser2(
-		const double &s,
-		const double &a
-	) : dealii::Function<dim> (1), s(s), a(a)
+	hyper_rectangle(
+		const dealii::Point<dim> &p1,
+		const dealii::Point<dim> &p2,
+		const double &t1,
+		const double &t2
+	) : dealii::Function<dim> (1), p1(p1), p2(p2), t1(t1), t2(t2)
 	{};
 	
-	virtual ~KoecherBruchhaeuser2() = default;
+	virtual ~hyper_rectangle() = default;
 	
 	virtual
 	double
@@ -64,8 +53,11 @@ public:
 	) const;
 
 private:
-	const double s;
-	const double a;
+	const dealii::Point<dim> p1;
+	const dealii::Point<dim> p2;
+	
+	const double t1;
+	const double t2;
 };
 
 }}

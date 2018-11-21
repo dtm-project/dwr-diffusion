@@ -1,8 +1,8 @@
 /**
- * @file ExactSolution_KoecherBruchhaeuser2.tpl.hh
+ * @file ControlVolume_hyper_rectangle.tpl.cc
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-10-23, UK
+ * @date 2018-11-19, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
@@ -22,52 +22,56 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_KoecherBruchhaeuser2_tpl_hh
-#define __ExactSolution_KoecherBruchhaeuser2_tpl_hh
-
-// DEAL.II includes
-#include <deal.II/base/function.h>
-#include <deal.II/base/point.h>
+#include <heat/ControlVolume/ControlVolume_hyper_rectangle.tpl.hh>
 
 namespace heat {
-namespace exact_solution {
+namespace control_volume {
 
-/**
- * Implements the analytic solution \f$ u : \Omega \times I \to \mathbb{R} \f$,
- * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
- * \f[
- * u(x,y,t) := \begin{cases}
- * -s \frac{\arctan(10\frac{\pi}{2}(4t-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
- * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \quad (t < 0.5) \,, \\
- * s \frac{\arctan(10\frac{\pi}{2}(4(t-0.5)-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
- * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \;\;\;\quad (t \geq 0.5) \,,
- * \end{cases}
- * \f]
- * with the parameter values \f$ s =\frac{1}{3} \f$ and \f$ a = 50 \f$ for example.
- */
 template<int dim>
-class KoecherBruchhaeuser2 : public dealii::Function<dim> {
-public:
-	KoecherBruchhaeuser2(
-		const double &s,
-		const double &a
-	) : dealii::Function<dim> (1), s(s), a(a)
-	{};
+double
+hyper_rectangle<dim>::
+value(
+	const dealii::Point<dim> &x,
+	[[maybe_unused]]const unsigned int c
+) const {
+	Assert(
+		c==0,
+		dealii::ExcMessage(
+			"you want to get component value which is not implemented"
+		)
+	);
 	
-	virtual ~KoecherBruchhaeuser2() = default;
+	double result{1.0};
 	
-	virtual
-	double
-	value(
-		const dealii::Point<dim> &x,
-		const unsigned int c
-	) const;
+	const double t{this->get_time()};
+	
+	if ((t >= t1) && (t <= t2)) {
+		// time window of \Omega_c x I_c
+		
+		switch (dim) {
+		case 3:
+			result *= ((x[2] >= p1[2]) && (x[2] <= p2[2])) ? 1. : 0.;
+			[[fallthrough]];
+		
+		case 2:
+			result *= ((x[1] >= p1[1]) && (x[1] <= p2[1])) ? 1. : 0.;
+			[[fallthrough]];
+			
+		case 1:
+			result *= ((x[0] >= p1[0]) && (x[0] <= p2[0])) ? 1. : 0.;
+			break;
+			
+		default:
+			Assert(false, dealii::ExcInvalidState());
+		}
+	}
+	else {
+		result = 0.;
+	}
+	
+	return result;
+}
 
-private:
-	const double s;
-	const double a;
-};
+}} //namespaces
 
-}}
-
-#endif
+#include "ControlVolume_hyper_rectangle.inst.in"

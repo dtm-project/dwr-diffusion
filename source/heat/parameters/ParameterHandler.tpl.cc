@@ -198,9 +198,59 @@ ParameterHandler() {
 	
 	enter_subsection("DWR"); {
 		declare_entry(
+			"goal type",
+			"L2L2",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"goal weight function",
+			"ConstantFunction",
+			dealii::Patterns::Anything()
+		);
+		
+		declare_entry(
+			"goal weight options",
+			"1.0",
+			dealii::Patterns::Anything()
+		);
+		
+		
+		declare_entry(
 			"loops",
 			"2",
 			dealii::Patterns::Integer()
+		);
+		
+		
+		declare_entry(
+			"solver control in use",
+			"false",
+			dealii::Patterns::Bool()
+		);
+		
+		declare_entry(
+			"solver control reduction mode",
+			"true",
+			dealii::Patterns::Bool()
+		);
+		
+		declare_entry(
+			"solver control max iterations",
+			"5",
+			dealii::Patterns::Integer()
+		);
+		
+		declare_entry(
+			"solver control tolerance",
+			"1e-10",
+			dealii::Patterns::Double()
+		);
+		
+		declare_entry(
+			"solver control reduction",
+			"1e-8",
+			dealii::Patterns::Double()
 		);
 		
 		

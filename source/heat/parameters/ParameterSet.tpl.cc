@@ -99,7 +99,32 @@ ParameterSet(
 	handler->leave_subsection();
 	
 	handler->enter_subsection("DWR"); {
-		dwr.loops = static_cast<unsigned int> (handler->get_integer("loops"));
+		dwr.goal.type = handler->get("goal type");
+		dwr.goal.weight_function = handler->get("goal weight function");
+		dwr.goal.weight_options = handler->get("goal weight options");
+		
+		dwr.solver_control.in_use = handler->get_bool("solver control in use");
+		if (dwr.solver_control.in_use) {
+			dwr.solver_control.reduction_mode = handler->get_bool(
+				"solver control reduction mode"
+			);
+			
+			dwr.solver_control.max_iterations = static_cast<unsigned int> (
+				handler->get_integer("solver control max iterations")
+			);
+			dwr.loops = dwr.solver_control.max_iterations;
+			
+			dwr.solver_control.tolerance = handler->get_double(
+				"solver control tolerance"
+			);
+			
+			dwr.solver_control.reduction = handler->get_double(
+				"solver control reduction"
+			);
+		}
+		else {
+			dwr.loops = static_cast<unsigned int> (handler->get_integer("loops"));
+		}
 		
 		
 		dwr.refine_and_coarsen.space.strategy = handler->get(

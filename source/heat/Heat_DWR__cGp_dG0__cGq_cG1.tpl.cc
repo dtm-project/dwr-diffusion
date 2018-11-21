@@ -45,6 +45,8 @@
 
 #include <heat/ExactSolution/ExactSolution_Selector.tpl.hh>
 
+#include <heat/ControlVolume/ControlVolume_Selector.tpl.hh>
+
 #include <heat/types/boundary_id.hh>
 
 #include <heat/assembler/L2_MassAssembly.tpl.hh>
@@ -66,6 +68,7 @@ using NeumannAssembler = heat::Assemble::L2::NeumannConstrained::Assembler<dim>;
 
 #include <deal.II/grid/grid_refinement.h>
 
+#include <deal.II/lac/solver_control.h>
 #include <deal.II/lac/sparse_direct.h>
 
 #include <deal.II/numerics/matrix_tools.h>
@@ -139,19 +142,66 @@ run() {
 	init_grid();
 	init_functions();
 	
-	// DWR loop:
+	////////////////////////////////////////////////////////////////////////////
+	// DWR loop
+	//
+	
 	DTM::pout
 		<< std::endl
 		<< "*******************************************************************"
-		<< "*************" << std::endl
-		<< "dwr loops = " << parameter_set->dwr.loops << std::endl
+		<< "*************" << std::endl;
+	
+	////////////////////////////////////////////////////////////////////////////
+	// setup solver/reduction control for outer dwr loop
+	std::shared_ptr< dealii::ReductionControl > solver_control_dwr;
+	solver_control_dwr = std::make_shared< dealii::ReductionControl >();
+	
+	if (!parameter_set->dwr.solver_control.in_use) {
+		solver_control_dwr->set_max_steps(parameter_set->dwr.loops);
+		solver_control_dwr->set_tolerance(0.);
+		solver_control_dwr->set_reduction(0.);
+		
+		DTM::pout
+			<< std::endl
+			<< "dwr loops (fixed number) = " << solver_control_dwr->max_steps()
+			<< std::endl << std::endl;
+	}
+	else {
+		solver_control_dwr->set_max_steps(
+			parameter_set->dwr.solver_control.max_iterations
+		);
+		
+		solver_control_dwr->set_tolerance(
+			parameter_set->dwr.solver_control.tolerance
+		);
+		
+		solver_control_dwr->set_reduction(
+			parameter_set->dwr.solver_control.reduction_mode ?
+			parameter_set->dwr.solver_control.reduction :
+			parameter_set->dwr.solver_control.tolerance
+		);
+	}
+	
+	DTM::pout
+		<< std::endl
+		<< "dwr tolerance = " << solver_control_dwr->tolerance() << std::endl
+		<< "dwr reduction = " << solver_control_dwr->reduction() << std::endl
+		<< "dwr max. iterations = " << solver_control_dwr->max_steps() << std::endl
 		<< std::endl;
 	
-	for (unsigned int dwr_loop{0}; dwr_loop < parameter_set->dwr.loops; ++dwr_loop) {
+	dealii::SolverControl::State dwr_loop_state{dealii::SolverControl::State::iterate};
+	solver_control_dwr->set_max_steps(solver_control_dwr->max_steps()-1);
+	unsigned int dwr_loop{solver_control_dwr->last_step()+1};
+	do {
+		if (dwr_loop > 0) {
+			// do space-time mesh refinements and coarsenings
+			refine_and_coarsen_space_time_grid();
+		}
+		
 		DTM::pout
 			<< "***************************************************************"
 			<< "*****************" << std::endl
-			<< "dwr loop = " << dwr_loop+1 << std::endl;
+			<< "dwr loop = " << dwr_loop << std::endl;
 		
 		convergence_table.add_value("DWR-loop", dwr_loop+1);
 		
@@ -161,22 +211,38 @@ run() {
 		// primal problem:
 		primal_reinit_storage();
 		primal_init_data_output();
-		primal_do_forward_TMS(dwr_loop);
+		primal_do_forward_TMS();
+		primal_do_data_output(dwr_loop,false);
+		
+		// check if dwr has converged
+		dwr_loop_state = solver_control_dwr->check(
+			dwr_loop,
+			primal_L2_L2_error_u // convergence criterium here
+		);
+		
+		if (dwr_loop_state == dealii::SolverControl::State::iterate) {
+			DTM::pout << "state iterate = true" << std::endl;
+		}
+		else {
+			DTM::pout << "state iterate = false" << std::endl;
+		}
 		
 		// dual problem
 		dual_reinit_storage();
 		dual_init_data_output();
-		dual_do_backward_TMS(dwr_loop);
+		dual_do_backward_TMS();
+		dual_do_data_output(dwr_loop,false);
 		
 		// error estimation
 		eta_reinit_storage();
 		compute_error_indicators();
 		compute_effectivity_index();
-		
-		// do space-time mesh refinements and coarsenings only if we have
-		// another dwr-loop
-		if ((dwr_loop+1) < parameter_set->dwr.loops)
-			refine_and_coarsen_space_time_grid();
+	} while((dwr_loop_state == dealii::SolverControl::State::iterate) && ++dwr_loop);
+	
+	// data output of the last (final) dwr loop solution
+	if (dwr_loop_state == dealii::SolverControl::State::success) {
+		primal_do_data_output(dwr_loop,true);
+		dual_do_data_output(dwr_loop,true);
 	}
 	
 	write_convergence_table_to_tex_file();
@@ -331,6 +397,18 @@ init_functions() {
 		);
 		
 		Assert(function.u_E.use_count(), dealii::ExcNotInitialized());
+	}
+	
+	// weight function for L2-L2 integrals (only for L2L2 goal type)
+	{
+		heat::control_volume::Selector<dim> selector;
+		selector.create_function(
+			parameter_set->dwr.goal.weight_function,
+			parameter_set->dwr.goal.weight_options,
+			primal_L2_L2_error_weight
+		);
+		
+		Assert(primal_L2_L2_error_weight.use_count(), dealii::ExcNotInitialized());
 	}
 }
 
@@ -592,8 +670,7 @@ primal_solve_slab_problem(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_do_forward_TMS(
-	const unsigned int dwr_loop) {
+primal_do_forward_TMS() {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare time marching scheme (TMS) loop
 	//
@@ -640,10 +717,6 @@ primal_do_forward_TMS(
 	//       hanging nodes. Therefore,
 	// distribute hanging node constraints to make the result continuous again:
 	slab->primal.constraints->distribute(*primal.um);
-	
-	// output "initial value solution" at initial time t0
-	*u->x[0] = *primal.um;
-	primal_do_data_output(slab,u,dwr_loop,true);
 	
 	// init error computations (for global L2(L2) goal functional)
 	primal_init_error_computations();
@@ -705,7 +778,7 @@ primal_do_forward_TMS(
 		primal_solve_slab_problem(slab,u,t0);
 		
 		////////////////////////////////////////////////////////////////////////
-		// do postprocessing on the solution
+		// do postprocessings on the solution
 		//
 		
 		// do error computations ( for global L2(L2) goal )
@@ -717,9 +790,6 @@ primal_do_forward_TMS(
 		double zeta0 = 1.; // zeta0( t_n ) = 1. for dG(0)
 		*primal.un = 0;
 		primal.un->add(zeta0, *u->x[0]);
-		
-		// output solution at t_n
-		primal_do_data_output(slab,u,dwr_loop,false);
 		
 		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
@@ -854,6 +924,7 @@ primal_do_error_L2(
 		_t = tq[q][0];
 		
 		function.u_E->set_time(_t * slab->tau_n() + slab->t_m);
+		primal_L2_L2_error_weight->set_time(_t * slab->tau_n() + slab->t_m);
 		
 		zeta0 = 1.;
 		
@@ -876,7 +947,8 @@ primal_do_error_L2(
 			*function.u_E,
 			difference_per_cell,
 			quad_cell,
-			dealii::VectorTools::L2_norm
+			dealii::VectorTools::L2_norm,
+			primal_L2_L2_error_weight.get()
 		);
 		
 		norm_sqr = difference_per_cell.norm_sqr();
@@ -904,6 +976,13 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 primal_init_data_output() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	
+	// set up which dwr loop(s) are allowed to make data output:
+	if ( !parameter_set->data_output.primal.dwr_loop.compare("none") ) {
+		return;
+	}
+	
+	// may output data: initialise (mode: all, last or specific dwr loop)
 	DTM::pout
 		<< "primal solution data output: patches = "
 		<< parameter_set->data_output.primal.patches
@@ -922,27 +1001,6 @@ primal_init_data_output() {
 	primal.data_output->set_data_output_patches(
 		parameter_set->data_output.primal.patches
 	);
-	
-	// set up which dwr loop(s) are allowed to make data output:
-	primal.data_output_dwr_loop = -3; // -3 => not initialized
-	if ( !parameter_set->data_output.primal.dwr_loop.compare("none") ) {
-		primal.data_output_dwr_loop = -2;
-	}
-	else if ( !parameter_set->data_output.primal.dwr_loop.compare("all") ) {
-		primal.data_output_dwr_loop = -1;
-	}
-	else if ( !parameter_set->data_output.primal.dwr_loop.compare("last") ) {
-		Assert(parameter_set->dwr.loops > 0, dealii::ExcInternalError());
-		primal.data_output_dwr_loop = parameter_set->dwr.loops-1;
-	}
-	else {
-		primal.data_output_dwr_loop = std::stoi(parameter_set->data_output.primal.dwr_loop);
-	}
-	
-	DTM::pout
-		<< "primal solution data output: dwr loop = "
-		<< primal.data_output_dwr_loop
-		<< std::endl;
 	
 	// check if we use a fixed trigger interval, or, do output once on a I_n
 	if ( !parameter_set->data_output.primal.trigger_type.compare("fixed") ) {
@@ -974,16 +1032,11 @@ primal_init_data_output() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-primal_do_data_output(
+primal_do_data_output_on_slab(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<1>::iterator &u,
 	const unsigned int dwr_loop,
 	const bool dG_initial_value) {
-	
-	if (!( (primal.data_output_dwr_loop == -1) ||
-		(primal.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
-		return;
-	
 	if (primal.data_output_trigger <= 0) return;
 	
 	// adapt trigger value for I_n output mode
@@ -1047,7 +1100,11 @@ primal_do_data_output(
 	// check if data for t=T was written
 	if (std::next(slab) == grid->slabs.end()) {
 	if (primal.data_output_trigger_type_fixed) {
-		if ((t > slab->t_n) && (std::abs(t - slab->t_n) < slab->tau_n()/4.)) {
+		const double overshoot_tol{
+			std::min(slab->tau_n(), primal.data_output_trigger) * 1e-7
+		};
+		
+		if ((t > slab->t_n) && (std::abs(t - slab->t_n) < overshoot_tol)) {
 			// overshoot of time variable; manually set to t = T and do data output
 			t = slab->t_n;
 			
@@ -1065,6 +1122,107 @@ primal_do_data_output(
 			);
 		}
 	}}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+primal_do_data_output(
+	const unsigned int dwr_loop,
+	bool last
+) {
+	// set up which dwr loop(s) are allowed to make data output:
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	if ( !parameter_set->data_output.primal.dwr_loop.compare("none") ) {
+		return;
+	}
+	
+	if (!parameter_set->data_output.primal.dwr_loop.compare("last")) {
+		// output only the last (final) dwr loop
+		if (last) {
+			primal.data_output_dwr_loop = dwr_loop;
+		}
+		else {
+			return;
+		}
+	}
+	else {
+		if (!parameter_set->data_output.primal.dwr_loop.compare("all")) {
+			// output all dwr loops
+			if (!last) {
+				primal.data_output_dwr_loop = dwr_loop;
+			}
+			else {
+				return;
+			}
+		}
+		else {
+			// output on a specific dwr loop
+			if (!last) {
+				primal.data_output_dwr_loop =
+					std::stoi(parameter_set->data_output.primal.dwr_loop)-1;
+			}
+			else {
+				return;
+			}
+		}
+		
+	}
+	
+	if (primal.data_output_dwr_loop < 0)
+		return;
+	
+	if ( static_cast<unsigned int>(primal.data_output_dwr_loop) != dwr_loop )
+		return;
+	
+	DTM::pout
+		<< "primal solution data output: dwr loop = "
+		<< primal.data_output_dwr_loop
+		<< std::endl;
+	
+	primal.data_output_time_value = parameter_set->t0;
+	
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = grid->slabs.begin();
+	auto u = primal.storage.u->begin();
+	
+	// primal: dG: additionally output interpolated u_0(t0)
+	{
+		// n == 1: initial value function u_0
+		primal.um = std::make_shared< dealii::Vector<double> >();
+		primal.um->reinit( slab->primal.dof->n_dofs() );
+		
+		primal.un = std::make_shared< dealii::Vector<double> >();
+		primal.un->reinit( slab->primal.dof->n_dofs() );
+		
+		function.u_0->set_time(slab->t_m);
+		
+		Assert(primal.um.use_count(), dealii::ExcNotInitialized());
+		dealii::VectorTools::interpolate(
+			*slab->primal.mapping,
+			*slab->primal.dof,
+			*function.u_0,
+			*primal.um
+		);
+		slab->primal.constraints->distribute(*primal.um);
+		
+		// output "initial value solution" at initial time t0
+		Assert(primal.un.use_count(), dealii::ExcNotInitialized());
+		*primal.un = *u->x[0];
+		
+		*u->x[0] = *primal.um;
+		primal_do_data_output_on_slab(slab,u,dwr_loop,true);
+		
+		*u->x[0] = *primal.un;
+	}
+	
+	while (slab != grid->slabs.end()) {
+		primal_do_data_output_on_slab(slab,u,dwr_loop,false);
+		
+		++slab;
+		++u;
+	}
 }
 
 
@@ -1311,6 +1469,7 @@ dual_assemble_rhs(
 		dual.Je0,
 		t0,
 		function.u_E,
+		primal_L2_L2_error_weight,
 		dual.u0,
 		0,   // n_q_points: 0 -> q+1 in auto mode
 		true // auto mode
@@ -1346,6 +1505,7 @@ dual_assemble_rhs(
 			dual.Je1,
 			t1,
 			function.u_E,
+			primal_L2_L2_error_weight,
 			dual.u1,
 			0,   // n_q_points: 0 -> q+1 in auto mode
 			true // auto mode
@@ -1506,8 +1666,7 @@ dual_solve_slab_problem(
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_do_backward_TMS(
-	const unsigned int dwr_loop) {
+dual_do_backward_TMS() {
 	////////////////////////////////////////////////////////////////////////////
 	// prepare time marching scheme (TMS) loop
 	//
@@ -1612,12 +1771,6 @@ dual_do_backward_TMS(
 		dual_solve_slab_problem(slab,z);
 		
 		////////////////////////////////////////////////////////////////////////
-		// do postprocessing on the solution
-		//
-		
-		dual_do_data_output(slab,z,dwr_loop);
-		
-		////////////////////////////////////////////////////////////////////////
 		// prepare next I_n slab problem:
 		//
 		
@@ -1712,6 +1865,13 @@ void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
 dual_init_data_output() {
 	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	
+	// set up which dwr loop(s) are allowed to make data output:
+	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
+		return;
+	}
+	
+	// may output data: initialise (mode: all, last or specific dwr loop)
 	DTM::pout
 		<< "dual solution data output: patches = "
 		<< parameter_set->data_output.dual.patches
@@ -1730,27 +1890,6 @@ dual_init_data_output() {
 	dual.data_output->set_data_output_patches(
 		parameter_set->data_output.dual.patches
 	);
-	
-	dual.data_output_dwr_loop = -3; // -2 => not initialized
-	// set up which dwr loop(s) are allowed to make data output:
-	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
-		dual.data_output_dwr_loop = -2;
-	}
-	else if ( !parameter_set->data_output.dual.dwr_loop.compare("all") ) {
-		dual.data_output_dwr_loop = -1;
-	}
-	else if ( !parameter_set->data_output.dual.dwr_loop.compare("last") ) {
-		Assert(parameter_set->dwr.loops > 0, dealii::ExcInternalError());
-		dual.data_output_dwr_loop = parameter_set->dwr.loops-1;
-	}
-	else {
-		dual.data_output_dwr_loop = std::stoi(parameter_set->data_output.dual.dwr_loop);
-	}
-	
-	DTM::pout
-		<< "dual solution data output: dwr loop = "
-		<< dual.data_output_dwr_loop
-		<< std::endl;
 	
 	// check if we use a fixed trigger interval, or, do output once on a I_n
 	if ( !parameter_set->data_output.dual.trigger_type.compare("fixed") ) {
@@ -1782,15 +1921,10 @@ dual_init_data_output() {
 template<int dim>
 void
 Heat_DWR__cGp_dG0__cGq_cG1<dim>::
-dual_do_data_output(
+dual_do_data_output_on_slab(
 	const typename DTM::types::spacetime::dwr::slabs<dim>::iterator &slab,
 	const typename DTM::types::storage_data_vectors<2>::iterator &z,
 	const unsigned int dwr_loop) {
-	
-	if (!( (dual.data_output_dwr_loop == -1) ||
-		(dual.data_output_dwr_loop == static_cast<int>(dwr_loop)) ))
-		return;
-	
 	if (dual.data_output_trigger <= 0) return;
 	
 	// adapt trigger value for I_n output mode
@@ -1839,7 +1973,12 @@ dual_do_data_output(
 	// check if data for t=0 (t_0) was written
 	if (slab == grid->slabs.begin()) {
 	if (dual.data_output_trigger_type_fixed) {
-		if ((t < slab->t_m) && (std::abs(t - slab->t_m) < slab->tau_n()/4.)) {
+		const double overshoot_tol{
+			std::min(slab->tau_n(), dual.data_output_trigger) * 1e-7
+		};
+		
+		
+		if ((t < slab->t_m) && (std::abs(t - slab->t_m) < overshoot_tol)) {
 			// undershoot of time variable; manually set t = 0 and do data output
 			t = slab->t_m;
 			
@@ -1859,6 +1998,79 @@ dual_do_data_output(
 			);
 		}
 	}}
+}
+
+
+template<int dim>
+void
+Heat_DWR__cGp_dG0__cGq_cG1<dim>::
+dual_do_data_output(
+	const unsigned int dwr_loop,
+	bool last
+) {
+	// set up which dwr loop(s) are allowed to make data output:
+	Assert(parameter_set.use_count(), dealii::ExcNotInitialized());
+	if ( !parameter_set->data_output.dual.dwr_loop.compare("none") ) {
+		return;
+	}
+	
+	if (!parameter_set->data_output.dual.dwr_loop.compare("last")) {
+		// output only the last (final) dwr loop
+		if (last) {
+			dual.data_output_dwr_loop = dwr_loop;
+		}
+		else {
+			return;
+		}
+	}
+	else {
+		if (!parameter_set->data_output.dual.dwr_loop.compare("all")) {
+			// output all dwr loops
+			if (!last) {
+				dual.data_output_dwr_loop = dwr_loop;
+			}
+			else {
+				return;
+			}
+		}
+		else {
+			// output on a specific dwr loop
+			if (!last) {
+				dual.data_output_dwr_loop =
+					std::stoi(parameter_set->data_output.dual.dwr_loop)-1;
+			}
+			else {
+				return;
+			}
+		}
+		
+	}
+	
+	if (dual.data_output_dwr_loop < 0)
+		return;
+	
+	if ( static_cast<unsigned int>(dual.data_output_dwr_loop) != dwr_loop )
+		return;
+	
+	DTM::pout
+		<< "dual solution data output: dwr loop = "
+		<< dual.data_output_dwr_loop
+		<< std::endl;
+	
+	dual.data_output_time_value = parameter_set->T;
+	
+	Assert(grid->slabs.size(), dealii::ExcNotInitialized());
+	auto slab = std::prev(grid->slabs.end());
+	auto z = std::prev(dual.storage.z->end());
+	
+	unsigned int n{static_cast<unsigned int>(grid->slabs.size())};
+	while (n) {
+		dual_do_data_output_on_slab(slab,z,dwr_loop);
+		
+		--n;
+		--slab;
+		--z;
+	}
 }
 
 
@@ -2197,6 +2409,9 @@ refine_and_coarsen_space_time_grid() {
 	}
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// other
 
 template<int dim>
 void

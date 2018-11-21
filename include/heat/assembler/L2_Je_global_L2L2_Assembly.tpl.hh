@@ -82,6 +82,7 @@ struct Je_global_L2L2Assembly {
 	double                JxW;
 	double                u_E;
 	double                u_h;
+	double                weight;
 	
 	// other
 	unsigned int q;
@@ -128,6 +129,7 @@ public:
 		std::shared_ptr< dealii::Vector<double> > Je,
 		const double time,
 		std::shared_ptr< dealii::Function<dim> > u_E,
+		std::shared_ptr< dealii::Function<dim> > weight,
 		std::shared_ptr< dealii::Vector<double> > u_h,
 		const unsigned int n_quadrature_points = 0,
 		const bool quadrature_points_auto_mode = true
@@ -155,6 +157,7 @@ private:
 	
 	struct {
 		std::shared_ptr< dealii::Function<dim> > u_E;
+		std::shared_ptr< dealii::Function<dim> > weight;
 	} function;
 	
 	std::shared_ptr< dealii::Vector<double> > u_h;

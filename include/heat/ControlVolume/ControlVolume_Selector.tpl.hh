@@ -1,11 +1,17 @@
 /**
- * @file ExactSolution_KoecherBruchhaeuser2.tpl.hh
+ * @file ControlVolume_Selector.tpl.hh
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- * @date 2018-10-23, UK
+ * @author Marius Paul Bruchhäuser (MPB)
+ *
+ * @date 2018-11-19, included from NeumannBoundary, UK, MPB
+ * @date 2018-11-15, NeumannBoundary, UK, MPB
+ * @date 2018-07-30, DirichletBoundary, contributed by MPB from Force_Selector (UK)
+ * @date 2018-07-26, dwr, UK
+ * @date 2016-05-30, UK
+ * @date 2016-02-11, UK
  */
 
-/*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
+/*  Copyright (C) 2012-2018 by Uwe Koecher                                    */
 /*                                                                            */
 /*  This file is part of DTM++.                                               */
 /*                                                                            */
@@ -22,50 +28,30 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ExactSolution_KoecherBruchhaeuser2_tpl_hh
-#define __ExactSolution_KoecherBruchhaeuser2_tpl_hh
+#ifndef __ControlVolume_Selector_tpl_hh
+#define __ControlVolume_Selector_tpl_hh
 
 // DEAL.II includes
 #include <deal.II/base/function.h>
-#include <deal.II/base/point.h>
+
+// C++ includes
+#include <memory>
+#include <string>
 
 namespace heat {
-namespace exact_solution {
+namespace control_volume {
 
-/**
- * Implements the analytic solution \f$ u : \Omega \times I \to \mathbb{R} \f$,
- * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
- * \f[
- * u(x,y,t) := \begin{cases}
- * -s \frac{\arctan(10\frac{\pi}{2}(4t-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
- * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \quad (t < 0.5) \,, \\
- * s \frac{\arctan(10\frac{\pi}{2}(4(t-0.5)-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
- * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2} \;\;\;\quad (t \geq 0.5) \,,
- * \end{cases}
- * \f]
- * with the parameter values \f$ s =\frac{1}{3} \f$ and \f$ a = 50 \f$ for example.
- */
 template<int dim>
-class KoecherBruchhaeuser2 : public dealii::Function<dim> {
+class Selector {
 public:
-	KoecherBruchhaeuser2(
-		const double &s,
-		const double &a
-	) : dealii::Function<dim> (1), s(s), a(a)
-	{};
+	Selector() = default;
+	virtual ~Selector() = default;
 	
-	virtual ~KoecherBruchhaeuser2() = default;
-	
-	virtual
-	double
-	value(
-		const dealii::Point<dim> &x,
-		const unsigned int c
+	virtual void create_function(
+		const std::string &type,
+		const std::string &options,
+		std::shared_ptr< dealii::Function<dim> > &function
 	) const;
-
-private:
-	const double s;
-	const double a;
 };
 
 }}

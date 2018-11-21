@@ -13,6 +13,27 @@
  * @date 2015-11-11, UK
  *
  * @brief DTM++.Project/DWR/DWR-Heat: Solve the heat-eq with DWR.
+ * 
+ * @mainpage
+ * The dwr-heat subproject of the DTM++.Project covers to
+ * simulate the heat equation
+ * \f[
+ * \rho\, \partial_t u - \nabla \cdot (\epsilon\, \nabla u) = f\,,
+ * \f]
+ * in the space-time cyclinder \f$ \Omega \times I \f$,
+ * \f$ \Omega \subset \mathbb{R}^d \f$, \f$ I = (0,T) \f$ with \f$ T < \infty \f$,
+ * equipped with appropriate inital and boundary values as given by
+ * \f[ \begin{array}{r@{\,}c@{\,}l@{\,}l@{\,}l}
+ * u(\boldsymbol x, 0) &=& u_0(\boldsymbol x) & \text{in} & \Omega \times \{0\}\,,\\[1ex]
+ * u(\boldsymbol x, t) &=& g(\boldsymbol x, t) & \text{on} & \Gamma_D \times I\,,\\[1ex]
+ * \epsilon(\boldsymbol x)\, \nabla u(\boldsymbol x, t) \cdot \boldsymbol n
+ * &=& h(\boldsymbol x, t) & \text{on} & \Gamma_N \times I\,,\\[1ex]
+ * \end{array}
+ * \f]
+ * with the partition of the boundary \f$ \partial \Omega = \Gamma_D \cup \Gamma_N \f$
+ * and \f$ \Gamma_D \neq \emptyset \f$,
+ * using goal-oriented space-time adaptive finite element methods.
+ * 
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
