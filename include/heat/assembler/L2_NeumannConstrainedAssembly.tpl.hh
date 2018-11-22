@@ -96,7 +96,21 @@ struct NeumannConstrainedAssembly {
 } // namespace Assembly
 ////////////////////////////////////////////////////////////////////////////////
 
-
+/**
+ * The normal traction assembly for the diffusion problem is given by 
+ * \f[
+ * \boldsymbol T_N^{n,\iota} = ( h_{i} )_{i}\,,\quad
+ * h_{i} = \displaystyle \sum_{F \in \mathcal{F}_h \cap \Gamma_{N}}
+ * \displaystyle \sum_{i=1}^{N_u}
+ * \displaystyle \int_F
+ * \varphi^{i}(\boldsymbol x)\, h(\boldsymbol x, t_{n,\iota})
+ * \,\text{d} \boldsymbol x\,, \quad
+ * \text{with } 1 \leq i \leq N_u\,,
+ * \f]
+ * where  \f$ N_u \f$ denotes the degrees of freedom in space for a single 
+ * temporal degree of freedem of the fully discrete solution 
+ * \f$ u_{\tau, h}^{\text{dG}} \f$.
+ */
 template<int dim>
 class Assembler {
 public:
