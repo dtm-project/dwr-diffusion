@@ -1956,8 +1956,17 @@ dual_do_data_output_on_slab(
 	for ( ; t >= slab->t_m; t -= dual.data_output_trigger) {
 		const double _t{ (t - slab->t_m) / slab->tau_n() };
 		
-		const double xi0{ 1. - _t };
-		const double xi1{ _t };
+		// trial basis functions evaluation on reference interval
+		double xi0{0.};
+		double xi1{0.};
+		if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
+			xi0 = 1.-_t;
+			xi1 = _t;
+		}
+		else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+			xi0 = -2.*_t+2.;
+			xi1 = 2.*_t-1.;
+		}
 		
 		// evalute space-time solution
 		z_trigger->equ(xi0, *z->x[0]);
@@ -1984,8 +1993,17 @@ dual_do_data_output_on_slab(
 			
 			const double _t{ (t - slab->t_m) / slab->tau_n() };
 			
-			const double xi0{ 1. - _t };
-			const double xi1{ _t };
+			// trial basis functions evaluation on reference interval
+			double xi0{0.};
+			double xi1{0.};
+			if (parameter_set->fe.dual.time_type_support_points.compare("Gauss-Lobatto")==0) {
+				xi0 = 1.-_t;
+				xi1 = _t;
+			}
+			else if (parameter_set->fe.dual.time_type_support_points.compare("Gauss")==0) {
+				xi0 = -2.*_t+2.;
+				xi1 = 2.*_t-1.;
+			}
 			
 			// evalute space-time solution
 			z_trigger->equ(xi0, *z->x[0]);
