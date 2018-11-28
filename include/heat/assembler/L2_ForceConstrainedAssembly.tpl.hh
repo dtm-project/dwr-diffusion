@@ -102,7 +102,21 @@ struct ForceConstrainedAssembly {
 } // namespace Assembly
 ////////////////////////////////////////////////////////////////////////////////
 
-
+/**
+ * The volumetric source assembly for the diffusion problem is given by 
+ * \f[
+ * \boldsymbol F^{n,\iota} = ( f_{i} )_{i}\,,\quad
+ * f_{i} = \displaystyle \sum_{K \in \mathcal{T}_h}
+ * \displaystyle \sum_{i=1}^{N_u}
+ * \displaystyle \int_K
+ * \varphi^{i}(\boldsymbol x)\, f(\boldsymbol x, t_{n,\iota})
+ * \,\text{d} \boldsymbol x\,, \quad
+ * \text{with } 1 \leq i \leq N_u\,,
+ * \f]
+ * where  \f$ N_u \f$ denotes the degrees of freedom in space for a single 
+ * temporal degree of freedem of the fully discrete solution 
+ * \f$ u_{\tau, h}^{\text{dG}} \f$.
+ */
 template<int dim>
 class Assembler {
 public:

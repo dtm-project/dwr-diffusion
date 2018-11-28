@@ -32,6 +32,15 @@
 namespace heat {
 namespace neumann_boundary {
 
+/**
+ * Implements the analytic solution \f$ h : \Omega \times I \to \mathbb{R} \f$,
+ * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
+ * \f[
+ * h(x,y,t) := \varepsilon(\boldsymbol x) \nabla u(x,y,t)\cdot\boldsymbol n
+ * \f]
+ * where \f$ u(x,y,t) \f$ denotes the exact analytical solution
+ * and \f$ \boldsymbol n \f$ denotes the outward directed normal vector.
+ */
 template<int dim>
 class KoecherBruchhaeuser2a : public dealii::Function<dim> {
 public:
