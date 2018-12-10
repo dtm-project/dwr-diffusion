@@ -34,6 +34,22 @@
  * and \f$ \Gamma_D \neq \emptyset \f$,
  * using goal-oriented space-time adaptive finite element methods.
  * 
+ * Solver and corresponding dwr error estimator classes:
+ * 
+ * - heat::Heat_DWR__cGp_dG0__cGq_cG1
+ * - heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator
+ * 
+ * Grid and triangulation generation classes:
+ * 
+ * - heat::Grid_DWR
+ * - heat::TriaGenerator
+ * 
+ * Data structures:
+ * 
+ * - DTM::types::spacetime::dwr::s_slab
+ * - DTM::types::spacetime::dwr::slabs
+ * - DTM::types::storage::data::s_vectors
+ * - DTM::types::storage_data_vectors
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
