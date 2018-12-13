@@ -1,10 +1,8 @@
 /**
- * @file ControlVolumes.hh
+ * @file ControlVolume_moving_hyper_rectangle.inst.in
  *
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- *
- * @date 2018-11-19, UK, MPB
+ * @date 2018-12-13, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
@@ -24,10 +22,15 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ControlVolumes_hh
-#define __ControlVolumes_hh
+#ifndef __ControlVolume_moving_hyper_rectangle_inst_in
+#define __ControlVolume_moving_hyper_rectangle_inst_in
 
-#include <heat/ControlVolume/ControlVolume_hyper_rectangle.tpl.hh>
-#include <heat/ControlVolume/ControlVolume_moving_hyper_rectangle.tpl.hh>
+namespace heat {
+namespace control_volume {
+
+template class moving_hyper_rectangle<2>;
+template class moving_hyper_rectangle<3>;
+
+}}
 
 #endif

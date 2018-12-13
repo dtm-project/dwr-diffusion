@@ -1,10 +1,8 @@
 /**
- * @file ControlVolumes.hh
- *
+ * @file ControlVolume_moving_hyper_rectangle.tpl.hh
  * @author Uwe Koecher (UK)
- * @author Marius Paul Bruchhaeuser (MPB)
- *
- * @date 2018-11-19, UK, MPB
+ * 
+ * @date 2018-12-13, UK
  */
 
 /*  Copyright (C) 2012-2018 by Uwe Koecher and contributors                   */
@@ -24,10 +22,52 @@
 /*  You should have received a copy of the GNU Lesser General Public License  */
 /*  along with DTM++.   If not, see <http://www.gnu.org/licenses/>.           */
 
-#ifndef __ControlVolumes_hh
-#define __ControlVolumes_hh
+#ifndef __ControlVolume_moving_hyper_rectangle_tpl_hh
+#define __ControlVolume_moving_hyper_rectangle_tpl_hh
 
-#include <heat/ControlVolume/ControlVolume_hyper_rectangle.tpl.hh>
-#include <heat/ControlVolume/ControlVolume_moving_hyper_rectangle.tpl.hh>
+// DEAL.II includes
+#include <deal.II/base/function.h>
+#include <deal.II/base/point.h>
+
+namespace heat {
+namespace control_volume {
+
+/**
+ * Control volume \f$ \mathcal{Q}_c(t) := \Omega_c(t) \times I_c \f$,
+ * with \f$ \Omega_c(t) \subseteq \Omega \f$
+ * and \f$ I_c \subseteq I \f$.
+ */
+template<int dim>
+class moving_hyper_rectangle : public dealii::Function<dim> {
+public:
+	moving_hyper_rectangle(
+		const double r1,
+		const dealii::Point<dim> &p1,
+		const dealii::Point<dim> &p2,
+		const double &t1,
+		const double &t2
+	) : dealii::Function<dim> (1), r1(r1), p1(p1), p2(p2), t1(t1), t2(t2)
+	{};
+	
+	virtual ~moving_hyper_rectangle() = default;
+	
+	virtual
+	double
+	value(
+		const dealii::Point<dim> &x,
+		const unsigned int c
+	) const;
+
+private:
+	const double r1;
+	
+	const dealii::Point<dim> p1;
+	const dealii::Point<dim> p2;
+	
+	const double t1;
+	const double t2;
+};
+
+}}
 
 #endif

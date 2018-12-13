@@ -175,6 +175,53 @@ create_function(
 	
 	////////////////////////////////////////////////////////////////////////////
 	// 
+	if (_type.compare("ControlVolume_moving_hyper_rectangle") == 0) {
+		AssertThrow(
+			options.size() == 1+3+3+1+1,
+			dealii::ExcMessage(
+				"control_volume options invalid, "
+				"please check your input file data."
+			)
+		);
+		
+		double r1;
+		dealii::Point<dim> p1;
+		dealii::Point<dim> p2;
+		double t1;
+		double t2;
+		
+		r1 = std::stod(options.at(0));
+		
+		p1[0] = std::stod(options.at(1));
+		p2[0] = std::stod(options.at(4));
+		
+		if (dim > 1) {
+			p1[1] = std::stod(options.at(2));
+			p2[1] = std::stod(options.at(5));
+		}
+		
+		if (dim > 2) {
+			p1[2] = std::stod(options.at(3));
+			p2[2] = std::stod(options.at(6));
+		}
+		
+		t1 = std::stod(options.at(7));
+		t2 = std::stod(options.at(8));
+		
+		function = std::make_shared< heat::control_volume::moving_hyper_rectangle<dim> >(
+			r1, p1,p2, t1,t2
+		);
+		
+		DTM::pout
+			<< "control_volume selector: created moving_hyper_rectangle "
+			<< "as control_volume function." << std::endl
+			<< std::endl;
+		
+		return;
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	// 
 	AssertThrow(
 		false,
 		dealii::ExcMessage("control_volume function unknown, please check your input file data.")
