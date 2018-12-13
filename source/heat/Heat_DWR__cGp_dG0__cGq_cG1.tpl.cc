@@ -196,6 +196,32 @@ run() {
 		if (dwr_loop > 0) {
 			// do space-time mesh refinements and coarsenings
 			refine_and_coarsen_space_time_grid();
+			
+			{
+				////////////////////////////////////////////////////////////////////////////
+				// write to text file tau_n(t_n)
+				
+				std::ostringstream filename;
+				filename
+					<< "tau_n-over-t_n-"
+					<< std::setw(setw_value_dwr_loops) << std::setfill('0') << dwr_loop+1
+					<< ".log";
+				
+				std::ofstream output_file(
+					filename.str().c_str()
+				);
+				
+				output_file << "t_n" << " " << "tau_n" << std::endl;
+				
+				for (auto &slab : grid->slabs) {
+					output_file
+						<< slab.t_n << " "
+						<< slab.tau_n() << " \\\\"
+						<< std::endl;
+				}
+				
+				output_file.close();
+			}
 		}
 		
 		DTM::pout
@@ -1039,16 +1065,6 @@ primal_do_data_output_on_slab(
 	const bool dG_initial_value) {
 	if (primal.data_output_trigger <= 0) return;
 	
-	// adapt trigger value for I_n output mode
-	if (!primal.data_output_trigger_type_fixed) {
-		if (std::next(slab) != grid->slabs.end()) {
-			primal.data_output_trigger = std::next(slab)->tau_n();
-		}
-		else {
-			primal.data_output_trigger = slab->tau_n();
-		}
-	}
-	
 	primal.data_output->set_DoF_data(
 		slab->primal.dof
 	);
@@ -1081,6 +1097,12 @@ primal_do_data_output_on_slab(
 		t += primal.data_output_trigger;
 	}
 	else {
+		// adapt trigger value for I_n output mode
+		if (!primal.data_output_trigger_type_fixed) {
+			primal.data_output_trigger = slab->tau_n();
+			primal.data_output_time_value = slab->t_n;
+		}
+		
 		for ( ; t <= slab->t_n; t += primal.data_output_trigger) {
 			[[maybe_unused]] const double _t{ (t - slab->t_m) / slab->tau_n() };
 			
@@ -1929,11 +1951,13 @@ dual_do_data_output_on_slab(
 	
 	// adapt trigger value for I_n output mode
 	if (!dual.data_output_trigger_type_fixed) {
-		if (slab != grid->slabs.begin()) {
-			dual.data_output_trigger = std::prev(slab)->tau_n();
+		dual.data_output_trigger = slab->tau_n();
+		
+		if (slab == std::prev(grid->slabs.end())) {
+			dual.data_output_time_value = slab->t_n;
 		}
 		else {
-			dual.data_output_trigger = slab->tau_n();
+			dual.data_output_time_value = slab->t_m;
 		}
 	}
 	
