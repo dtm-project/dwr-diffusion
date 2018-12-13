@@ -63,20 +63,20 @@ subsection DWR
     set solver control reduction mode = true
     set solver control max iterations = 1000
     set solver control tolerance = 1.e-8
-    set solver control reduction = 1.e-2
+    set solver control reduction = 5.e-3
     
     # space strategy: global, fixed_fraction or Schwegler
 #    set refine and coarsen space strategy = global
     set refine and coarsen space strategy = fixed_fraction
     set refine and coarsen space top fraction1 = 0.3
-    set refine and coarsen space top fraction2 = 0.15
+    set refine and coarsen space top fraction2 = 0.1
     set refine and coarsen space bottom fraction = 0.0
     set refine and coarsen space max growth factor n_active_cells = 4
     
     # time strategy: global, fixed_fraction
 #    set refine and coarsen time strategy = global
     set refine and coarsen time strategy = fixed_fraction
-    set refine and coarsen time top fraction = 0.3
+    set refine and coarsen time top fraction = 0.8
 end
 
 subsection Parameter Specification
@@ -125,8 +125,8 @@ subsection Output Quantities
     # primal solution output control
     set primal data output dwr loop = last      # use none, all, last or number
     
-#    set primal data output trigger type = I_n   # I_n mode: one output per I_n
-    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
+    set primal data output trigger type = I_n   # I_n mode: one output per I_n
+#    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
     set primal data output trigger time      = 0.005 # use fixed trigger value (fixed mode only)
     
     set primal data output patches auto mode = true # use < primal p > data output patches (auto mode)
