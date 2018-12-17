@@ -47,7 +47,7 @@ subsection Mesh Specification
 end
 
 subsection Time Integration
-    set initial time   = 0.25
+    set initial time   = 0.00
     set final time     = 1.25
     set time step size = 0.25
 end
@@ -123,7 +123,7 @@ end
 subsection Output Quantities
     ############################################################################
     # primal solution output control
-    set primal data output dwr loop = last      # use none, all, last or number
+    set primal data output dwr loop = all      # use none, all, last or number
     
     set primal data output trigger type = I_n   # I_n mode: one output per I_n
 #    set primal data output trigger type = fixed # fixed mode: fixed output trigger time
@@ -134,7 +134,7 @@ subsection Output Quantities
     
     ############################################################################
     # dual solution output control
-    set dual data output dwr loop = last      # use none, all, last or number
+    set dual data output dwr loop = all      # use none, all, last or number
     set dual data output trigger type = I_n   # I_n mode: one output per I_n
 #    set dual data output trigger type = fixed # fixed mode: fixed output trigger time
     set dual data output trigger time      = 0.005
