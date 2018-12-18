@@ -239,52 +239,52 @@ struct ErrorEstimates {
  * Implements the computation of the a posteriori error estimator \f$ \eta^l \f$
  * given by:
  * \f[
- * \eta^l := \displaystyle \sum_{n=1}^{N}\displaystyle \sum_{K \in \mathcal{T}_h}
- * \eta_K^{n,l}\,,
+ * \tilde{\eta}^\ell := \displaystyle \sum_{n=1}^{N}\displaystyle \sum_{K \in \mathcal{T}_h}
+ * \tilde{\eta}_K^{n,\ell}\,,
  * \f]
- * where \f$ \eta_K^{n,l} \f$ is given by
+ * where \f$ \tilde{\eta}_K^{n,\ell} \f$ is given by
  * \f[
- * \eta_K^{n,l}:= \int_{I_n}\left\{\left( R(u_{\tau h}^{n,l}),
- * z_{\tau H}^{n,l}-I_h z_{\tau H}^{n,l}\right)_K
- * - \left( E(u_{\tau h}^{n,l}),
- * z_{\tau H}^{n,l}-I_h z_{\tau H}^{n,l}\right)_{\partial K}
- * - \left( g-g_{\tau h},
- * \nabla z_{\tau H}^{n,l}\cdot\boldsymbol n\right)_{\partial K \subset \Gamma_D} 
+ * \tilde{\eta}_K^{n,\ell}:= \int_{I_n}\left\{\left( R(u_{\tau h}^{n,\ell}),
+ * z_{\tau H}^{n,\ell}-I_h z_{\tau H}^{n,\ell}\right)_K
+ * - \left( E(u_{\tau h}^{n,\ell}),
+ * z_{\tau H}^{n,\ell}-I_h z_{\tau H}^{n,\ell}\right)_{\partial K}
+ * - \left( g-g_{\tau h}^{n,\ell},
+ * \nabla z_{\tau H}^{n,\ell}\cdot\boldsymbol n\right)_{\partial K \subset \Gamma_D} 
  * \right\}
  * \text{d} t
- * - \left( [u_{\tau h}^{l}]_{n-1},
- * z_{\tau H}^{n-1,l}-I_h z_{\tau H}^{n-1,l}\right)_K
+ * - \left( [u_{\tau h}^{\ell}]_{n-1},
+ * z_{\tau H}^{n-1,\ell}-I_h z_{\tau H}^{n-1,\ell}\right)_K
  * \f]
  * where the cell and edge residuals are given by
  * \f[
- * R(u_{\tau h}^{n,l})|_K := f - \partial_t u_{\tau h} 
- * + \nabla\cdot(\varepsilon \nabla u_{\tau h}) \\
+ * R(u_{\tau h}^{n,l})|_K := f - \partial_t u_{\tau h}^{n,\ell} 
+ * + \nabla\cdot(\varepsilon \nabla u_{\tau h}^{n,\ell}) \\
  * E(u_{\tau h}^{n,l})|_F := \begin{cases}
- * \frac{1}{2}\boldsymbol n\cdot[\varepsilon \nabla u_{\tau h}^{n,l}] 
+ * \frac{1}{2}\boldsymbol n\cdot[\varepsilon \nabla u_{\tau h}^{n,\ell}] 
  * \quad \text{if } F \subset \partial K\backslash \partial \Omega \,, \\
- * h - \nabla u_{\tau h}^{n,l} \cdot\boldsymbol n  
+ * h - \varepsilon \nabla u_{\tau h}^{n,\ell} \cdot\boldsymbol n  
  * \quad \text{if } F \subset \partial \Omega_N \,.
  * \end{cases}
  * \f]
- * Here, \f$ I_h z_{\tau H}^{n,l} \f$ is the interpolation of the dual solution
- * \f$ z_{\tau H}^{n,l} \f$
+ * Here, \f$ I_h z_{\tau H}^{n,\ell} \f$ is the interpolation of the dual solution
+ * \f$ z_{\tau H}^{n,\ell} \f$
  * into the primal finite element space.
  * Furthermore,
  * \f$ [ \, \cdot \, ]_n \f$ denotes a trace operator for the jump
  * of a discontinuous function in \f$ t_n \f$ as given by
  * \f[ 
  * \begin{array}{l@{\quad}l@{\quad}l}
- * \displaystyle [u_{\tau h}^l]_n := u_{\tau h}^{n,l,+} - u_{\tau h}^{n,l,-}\,, &
- * \displaystyle u_{\tau h}^{n,l,-} := \lim_{t \to t_n-0} u_{\tau h}^l(t)\,, &
- * \displaystyle u_{\tau h}^{n,l,+} := \lim_{t \to t_n+0} u_{\tau h}^l(t)\,.\\[1.5ex]
+ * \displaystyle [u_{\tau h}^\ell]_n := u_{\tau h}^{n,\ell,+} - u_{\tau h}^{n,\ell,-}\,, &
+ * \displaystyle u_{\tau h}^{n,\ell,-} := \lim_{t \to t_n-0} u_{\tau h}^\ell(t)\,, &
+ * \displaystyle u_{\tau h}^{n,\ell,+} := \lim_{t \to t_n+0} u_{\tau h}^\ell(t)\,.\\[1.5ex]
  * \end{array}
  * \f]
- * as well as \f$ [\varepsilon \nabla u_{\tau h}^{n,l}] \f$ denotes a trace 
+ * as well as \f$ [\varepsilon \nabla u_{\tau h}^{n,\ell}] \f$ denotes a trace 
  * operator for the jump across an inter-element edge (\f$ d=2 \f$) or
  * face (\f$ d=3 \f$), given by
  * \f[ 
- * [\varepsilon \nabla u_{\tau h}^{n,l}] := \left(
- * \nabla u_{\tau h}^{n,l}|_{F\cap K} - \nabla u_{\tau h}^{n,l}|_{F\cap K'}
+ * [\varepsilon \nabla u_{\tau h}^{n,\ell}] := \left(
+ * \varepsilon\nabla u_{\tau h}^{n,\ell}|_{F\cap K} - \varepsilon\nabla u_{\tau h}^{n,\ell}|_{F\cap K'}
  * \right) \cdot \boldsymbol n\,,
  * \f]
  * where \f$ K, K' \in \mathcal{T}_h  \f$ are two neighboring cells with common
