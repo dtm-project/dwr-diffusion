@@ -38,6 +38,21 @@
 namespace diffusion {
 namespace exact_solution {
 
+/**
+ * Implements the analytic solution \f$ u : \Omega \times I \to \mathbb{R} \f$,
+ * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
+ * \f[
+ * u(x,y,t) :=
+ * \frac{ 1 }{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
+ * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2}\,,
+ * \f]
+ * with the parameter value \f$ a = 50 \f$ for example, found in the literature
+ * reference: R. Hartmann: A-posteriori Fehlersch&auml;tzung und adaptive
+ * Schrittweiten- und Ortsgittersteuerung bei Galerkin-Verfahren f&uuml;r die
+ * W&auml;rmeleitungsgleichung. Sec. 1.4.2, p. 20, Diploma thesis,
+ * Supervisor: Prof. Dr. R. Rannacher,
+ * Faculty for Mathematics, University of Heidelberg, Germany, 1998.
+ */
 template<int dim>
 class Hartmann142 : public dealii::Function<dim> {
 public:
