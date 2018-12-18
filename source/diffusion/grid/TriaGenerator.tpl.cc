@@ -38,26 +38,24 @@
 // class declaration
 namespace diffusion {
 
-/**
- * Lshape:
- * \f[
- * \begin{tikzpicture}
- * \draw (0,2) -- (2,2) node[midway,above]{$\Gamma_D$};
- * \draw (2,2) -- (2,0) node[midway,right]{$\Gamma_D$};
- * \draw (2,0) -- (4,0) node[midway,above]{$\Gamma_D$};
- * \draw (4,0) -- (4,-2) node[midway,right]{$\Gamma_D$};
- * \draw (4,-2) -- (0,-2) node[midway,below]{$\Gamma_D$};
- * \draw[red] (0,-2) -- (0,2) node[midway,left]{$\Gamma_N$};
- * \fill (1,1) circle [radius=0.05];
- * \draw (1,1) circle [radius=0.4];
- * \draw (1,1) circle [radius=0.8];
- * \fill[gray] (3,-1) circle [radius=0.05];
- * \draw[gray] (3,-1) circle [radius=0.4];
- * \draw[gray] (3,-1) circle [radius=0.8];
- * \draw [every edge/.style = {draw, ->}] (1,0) edge [bend right] (2,-1);
- * \end{tikzpicture}
- * \f]
+/** Generates sophisticated triangulations.
+ * <ul>
+ * <li>hyper_cube: generates \f$ \Omega_h=\{ (p_1^1,p_2^1) \times (p_1^2,p_2^2)
+ * \times (p_1^3,p_2^3) \} \f$ with one mesh cell; cf. deal.II documentation.</li>
  * 
+ * <li>subdivided_hyper_rectangle: same as hyper_cube but allows for (an-)isotropic
+ * refinement upon construction; cf. deal.II documentation.</li>
+ * 
+ * <li>hyper_ball: generates a circle for \f$ d=2 \f$ and a ball for \f$ d=3 \f$
+ * for the given center (middle point) and radius. This deal.II grid_generator
+ * automatically applies an boundary manifold for the (hyper-)sphere.</li>
+ * 
+ * <li>Lshape: generates \f$ \Omega_h=\{ (0,1)^d \} \setminus \{ (0.5,1)^d \} \f$,
+ * \f$ d=2,3 \f$ with 3 mesh cells.</li>
+ * </ul>
+ * 
+ * This function can easily be extended to other triangulations/geometrical mesh
+ * descriptions.
  */
 template<int dim>
 void
