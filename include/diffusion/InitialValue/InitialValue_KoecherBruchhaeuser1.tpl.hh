@@ -33,6 +33,16 @@
 namespace diffusion {
 namespace initial_value {
 
+/**
+ * Implements the analytic solution \f$ u : \Omega \times I \to \mathbb{R} \f$,
+ * \f$ \Omega \subset \mathbb{R}^2 \f$, as given by:
+ * \f[
+ * u(x,y,t) :=
+ * s \frac{\arctan(10\frac{\pi}{2}(2t-1))}{1+a\big(x-\frac{1}{2}-\frac{1}{4}\cos(2\pi t)\big)^2+
+ * a\big(y-\frac{1}{2}-\frac{1}{4}\sin(2\pi t)\big)^2}\,,
+ * \f]
+ * with the parameter values \f$ s =\frac{1}{3} \f$ and \f$ a = 50 \f$ for example.
+ */
 template<int dim>
 class KoecherBruchhaeuser1 : public dealii::Function<dim> {
 public:
