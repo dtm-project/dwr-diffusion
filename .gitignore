@@ -2,7 +2,7 @@ CMakeCache.txt
 CMakeFiles/
 doc/doxygen/
 Makefile
-dwr-heat
+dwr-diffusion
 cmake_install.cmake
 *.h5
 *.xdmf
