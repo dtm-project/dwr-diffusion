@@ -37,6 +37,10 @@
 namespace diffusion {
 namespace grid {
 
+/**
+ * Colorises the boundary \f$ \Gamma = \partial \Omega \f$ for the application
+ * of a Dirichlet type boundary independently of the geometry of \f$ \Omega \f$.
+ */
 template<int dim, int spacedim>
 class Grid_DWR_PureDirichlet : public diffusion::Grid_DWR<dim,spacedim> {
 public:
