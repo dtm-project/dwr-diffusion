@@ -37,6 +37,12 @@
 namespace diffusion {
 namespace grid {
 
+/**
+ * Colorises the boundary \f$ \Gamma_N \cup \Gamma_D = \partial \Omega \f$
+ * for the application of a Neumann type boundary for faces having
+ * \f$ x_1 = 0 \f$ and a Dirichlet type boundary elsewhere,
+ * independently of the geometry of \f$ \Omega \f$.
+ */
 template<int dim, int spacedim>
 class Grid_DWR_Dirichlet_and_Neumann_1 : public diffusion::Grid_DWR<dim,spacedim> {
 public:
