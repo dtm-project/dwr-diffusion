@@ -4,6 +4,7 @@
  * @author Uwe Koecher (UK)
  * @author Marius Paul Bruchhaeuser (MPB)
  *
+ * @date 2018-12-18, Forked from DTM++.Project/dwr-heat as dwr-diffusion, UK, MPB
  * @date 2018-07-26, DTM::Problem, UK
  * @date 2018-07-25, tested and running instationary version, UK, MPB
  * @date 2018-03-06, new implementation, UK
@@ -12,11 +13,11 @@
  * @date 2016-01-12, UK
  * @date 2015-11-11, UK
  *
- * @brief DTM++.Project/DWR/DWR-Heat: Solve the heat-eq with DWR.
+ * @brief DTM++.Project/DWR/DWR-Diffusion: Solve the diffusion-eq with DWR.
  * 
  * @mainpage
- * The dwr-heat subproject of the DTM++.Project covers to
- * simulate the heat equation
+ * The dwr-diffusion subproject of the DTM++.Project covers to
+ * simulate the diffusion equation
  * \f[
  * \rho\, \partial_t u - \nabla \cdot (\epsilon\, \nabla u) = f\,,
  * \f]
@@ -36,13 +37,13 @@
  * 
  * Solver and corresponding dwr error estimator classes:
  * 
- * - heat::Heat_DWR__cGp_dG0__cGq_cG1
- * - heat::dwr::cGp_dG0::cGq_cG1::ErrorEstimator
+ * - diffusion::Diffusion_DWR__cGp_dG0__cGq_cG1
+ * - diffusion::dwr::cGp_dG0::cGq_cG1::ErrorEstimator
  * 
  * Grid and triangulation generation classes:
  * 
- * - heat::Grid_DWR
- * - heat::TriaGenerator
+ * - diffusion::Grid_DWR
+ * - diffusion::TriaGenerator
  * 
  * Data structures:
  * 
@@ -81,8 +82,8 @@
 #include <DTM++/base/LogStream.hh>
 #include <DTM++/base/Problem.hh>
 
-#include <heat/parameters/ParameterHandler.hh>
-#include <heat/Heat_DWR__cGp_dG0__cGq_cG1.tpl.hh>
+#include <diffusion/parameters/ParameterHandler.hh>
+#include <diffusion/Diffusion_DWR__cGp_dG0__cGq_cG1.tpl.hh>
 
 // DEAL.II includes
 #include <deal.II/base/exceptions.h>
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]) {
 	const unsigned int NumProc(dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
 	
 	////////////////////////////////////////////////////////////////////////////
-	// Restrict usage of dwr-heat to a single process only.
+	// Restrict usage of dwr-diffusion to a single process only.
 	// NOTE: we use the deal.II MPI framework to control non-distributed
 	//       threading facilities precisely and to give a general approach
 	//       which can be extended to a MPI-version.
@@ -143,7 +144,7 @@ int main(int argc, char *argv[]) {
 		AssertThrow(
 			!(argc < 2),
 			dealii::ExcMessage (
-				std::string ("===>\tUSAGE: ./dwr-heat <Input_Parameter_File.prm>"))
+				std::string ("===>\tUSAGE: ./dwr-diffusion <Input_Parameter_File.prm>"))
 		);
 		
 		// Check if the given input parameter file can be opened
@@ -161,7 +162,7 @@ int main(int argc, char *argv[]) {
 		
 		// Prepare input parameter handling:
 		auto parameter_handler =
-			std::make_shared< heat::dwr::ParameterHandler > ();
+			std::make_shared< diffusion::dwr::ParameterHandler > ();
 		parameter_handler->parse_input(argv[1]);
 		
 		// Get minimal set of input parameters to drive the correct simulator
@@ -186,19 +187,19 @@ int main(int argc, char *argv[]) {
 		// select simulator
 		{
 			DTM::pout
-				<< "dwr-heat solver: primal cG(p)-dG(0) with dual cG(q)-cG(1)"
+				<< "dwr-diffusion solver: primal cG(p)-dG(0) with dual cG(q)-cG(1)"
 				<< std::endl;
 			
 			switch (dimension) {
 			case 2: {
 				problem =
-					std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<2> > ();
+					std::make_shared< diffusion::Diffusion_DWR__cGp_dG0__cGq_cG1<2> > ();
 				break;
 			}
 			
 			case 3: {
 				problem =
-					std::make_shared< heat::Heat_DWR__cGp_dG0__cGq_cG1<3> > ();
+					std::make_shared< diffusion::Diffusion_DWR__cGp_dG0__cGq_cG1<3> > ();
 				break;
 			}
 			
@@ -208,7 +209,7 @@ int main(int argc, char *argv[]) {
 		}
 		
 		DTM::pout
-			<< "dwr-heat: dimension dim = " << dimension << std::endl
+			<< "dwr-diffusion: dimension dim = " << dimension << std::endl
 			<< std::endl;
 		
 		DTM::pout

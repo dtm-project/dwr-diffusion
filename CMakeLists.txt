@@ -33,11 +33,11 @@
 
 
 MESSAGE("================================================================================")
-MESSAGE("=== Configuring DTM++.Project/DWR/DWR-Heat =====================================")
+MESSAGE("=== Configuring DTM++.Project/DWR/DWR-Diffusion =====================================")
 MESSAGE("================================================================================")
 
 # SETs the NAME of the TARGET and PROJECT
-SET(TARGET "dwr-heat")
+SET(TARGET "dwr-diffusion")
 
 FILE(GLOB_RECURSE TARGET_SRC "source/*.cc")
 INCLUDE_DIRECTORIES(include)
