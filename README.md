@@ -28,6 +28,24 @@ make
 * Contributors
     * Marius P. Bruchhaeuser (bruchhaeuser@hsu-hamburg.de)
 
+Remark. DTM++ is free software.
+
+If you write scientific publication using results obtained by reusing parts
+of DTM++, or specifically DTM++/dwr-diffusion, especially by reusing the
+datastructures, algorithms and/or supporting parameter/data input/output
+classes, you are willing to cite the following two publications:
+
+- U. Koecher, M.P. Bruchhaeuser, M. Bause: "Efficient and scalable
+  data structures and algorithms for goal-oriented adaptivity of space-time
+  FEM codes", submitted to SoftwareX, p. 1-6, 2018.
+
+- U. Koecher: "Variational space-time methods for the elastic wave equation
+  and the diffusion equation", Ph.D. thesis,
+  Department of Mechanical Engineering of the Helmut-Schmidt-University,
+  University of the German Federal Armed Forces Hamburg, Germany, p. 1-188,
+  urn:nbn:de:gbv:705-opus-31129, 2015. Open access via:
+  http://edoc.sub.uni-hamburg.de/hsu/volltexte/2015/3112/
+
 
 ### License ###
 Copyright (C) 2012-2018 by Uwe Koecher and contributors
