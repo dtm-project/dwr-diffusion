@@ -197,32 +197,6 @@ run() {
 		if (dwr_loop > 0) {
 			// do space-time mesh refinements and coarsenings
 			refine_and_coarsen_space_time_grid();
-			
-			{
-				////////////////////////////////////////////////////////////////////////////
-				// write to text file tau_n(t_n)
-				
-				std::ostringstream filename;
-				filename
-					<< "tau_n-over-t_n-"
-					<< std::setw(setw_value_dwr_loops) << std::setfill('0') << dwr_loop+1
-					<< ".log";
-				
-				std::ofstream output_file(
-					filename.str().c_str()
-				);
-				
-				output_file << "t_n" << " " << "tau_n" << std::endl;
-				
-				for (auto &slab : grid->slabs) {
-					output_file
-						<< slab.t_n << " "
-						<< slab.tau_n() << " \\\\"
-						<< std::endl;
-				}
-				
-				output_file.close();
-			}
 		}
 		
 		DTM::pout
