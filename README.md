@@ -1,12 +1,12 @@
 # README #
 
 This README documents whatever steps are necessary to get the application
-  DTM++.Project/DWR/DWR-Heat
+  DTM++.Project/dwr/dwr-diffusion
 up and running.
 
 ### What is this repository for? ###
 
-* Heat equation problem with DWR
+* Goal-oriented adaptivity for the diffusion equation
 
 ### How do I get set up? ###
 
@@ -18,7 +18,7 @@ cmake .
 make
 
 * Run (single process)
-./dwr-heat
+./dwr-diffusion
 
 
 ### Who do I talk to? ###
