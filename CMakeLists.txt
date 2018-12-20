@@ -33,7 +33,7 @@
 
 
 MESSAGE("================================================================================")
-MESSAGE("=== Configuring DTM++.Project/DWR/DWR-Diffusion =====================================")
+MESSAGE("=== Configuring DTM++.Project/DWR/DWR-Diffusion ================================")
 MESSAGE("================================================================================")
 
 # SETs the NAME of the TARGET and PROJECT
